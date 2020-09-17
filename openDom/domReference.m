@@ -1,72 +1,16 @@
 function [x,w] = domReference(domain)
-%+========================================================================+
-%|                                                                        |
-%|              OPENDOM - LIBRARY FOR NUMERICAL INTEGRATION               |
-%|           openDom is part of the GYPSILAB toolbox for Matlab           |
-%|                                                                        |
-%| COPYRIGHT : Matthieu Aussal & Francois Alouges (c) 2017-2018.          |
-%| PROPERTY  : Centre de Mathematiques Appliquees, Ecole polytechnique,   |
-%| route de Saclay, 91128 Palaiseau, France. All rights reserved.         |
-%| LICENCE   : This program is free software, distributed in the hope that|
-%| it will be useful, but WITHOUT ANY WARRANTY. Natively, you can use,    |
-%| redistribute and/or modify it under the terms of the GNU General Public|
-%| License, as published by the Free Software Foundation (version 3 or    |
-%| later,  http://www.gnu.org/licenses). For private use, dual licencing  |
-%| is available, please contact us to activate a "pay for remove" option. |
-%| CONTACT   : matthieu.aussal@polytechnique.edu                          |
-%|             francois.alouges@polytechnique.edu                         |
-%| WEBSITE   : www.cmap.polytechnique.fr/~aussal/gypsilab                 |
-%|                                                                        |
-%| Please acknowledge the gypsilab toolbox in programs or publications in |
-%| which you use it.                                                      |
-%|________________________________________________________________________|
-%|   '&`   |                                                              |
-%|    #    |   FILE       : domReference.m                                |
-%|    #    |   VERSION    : 0.40                                          |
-%|   _#_   |   AUTHOR(S)  : Matthieu Aussal & François Alouges            |
-%|  ( # )  |   CREATION   : 14.03.2017                                    |
-%|  / 0 \  |   LAST MODIF : 14.03.2018                                    |
-%| ( === ) |   SYNOPSIS   : Discrete quadrature for edges, triangle       |
-%|  `---'  |                and tetrahedre of reference                   |
-%+========================================================================+
+
+% Discrete quadrature of reference domain (segment, triangle or
+% tetrahedron)
+
 
 % Particles mesh
 if (size(domain.msh.elt,2) == 1)
-    error('domReference.m : unavailable case')
+    error('domReference.m : no quadrature for point meshes')
     
 % Edge mesh
 elseif (size(domain.msh.elt,2) == 2)
-    if (domain.gss == 1)
-        x = 0.5;
-        w = 1;
-
-    elseif (domain.gss == 2)
-        x = [0.5*(1-1/sqrt(3)) ; 0.5*(1+1/sqrt(3))];
-        w = [0.5 ; 0.5];
-
-    elseif (domain.gss == 3)
-        x = [0.5*(1-sqrt(3/5)) ; 0.5 ; 0.5*(1+sqrt(3/5))];
-        w = [5/18 ; 4/9 ; 5/18];
-
-    elseif (domain.gss == 4)
-        a = sqrt(3/7 + 2/7*sqrt(6/5));
-        b = sqrt(3/7 - 2/7*sqrt(6/5));
-        w1 = (18-sqrt(30))/72;
-        w2 = (18+sqrt(30))/72;
-        x = [0.5*(1-a) ; 0.5*(1-b) ; 0.5*(1+b) ; 0.5*(1+a)] ;
-        w = [w1 ; w2 ; w2 ; w1];
-
-    elseif (domain.gss == 5)
-        a = 1/3*sqrt(5 + 2*sqrt(10/7));
-        b = 1/3*sqrt(5 - 2*sqrt(10/7));
-        w1 = (322-13*sqrt(70))/1800;
-        w2 = (322+13*sqrt(70))/1800;
-        x = [0.5*(1-a) ; 0.5*(1-b) ; 0.5 ; 0.5*(1+b) ; 0.5*(1+a)] ;
-        w = [w1 ; w2 ;64/225 ; w2 ; w1];
-
-    else
-        error('domReference.m : unavailable case')
-    end
+    [x,w] = Gauss_Legendre1D(domain.gss,0,1);
     
 % Triangular mesh
 elseif (size(domain.msh.elt,2) == 3)
@@ -105,7 +49,7 @@ elseif (size(domain.msh.elt,2) == 3)
         w = [P1 P1 P1 P2 P2 P2 P3 P3 P3 P3 P3 P3]'*2;
     
     else
-        error('domReference.m : unavailable case')
+        error('domReference.m : number of Gauss points not supported')
     end
     
 % Tetrahedron mesh
@@ -162,7 +106,7 @@ elseif (size(domain.msh.elt,2) == 4)
         w = [48/405 w1 w1 w1 w1 w2 w2 w2 w2 30/567 30/567 30/567 30/567 30/567 30/567]';
         
     else
-        error('domReference.m : unavailable case')
+        error('domReference.m : number of Gauss points not supported')
     end
     
 % Unknown type

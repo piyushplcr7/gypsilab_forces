@@ -1,4 +1,4 @@
-function mshPlot(mesh,V)
+function mshPlot(mesh,color)
 %+========================================================================+
 %|                                                                        |
 %|                 OPENMSH - LIBRARY FOR MESH MANAGEMENT                  |
@@ -29,60 +29,46 @@ function mshPlot(mesh,V)
 %|  `---'  |                                                              |
 %+========================================================================+
 
-% Patch 
-H = patch('Faces',mesh.elt, 'Vertices',mesh.vtx,'Marker','o',...
-    'MarkerFaceColor','none','EdgeColor','none','FaceColor','none');
 
-% For single numerical values
-if (numel(V) == 1) && ~ischar(V)
-    V = V * ones(size(mesh.vtx,1),1);
+if ~exist('color','var')
+    color = 'b';
+end
+if isnumeric(color)&&isscalar(color)
+    color = repmat(color,mesh.nvtx,1);
 end
 
-% Particles mesh
-if (size(mesh.elt,2) == 1)
-    if isempty(V)
-        mlt = accumarray(mesh.elt,1);
-        col = accumarray(mesh.elt,mesh.col)./mlt;
-        set(H,'MarkerFaceColor','flat','FaceVertexCData',col);
-    elseif ischar(V)
-        set(H,'MarkerFaceColor',V);
-    else
-        set(H,'MarkerFaceColor','flat','FaceVertexCData',V);
-    end   
+% Patch
+H = patch('Faces',mesh.elt, 'Vertices',mesh.vtx,'Marker','o');
 
-% Edge mesh
-elseif (size(mesh.elt,2) == 2)
-    if isempty(V)
-        Nelt = size(mesh.elt,1);
-        vtx  = [mesh.vtx(mesh.elt(:,1),:) ; mesh.vtx(mesh.elt(:,2),:)];
-        elt  = [(1:Nelt)' (Nelt+1:2*Nelt)'];
-        col  = [mesh.col ; mesh.col];
-        delete(H);
-        patch('Faces',elt, 'Vertices',vtx,'Marker','o',...
-            'MarkerFaceColor','k','EdgeColor','flat','FaceColor','none',...
-            'FaceVertexCData',col);
-    elseif ischar(V)
-        set(H,'MarkerFaceColor','k','EdgeColor',V);
-    else
-        set(H,'Marker','none','EdgeColor','interp','FaceVertexCData',V);
-    end
-    
-% Triangular mesh
-elseif (size(mesh.elt,2) == 3)
-    if isempty(V)
-        set(H,'Marker','.','MarkerFaceColor','k','EdgeColor','k','FaceColor','flat','CData',mesh.col)
-    elseif ischar(V)
-        set(H,'Marker','.','MarkerFaceColor','k','EdgeColor','k','FaceColor',V)
-    else
-        set(H,'Marker','none','EdgeColor','none','FaceColor','interp','FaceVertexCData',V)
-    end    
-    
-% Tetrahedron mesh
-elseif (size(mesh.elt,2) == 4)
-    mshPlot(mesh.fce,V);
-    
-% Unknown type    
-else
-    error('mshPlot.m : unavailable case')
+switch mesh.type
+    case 'point'
+        if ischar(color)
+            set(H,'MarkerFaceColor',color);
+        else
+            set(H,'MarkerFaceColor','flat','FaceVertexCData',color);
+        end
+    case 'segment'
+        if ischar(color)
+            set(H,'MarkerFaceColor',color);
+            set(H,'MarkerEdgeColor','k');
+            set(H,'EdgeColor',color);
+        else
+            set(H,'MarkerFaceColor','flat','FaceVertexCData',color);
+            set(H,'EdgeColor','interp');
+            set(H,'MarkerEdgeColor','k');
+        end
+        
+    case 'triangle'
+        if ischar(color)
+            set(H,'Marker','.','MarkerFaceColor','k','EdgeColor','k','FaceColor',color)
+        else
+            set(H,'Marker','none','EdgeColor','none','FaceColor','interp','FaceVertexCData',color)
+        end
+        
+    case 'tetrahedron'
+        
 end
+
+return
+
 end

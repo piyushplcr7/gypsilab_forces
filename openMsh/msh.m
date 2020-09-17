@@ -1,33 +1,4 @@
 classdef msh
-%+========================================================================+
-%|                                                                        |
-%|                 OPENMSH - LIBRARY FOR MESH MANAGEMENT                  |
-%|           openMsh is part of the GYPSILAB toolbox for Matlab           |
-%|                                                                        |
-%| COPYRIGHT : Matthieu Aussal (c) 2017-2018.                             |
-%| PROPERTY  : Centre de Mathematiques Appliquees, Ecole polytechnique,   |
-%| route de Saclay, 91128 Palaiseau, France. All rights reserved.         |
-%| LICENCE   : This program is free software, distributed in the hope that|
-%| it will be useful, but WITHOUT ANY WARRANTY. Natively, you can use,    |
-%| redistribute and/or modify it under the terms of the GNU General Public|
-%| License, as published by the Free Software Foundation (version 3 or    |
-%| later,  http://www.gnu.org/licenses). For private use, dual licencing  |
-%| is available, please contact us to activate a "pay for remove" option. |
-%| CONTACT   : matthieu.aussal@polytechnique.edu                          |
-%| WEBSITE   : www.cmap.polytechnique.fr/~aussal/gypsilab                 |
-%|                                                                        |
-%| Please acknowledge the gypsilab toolbox in programs or publications in |
-%| which you use it.                                                      |
-%|________________________________________________________________________|
-%|   '&`   |                                                              |
-%|    #    |   FILE       : msh.m                                         |
-%|    #    |   VERSION    : 0.53                                          |
-%|   _#_   |   AUTHOR(S)  : Matthieu Aussal                               |
-%|  ( # )  |   CREATION   : 14.03.2017                                    |
-%|  / 0 \  |   LAST MODIF : 21.06.2019                                    |
-%| ( === ) |   SYNOPSIS   : Mesh class definition                         |
-%|  `---'  |                                                              |
-%+========================================================================+
 
 properties 
     vtx = [];      % VERTEX COORDINATES (3 dimensions)
@@ -36,66 +7,76 @@ properties
 end
 
 methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%% CONSTRUCTOR %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function mesh = msh(varargin)
+    %% Class constructor %%
+    
+    function this = msh(varargin)
         % Read file
         if (length(varargin) == 1) && ischar(varargin{1})
-            mesh = msh;
+            this = msh;
             file = varargin{1}; 
             ext  = file(end-2:end);
             if strcmp(ext,'msh')
-                [mesh.vtx,mesh.elt,mesh.col] = mshReadMsh(file);
+                [this.vtx,this.elt,this.col] = mshReadMsh(file);
             elseif strcmp(ext,'ply')
-                [mesh.vtx,mesh.elt] = mshReadPly(file);
+                [this.vtx,this.elt] = mshReadPly(file);
             elseif strcmp(ext,'stl')
-                [mesh.vtx,mesh.elt] = mshReadStl(file);
+                [this.vtx,this.elt] = mshReadStl(file);
             elseif strcmp(ext,'vtk')
-                [mesh.vtx,mesh.elt] = mshReadVtk(file);
+                [this.vtx,this.elt] = mshReadVtk(file);
             elseif strcmp(file(end-3:end),'mesh')
-                [mesh.vtx,mesh.elt,mesh.col] = mshReadMesh(file);
+                [this.vtx,this.elt,this.col] = mshReadMesh(file);
             else
                 error('msh.m : unavailable case')
             end
-            if isempty(mesh.col)
-                mesh.col = zeros(size(mesh.elt,1),1);
+            if isempty(this.col)
+                this.col = zeros(size(this.elt,1),1);
             end
             
         % Inout only vertex
         elseif (length(varargin) == 1) && isnumeric(varargin{1})
-            mesh.vtx = varargin{1};
-            mesh.elt = (1:size(mesh.vtx,1))';
-            mesh.col = zeros(size(mesh.elt,1),1);
+            this.vtx = varargin{1};
+            this.elt = (1:size(this.vtx,1))';
+            this.col = zeros(size(this.elt,1),1);
         
         % Input vertex and elements   
         elseif (length(varargin) == 2)
-            mesh.vtx = varargin{1};
-            mesh.elt = varargin{2};
-            mesh.col = zeros(size(mesh.elt,1),1);
+            this.vtx = varargin{1};
+            this.elt = varargin{2};
+            this.col = zeros(size(this.elt,1),1);
         
         % Input vertex, elements and colours     
         elseif (length(varargin) == 3)
-            mesh.vtx = varargin{1};
-            mesh.elt = varargin{2};
-            mesh.col = varargin{3};
+            this.vtx = varargin{1};
+            this.elt = varargin{2};
+            this.col = varargin{3};
         end
         
         % Clean mesh
-        mesh = clean(mesh);
+        this = clean(this);
     end
     
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CLEAN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function mesh = clean(varargin)
-        mesh = varargin{1};
-        if (nargin==1)
-            mesh = mshClean(mesh,[]);
-        else
-            mesh = mshClean(mesh,varargin{2});            
+    % CLEAN % Remove duplicate vertices, remove unused vertices and relabel
+    % elements accordingly.
+    
+    function this = clean(this,dst)
+        if ~exist('dst','var')||isempty(dst)
+            dst = []; 
         end
+        this = mshClean(this,dst);
     end
     
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% Display %% 
+    
+    function disp(this)
+        space = '   ';
+        fprintf('%s %s mesh with %d elements and %d vertices: \n\n',' ',this.type,this.nelt,this.nvtx);
+        fprintf('%s vtx: [%dx%d double] \n',space,size(this.vtx,1),size(this.vtx,2))
+        fprintf('%s elt: [%dx%d double] \n',space,size(this.elt,1),size(this.elt,2))
+        fprintf('%s col: [%dx%d double] \n\r',space,size(this.col,1),size(this.col,2))
+    end
+    
     function plot(varargin)
         mesh = varargin{1};
         if (nargin == 1)
@@ -122,8 +103,57 @@ methods
         quiver3(Xctr(:,1),Xctr(:,2),Xctr(:,3),Vnrm(:,1),Vnrm(:,2),Vnrm(:,3),spc);
     end
     
+    %% Access properties
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%% GLOBAL DATA  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function[nel] = nelt(this)
+        % Number of elements
+        nel = size(this.elt,1);
+    end
+    
+    function[nv] = nvtx(this)
+        % Nb of vtx
+        nv = size(this.vtx,1);
+    end
+    
+    function[nc] = ncol(this)
+        % Number of colors
+        nc = size(this.col,1);
+    end
+    
+    function[d] = dim(this)
+        % 4-> Tetrahedron mesh, 3-> Trimesh, 2-> edge mesh, 1-> particule
+        % mesh. 
+        d = size(this.elt,2);
+    end
+    
+    function[s] = type(this)
+        switch this.dim
+            case 1
+                s = 'point';
+            case 2
+                s = 'segment';
+            case 3
+                s = 'triangle';
+            case 4
+                s = 'tetrahedron';
+        end
+    end
+    
+    function varargout = ABCD(this)
+        % [A,B,C,D] = ABCD(mesh) : is mesh is a tetra mesh, A(i,:) contains the
+        % coordinates of the first vtx of mesh.elts(i,:), B(i,:) the
+        % second, and so on. For a particle, edge and triangle mesh, only
+        % A, resp A,B, resp A,B,C, are defined. 
+        
+        if nargout > this.dim
+            error('too many output arguments');
+        end
+        varargout = cell(1,this.dim);
+        for i = 1:this.dim
+            varargout{i} = this.vtx(this.elt(:,i),:);
+        end
+    end
+    
     % LENGTH
     function l = length(mesh)
         l = size(mesh.elt,1);
@@ -150,7 +180,8 @@ methods
         b = (max(abs(mesh.vtx(:,3))) < 1e-12);
     end
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%% ELEMENT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% ELEMENT DATA 
+    
     % CENTER
     function X = ctr(mesh)
         X = zeros(size(mesh.elt,1),size(mesh.vtx,2));

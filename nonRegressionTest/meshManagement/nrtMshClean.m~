@@ -4,13 +4,11 @@ clear all
 close all
 clc
 
-%% Simple illustration
+%% Simple example
 
-vtx = [0 0 0;0 1 0; 10 20 30; 1 0 1]; 
-elt = [1 2 4]; % Third vertex unused
-tri = msh(vtx,elt);
+vtx = [0 0 0;0 1 0; 1 0 1];
+elt = [0 1;]
 
-assert(isequal(tri.elt,[1,2,3]));
 
 
 %% Advanced example
