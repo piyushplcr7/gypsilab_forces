@@ -47,12 +47,11 @@ switch mesh.type
         [m,elt2fce] = mesh.fce; 
         color2 = zeros(m.nelt,1);
         for i = 1:mesh.nelt
-            color2(elt2fce(i,1),1) = color(i);
-            color2(elt2fce(i,2),1) = color(i);
-            color2(elt2fce(i,3),1) = color(i);
-            color2(elt2fce(i,4),1) = color(i);
-        end
-        m.col = color2;
+                color2(elt2face(i,1),1) = color(i);
+                color2(elt2face(i,2),1) = color(i);
+                color2(elt2face(i,3),1) = color(i);
+                color2(elt2face(i,4),1) = color(i);
+            end
         plot(m);     
 end
 

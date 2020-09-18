@@ -77,19 +77,8 @@ methods
         fprintf('%s col: [%dx%d double] \n\r',space,size(this.col,1),size(this.col,2))
     end
     
-    function plot(varargin)
-        mesh = varargin{1};
-        if (nargin == 1)
-            mshPlot(mesh,[])
-        else
-            V = varargin{2};
-            if (numel(V) == size(mesh.elt,1)) && (~ischar(V))
-                mesh.col = V;
-                mshPlot(mesh,[])
-            else
-                mshPlot(mesh,V)
-            end
-        end
+    function plot(mesh)
+        mshPlot(mesh);
     end
     
     function plotNrm(varargin)
