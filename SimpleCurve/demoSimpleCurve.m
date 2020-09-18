@@ -1,5 +1,5 @@
 %%  SimpleCurve class
-
+% Hello
 
 %% Creating curves
 %
