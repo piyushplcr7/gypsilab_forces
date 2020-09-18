@@ -32,16 +32,13 @@ clear all
 close all
 clc
 
-% Gypsilab path
-run('../../addpathGypsilab.m')
-
 % Create mesh
 Nvtx = 1e3;
 mesh = mshSquare(Nvtx,[2 2]);
 
 % Colours
 mesh.col(1:20)                 = -1;
-mesh.col(length(mesh)+(-20:0)) = 1;
+mesh.col(mesh.nelt+(-20:0)) = 1;
 
 % Graphical representation
 figure

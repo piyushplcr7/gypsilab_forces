@@ -33,7 +33,7 @@ function [mesh1,mesh2] = mshSplit(mesh,X0,U)
 N = U./norm(U);
 
 % Split mesh
-lambda = (mesh.ctr-ones(length(mesh),1)*X0) * N';
+lambda = (mesh.ctr-ones(mesh.nelt,1)*X0) * N';
 ind    = (lambda>0);
 mesh1  = mesh.sub(ind);
 mesh2  = mesh.sub(~ind);

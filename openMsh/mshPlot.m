@@ -1,7 +1,9 @@
-function mshPlot(mesh)
+function mshPlot(mesh,color)
 
+if ~exist('color','var')
+    color = mesh.col;
+end
 
-color = mesh.col;
 
 if isempty(color)
     color = 1;
@@ -26,7 +28,10 @@ switch mesh.type
             set(H,'EdgeColor',color,'LineWidth',2);
         else
             color2 = zeros(mesh.nvtx,1);
-            for i = 1:mesh.nelt
+            for i = 1:mesh.nelt % In this loop : assign to each vertex the color 
+            % of one associated segment that it touches. Some will be
+            % coloured several times but at least every one gets a color
+            % consistent with one element it touches.
                 color2(mesh.elt(i,1)) = color(i);
                 color2(mesh.elt(i,2)) = color(i);
             end
@@ -44,16 +49,20 @@ switch mesh.type
         
     case 'tetrahedron'
         
-        [m,elt2fce] = mesh.fce; 
+        m = mesh.bnd; % as we cannot se the interior...
         color2 = zeros(m.nelt,1);
-        for i = 1:mesh.nelt
-            color2(elt2fce(i,1),1) = color(i);
-            color2(elt2fce(i,2),1) = color(i);
-            color2(elt2fce(i,3),1) = color(i);
-            color2(elt2fce(i,4),1) = color(i);
+        
+        for i = 1:mesh.nelt % In this loop : assign to each face the color 
+            % of one associated tetrahedron that it touches. Faces will be
+            % coloured several times but at least every one gets a color in
+            % the end.
+            if ischar(color)
+                delete(H);
+                plot(m,color);    
+            else
+                plot(m);
+            end
         end
-        m.col = color2;
-        plot(m);     
 end
 
 return

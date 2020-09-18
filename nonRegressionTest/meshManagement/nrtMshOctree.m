@@ -32,8 +32,6 @@ clear all
 close all
 clc
 
-% Gypsilab path
-run('../../addpathGypsilab.m')
 
 % Initialize 3D mesh with tetra
 Nvtx  = 1e3;

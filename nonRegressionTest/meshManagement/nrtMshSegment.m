@@ -32,9 +32,6 @@ clear all
 close all
 clc
 
-% Gypsilab path
-run('../../addpathGypsilab.m')
-
 % Create mesh
 Nvtx = 21;
 L    = 4;

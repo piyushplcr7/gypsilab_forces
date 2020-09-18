@@ -68,7 +68,8 @@ end
 t = t(:);
 x = c.x(t);
 y = c.y(t);
-vtx = [x(:), y(:)];
+z = zeros(size(x));
+vtx = [x(:), y(:), z(:)];
 m = msh(vtx,elt);
 
 end

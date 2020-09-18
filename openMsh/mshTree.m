@@ -36,7 +36,7 @@ end
 
 % Particles are element centers
 X  = mesh.ctr;
-Nx = length(mesh);
+Nx = mesh.nelt;
 
 % Box initialization
 Xmin = min(X,[],1);
@@ -97,12 +97,12 @@ while (max(tree{n}.nbr) > Nlf)
         for i = 1:length(tree{n}.ind)
             V(tree{n}.ind{i}) = i;
         end
-        
+        mesh.col = V;
         % Graphical representation
         figure(fig); clf
         plot3(tree{n}.ctr(:,1),tree{n}.ctr(:,2),tree{n}.ctr(:,3),'ok','MarkerSize',8)
         hold on
-        plot(mesh,V) 
+        plot(mesh) 
         title(['Tree at step ',num2str(n-1)])
         grid on ; axis equal
         xlabel('X'); zlabel('Y'); zlabel('Z');

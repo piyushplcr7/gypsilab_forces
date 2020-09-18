@@ -32,9 +32,6 @@ clear all
 close all
 clc
 
-% Gypsilab path
-run('../../addpathGypsilab.m')
-
 % Segment
 Nvtx = 1e1;
 L    = 1;

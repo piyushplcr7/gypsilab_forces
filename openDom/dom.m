@@ -1,4 +1,6 @@
 classdef dom
+    
+   
 %+========================================================================+
 %|                                                                        |
 %|              OPENDOM - LIBRARY FOR NUMERICAL INTEGRATION               |

@@ -31,12 +31,9 @@ clear all
 close all
 clc
 
-% Gypsilab path
-run('../addpathGypsilab.m')
 
 % Mesh management
-cd('meshManagement/')
-run('nrtMshBitree.m')
+% run('nrtMshBitree.m')
 run('nrtMshClean.m');
 run('nrtMshCube.m');
 run('nrtMshOctree.m')
@@ -48,7 +45,6 @@ run('nrtMshTransfo.m');
 run('nrtMshWrite.m');
 
 % Domain quadrature
-cd('../domainQuadrature/')
 run('nrtDom1D.m');
 run('nrtDomEdge.m');
 run('nrtDomHalfSquare.m');
@@ -60,7 +56,6 @@ run('nrtDomTrace.m');
 run('nrtDomTriangle.m');
 
 % Finite element
-cd('../finiteElement/')
 run('nrtFemAllWithShuffle.m');
 run('nrtFemContinuity1.m');
 run('nrtFemContinuity2.m');
@@ -78,7 +73,6 @@ run('nrtFemWave1D.m');
 run('nrtFemWave2D.m');
 
 % Hierarchical matrices
-cd('../hierarchicalMatrix')
 run('nrtHmxAlgebra.m');
 run('nrtHmxBEMConvergence.m');
 run('nrtHmxBuilder.m');
@@ -94,7 +88,6 @@ run('nrtHmxLowrank.m');
 run('nrtHmxNonSquare.m');
 
 % Fast & Free memory Method
-cd('../fastFreeMemory')
 run('nrtFfmAlgebra.m');
 run('nrtFfmBuilder.m');
 run('nrtFfmBuilderFem.m');
@@ -103,12 +96,10 @@ run('nrtFfmHelmholtzBWneu.m');
 run('nrtFfmMaxwellCFIEpec.m');
 
 % Block matrix
-cd('../blockMatrix')
 run('nrtBmmAlgebra.m');
 run('nrtBmmStokesConv.m');
 
 % Scattering 2D
-cd('../scattering2d')
 run('nrtLaplace2dSDrad.m')
 run('nrtHelmholtz2dSDrad.m')
 run('nrtHmxHelmholtz2dS.m');
@@ -119,7 +110,6 @@ run('nrtHmxHelmholtz2dBWdir.m');
 run('nrtHmxHelmholtz2dBWneu.m');
 
 % Scattering 3D
-cd('../scattering3d')
 run('nrtHelmholtzCalderon.m')
 run('nrtHelmholtzSDrad.m');
 run('nrtHmxHelmholtzS.m');
@@ -134,19 +124,16 @@ run('nrtHmxMaxwellNxK.m');
 run('nrtHmxMaxwellCFIE.m');
 
 % Fem-Bem dielectrique
-cd('../femBemDielectrique')
 run('nrtHmxFemBemEFIE.m');
 run('nrtHmxFemBemEFIEhalf.m');
 run('nrtHmxFemBemCFIE.m');
 run('nrtHmxFemBemCFIEhalf.m');
 
 % Inverse problem
-cd('../inverseProblem')
 run('nrtIpbHelmholtz.m');
 run('nrtIpbHelmholtz0.m');
 
 % Ray-tracing
-cd('../rayTracing');
 run('nrtRayCube.m');
 run('nrtRayFabryPerot.m');
 run('nrtRayLabyrinthe.m');
@@ -155,19 +142,16 @@ run('nrtRaySphere.m');
 run('nrtRayTheatre');
 
 % Stokes
-cd('../stokes');
 run('nrtHmxStkConvergence.m');
 run('nrtStkConvergence.m');
 run('nrtStkRadiation.m');
 run('translatingSphere/nrtStkTranslatingSphere.m');
 
 % Vibro-acoustic
-cd('../vibroAcoustic');
 run('nrtVibroSlab2d.m');
 run('nrtHmxVibroSlab2d.m');
 
 % Operators
-cd('../operators');
 run('nrtOprValidation');
 
 % End

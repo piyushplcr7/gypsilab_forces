@@ -30,10 +30,7 @@
 % Cleaning
 clear all
 close all
-clc
-
-% Gypsilab path
-run('../../addpathGypsilab.m')
+clc;
 
 % Create mesh
 Nvtx = 1e3;

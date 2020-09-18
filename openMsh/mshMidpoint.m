@@ -36,7 +36,7 @@ end
 
 % Save color and replace by hierarchy
 col      = mesh.col;
-mesh.col = (1:length(mesh))';
+mesh.col = (1:mesh.nelt)';
 
 % Submeshing (triangle)
 meshs = mesh.sub(I);
@@ -79,7 +79,7 @@ Ir        = meshr.col;
 meshr.col = col(Ir);
 
 % Security
-if (sum(mesh.ndv)-sum(meshr.ndv))/sum(mesh.ndv) > 1e-15*length(meshr)
+if (sum(mesh.ndv)-sum(meshr.ndv))/sum(mesh.ndv) > 1e-15*(meshr.nelt)
     error('mshMidpoint.m : unavailable case 3');
 end
 end
@@ -94,7 +94,7 @@ Xctr = int.ctr;
 
 % Refined mesh initialization
 Nvtx = size(mesh.vtx,1);
-Nelt = length(mesh);
+Nelt = mesh.nelt;
 col  = mesh.col;
 mesh = mesh.sub([]);
 
@@ -142,7 +142,7 @@ Xctr = int.ctr;
 
 % Refined mesh initialization
 Nvtx = size(mesh.vtx,1);
-Nelt = length(mesh);
+Nelt = mesh.nelt;
 col  = mesh.col;
 mesh = mesh.sub([]);
 
@@ -189,7 +189,7 @@ function mesh = mshMidpoint3(mesh)
 [nds,ctr] = data(mesh);
    
 % Refined mesh initialization with centered triangle
-Nelt = length(mesh);
+Nelt = mesh.nelt;
 vtx  = [ctr{1} ; ctr{2} ; ctr{3}];
 elt  = reshape((1:3*Nelt)',Nelt,3);
 col  = mesh.col;
