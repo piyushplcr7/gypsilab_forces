@@ -513,8 +513,8 @@ classdef msh
         end
         
         % SPLIT
-        function [mesh1,mesh2] = split(mesh,X0,U)
-            [mesh1,mesh2] = mshSplit(mesh,X0,U);
+        function [mesh1,mesh2] = split(varargin)
+            [mesh1,mesh2] = mshSplit(varargin{:});
         end
         
         function [new_m] = explode(m,rho)

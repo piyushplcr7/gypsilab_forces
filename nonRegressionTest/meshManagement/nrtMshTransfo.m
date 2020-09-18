@@ -43,9 +43,9 @@ mesh2.col(:) = 1;
 
 % Rotation
 mesh3 = mesh;
-mesh3 = rotate(mesh3,[1 0 0],pi/4);
-mesh3 = rotate(mesh3,[0 1 0],pi);
-mesh3 = rotate(mesh3,[0 0 1],pi/2);
+mesh3 = rotate(mesh3,[1 0 0],pi/5);
+mesh3 = rotate(mesh3,[0 1 0],pi/3);
+mesh3 = rotate(mesh3,[0 0 1],pi/7);
 mesh3.col(:) = 2;
 
 % Graphical representation
@@ -64,7 +64,10 @@ zlabel('Z')
 
 % Planar split
 mesh          = mshSphere(Nvtx,1);
-[mesh1,mesh2] = split(mesh,[0 0 0.7],[1 1 1]);
+[mesh1,mesh2] = split(mesh,[0 0 0.7],[1 1 1],'stable',false);
+mesh1 = run(mmg(mesh1));
+mesh2 = run(mmg(mesh2));
+
 
 % Graphical representation
 figure

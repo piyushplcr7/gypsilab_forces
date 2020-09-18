@@ -28,13 +28,7 @@ switch mesh.type
             set(H,'EdgeColor',color,'LineWidth',2);
         else
             color2 = zeros(mesh.nvtx,1);
-            for i = 1:mesh.nelt % In this loop : assign to each vertex the color 
-            % of one associated segment that it touches. Some will be
-            % coloured several times but at least every one gets a color
-            % consistent with one element it touches.
-                color2(mesh.elt(i,1)) = color(i);
-                color2(mesh.elt(i,2)) = color(i);
-            end
+            color2(mesh.elt(:,1)) = color;
             set(H,'EdgeColor','flat','FaceVertexCData',color2,'LineWidth',2);
             set(H,'Marker','x','MarkerEdgeColor','k','MarkerFaceColor','none','MarkerSize',5);
         end
@@ -50,7 +44,6 @@ switch mesh.type
     case 'tetrahedron'
         
         m = mesh.bnd; % as we cannot se the interior...
-        color2 = zeros(m.nelt,1);
         
         for i = 1:mesh.nelt % In this loop : assign to each face the color 
             % of one associated tetrahedron that it touches. Faces will be
