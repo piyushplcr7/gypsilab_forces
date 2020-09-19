@@ -39,8 +39,9 @@ elseif (size(mesh.elt,2) == 2)
     
 % Triangular mesh
 elseif (size(mesh.elt,2) == 3)
+    % Mesh unchanged.
     fce2vtx = mesh.elt;
-    elt2fce = (1:size(mesh.elt,1))';
+    elt2fce = (1:size(mesh.elt,1))'; % Faces and elements are the same
     col     = mesh.col;
     
 % Tetrahedral mesh

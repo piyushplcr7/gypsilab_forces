@@ -98,7 +98,6 @@ else
                     indj(i) = mod(indi(i),3)+1; indk(i) = mod(indj(i),3) + 1;
                     J(i,:) = ABC_i(indj(i),:);
                     K(i,:) = ABC_i(indk(i),:);
-                    
                 elseif sum(above_i) ==2
                     [~,indi(i)] = min(above_i);
                     I(i,:) = ABC_i(indi(i),:);
@@ -117,21 +116,15 @@ else
             indIJ = mesh.nvtx + (1:nint)'; 
             indIK = mesh.nvtx + nint + (1:nint)';
             elt = mesh.elt(or(above,below),:);
-            tmp = msh(vtx,elt);
-            plot(tmp);
             elt = [elt; [indI, indIJ, indIK]]; 
             elt = [elt; [indJ,indIK,indIJ]];
             elt = [elt; [indJ,indK,indIK]];
-            for n = 1:nint
-                hold on
-                plot(vtx([indI(n) indIJ(n), indIK(n), indI(n)],1),...
-                    vtx([indI(n) indIJ(n), indIK(n), indI(n)],2),'r-')
-            end
             col = mesh.col(or(above,below),:);
             col = [col; repmat(mesh.col(in_between),4,1)];
             tmp = msh(vtx,elt,col);
             [mesh1,mesh2] = mshSplit(tmp,X0,N,'stable',true);
         case 'tetrahedron'
+            error('Not available yet. Feel free to implement it !')
     end
 end
 

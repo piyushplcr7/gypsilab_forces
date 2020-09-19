@@ -385,10 +385,10 @@ classdef msh
             % - A function defined on R^3 such that f(X) is the number of
             % times an element lying at X should be refined. 
             if ~exist('spc','var')||isempty(spc)
-                spc = ones(this.nelt,1);
+                order = ones(this.nelt,1);
             end
             ref  = sum(mesh.ndv);
-            if isnumeric(spc) && isequal(spc,1)
+            if (spc == 1)
                 mesh = midpoint(mesh);
             else
                 mesh = mshRefine(mesh,spc);

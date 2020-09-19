@@ -33,7 +33,7 @@ close all
 clc
 
 % Create mesh
-Nvtx = 1e3;
+Nvtx = 50;
 mesh = mshSquare(Nvtx,[2 2]);
 
 % Colours
@@ -43,8 +43,6 @@ mesh.col(mesh.nelt+(-20:0)) = 1;
 % Graphical representation
 figure
 plot(mesh)
-hold on
-plotNrm(mesh,'r')
 axis equal
 xlabel('X'); ylabel('Y'); zlabel('Z')
 
@@ -56,8 +54,6 @@ toc
 % Graphical representation
 figure
 plot(meshr)
-hold on
-plotNrm(meshr,'r')
 axis equal
 xlabel('X'); ylabel('Y'); zlabel('Z')
 
@@ -70,8 +66,6 @@ toc
 % Graphical representation
 figure
 plot(meshr)
-hold on
-plotNrm(meshr,'r')
 axis equal
 xlabel('X'); ylabel('Y'); zlabel('Z')
 
@@ -85,8 +79,6 @@ toc
 % Graphical representation
 figure
 plot(meshr)
-hold on
-plotNrm(meshr,'r')
 axis equal
 xlabel('X'); ylabel('Y'); zlabel('Z')
 
@@ -105,18 +97,15 @@ axis equal
 xlabel('X'); ylabel('Y'); zlabel('Z')
 
 % Refinement with recursive midpoint algorithm and fixed edge length
-stp    = meshr.stp;
-lambda = stp(2)/4;
+lambda = 0.08;
 tic
-meshr = refine(meshr,lambda);
+meshr = refine(mesh,lambda);
 toc
 
 % Graphical representation
 figure
 plot(meshr)
-hold on
-plotNrm(meshr,'r')
-axis equal
+axis equal1e-2
 xlabel('X'); ylabel('Y'); zlabel('Z')
 
 

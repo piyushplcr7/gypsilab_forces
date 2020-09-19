@@ -29,11 +29,6 @@ function [meshr,Ir] = mshMidpoint(mesh,I)
 %|  `---'  |                                                              |
 %+========================================================================+
 
-% Check dimenion
-if (size(mesh,2) ~= 3)
-    error('mshMidpoint : unavailable case 1')
-end
-
 % Save color and replace by hierarchy
 col      = mesh.col;
 mesh.col = (1:mesh.nelt)';
