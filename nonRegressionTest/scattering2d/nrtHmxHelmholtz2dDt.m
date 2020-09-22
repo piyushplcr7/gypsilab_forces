@@ -51,10 +51,11 @@ radiat = mshSquare(10*N,[5 5]);
 
 % Mesh representation
 figure
-plot(mesh)
-hold on
+
 plot(radiat)
-plotNrm(mesh)
+hold on
+plot(mesh,'r')
+plotNrm(mesh,'g')
 axis equal
 axis(2.5*[-1 1 -1 1 -1 1])
 
@@ -74,7 +75,10 @@ gradxPW{2} = @(X) 1i*k*X0(2) .* PW(X);
 gradxPW{3} = @(X) 1i*k*X0(3) .* PW(X);
 
 % Incident wave representation
-plot(radiat,real(PW(radiat.vtx)))
+figure;
+plotOn(radiat,real(PW(radiat.vtx)))
+hold on
+plot(mesh);
 title('Incident wave')
 xlabel('X');   ylabel('Y');   zlabel('Z');
 hold off
@@ -207,7 +211,8 @@ Pdom = diskHelmholtz('dom','neu',1,k,radiat.vtx) + PW(radiat.vtx);
 
 % Solution representation
 figure
-plot(radiat,abs(Pdom))
+plotOn(radiat,abs(Pdom))
+hold on
 axis equal;
 title('Analytical solution')
 colorbar

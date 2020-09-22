@@ -32,8 +32,6 @@ clear all
 close all
 clc
 
-% Gypsilab path
-run('../../addpathGypsilab.m')
 
 % Parameters
 N   = 5e2

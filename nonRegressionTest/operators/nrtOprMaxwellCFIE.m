@@ -32,8 +32,10 @@ clear all
 close all
 clc
 
-% Library path
-run('../../addpathGypsilab.m')
+el2save = 0.0161;
+eLINFsave = 0.111;
+nitSave = 11;
+
 
 % Parameters
 N    = 1e3;

@@ -43,14 +43,18 @@ elseif (size(mesh.elt,2) == 2)
 elseif (size(mesh.elt,2) == 3)
     % All edges
     edg2vtx = [ mesh.elt(:,[2 3]) ; mesh.elt(:,[3 1]) ; mesh.elt(:,[1 2]) ];
+    elt2edg = reshape(1:3*length(mesh),length(mesh),3);
     
     % Edges unicity (each edge will appear two times)
     tmp           = sort(edg2vtx,2); % Put lowest index in first position
-    [~,I,elt2edg] = unique(tmp,'rows');
+    [~,I,J] = unique(tmp,'rows');
+    % I : indices of edges to keep
+    % J : new names of edges (give same name to identical faces)
+    
+    elt2edg(:) = J(elt2edg(:)); % Translate in terms of unique edge names
     
     % Final sorted edges 
     edg2vtx = tmp(I,:);
-    elt2edg = reshape(elt2edg,size(mesh.elt,1),3);
     
     % Colours
     col             = zeros(size(edg2vtx,1),1);

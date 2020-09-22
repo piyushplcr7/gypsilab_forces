@@ -55,10 +55,8 @@ classdef msh
             this = clean(this);
         end
         
-        
-        % CLEAN % Remove duplicate vertices, remove unused vertices and relabel
+        % Clean: Remove duplicate vertices, remove unused vertices and relabel
         % elements accordingly.
-        
         function this = clean(this,dst)
             if ~exist('dst','var')||isempty(dst)
                 dst = [];
@@ -98,7 +96,6 @@ classdef msh
         end
         
         function plotTgt(varargin)
-            
             mesh = varargin{1};
             spc  = 'r';
             if (nargin == 2)
@@ -116,22 +113,26 @@ classdef msh
                     % shared by two triangles...
                     edg = mesh.edg;
                     plotTgt(edg,spc);
-                    
             end
-            
         end
         
         function plotUnitTgt(varargin)
             mesh = varargin{1};
-            assert(mesh.dim <=2);
-            spc  = 'r';
             if (nargin == 2)
                 spc = varargin{2};
+            else
+                spc = 'r';
             end
-            Xctr = mesh.ctr;
-            Vnrm = mesh.tgt;
-            quiver3(Xctr(:,1),Xctr(:,2),Xctr(:,3),Vnrm(:,1),Vnrm(:,2),Vnrm(:,3),spc);
-            
+            switch mesh.type
+                case 'segment'
+                    Xctr = mesh.ctr;
+                    Vnrm = mesh.tgt;
+                    quiver3(Xctr(:,1),Xctr(:,2),Xctr(:,3),Vnrm(:,1),Vnrm(:,2),Vnrm(:,3),...
+                        'Color',spc);
+                    
+                otherwise
+                    plotUnitTgt(mesh.edg,spc);
+            end
         end
         
         function plotUnitNrm(varargin)
@@ -143,7 +144,43 @@ classdef msh
             end
             Xctr = mesh.ctr;
             Vnrm = mesh.nrm;
-            quiver3(Xctr(:,1),Xctr(:,2),Xctr(:,3),Vnrm(:,1),Vnrm(:,2),Vnrm(:,3),spc);
+            quiver3(Xctr(:,1),Xctr(:,2),Xctr(:,3),Vnrm(:,1),Vnrm(:,2),Vnrm(:,3),...
+                'Color',spc);
+        end
+        
+        function plotNrmEdg(varargin)
+            b = ~ishold;
+            this = varargin{1};
+            assert(this.dim<=3);
+            spc  = 'r';
+            if (nargin == 2)
+                spc = varargin{2};
+            end
+            switch this.type
+                case 'segment'
+                    plotNrm(this);
+                case 'triangle'
+                    [A,B,C] = ABCD(this);
+                    I{1} = (A+B)/2; I{2} = (B+C)/2; I{3} = (A+C)/2;
+                    nu = this.nrmEdg;
+                    for d = 1:3
+                        quiver3(I{d}(:,1),I{d}(:,2),I{d}(:,3),...
+                            nu{d}(:,1),nu{d}(:,2),nu{d}(:,3),...
+                        'color',spc,'AutoScaleFactor',.3);
+                        hold on
+                    end
+                otherwise
+                    error('unavailable case');  
+            end
+            if b
+                % Release hold if it was in off mode before function call.
+                hold off;
+            end
+        end
+        
+        function plotOn(mesh,func)
+            % Plot a function func defined on the mesh
+            mshPlotOn(mesh,func);
         end
         
         %% Access properties
@@ -152,6 +189,7 @@ classdef msh
             % Number of elements
             nel = size(this.elt,1);
         end
+        
         % By convention, length(mesh) is the number of elements.
         function l = length(mesh)
             l = size(mesh.elt,1);
@@ -162,14 +200,14 @@ classdef msh
             nv = size(this.vtx,1);
         end
         
-        function[ne] = nedg(this)
-            assert(this.dim>=2)
-            ne = length(this.edg);
-        end
-        
         function[nf] = nfce(this)
             assert(this.dim >=3)
             nf = length(this.fce);
+        end
+        
+        function[ne] = nedg(this)
+            assert(this.dim>=2)
+            ne = length(this.edg);
         end
         
         function[nc] = ncol(this)
@@ -196,18 +234,19 @@ classdef msh
             end
         end
         
+        % Local vertices of element. 
         function varargout = ABCD(this)
             % [A,B,C,D] = ABCD(mesh) : if mesh is a tetra mesh, A(i,:) contains the
             % coordinates of the first vtx of mesh.elts(i,:), B(i,:) the
             % second, and so on. For a particle, edge and triangle mesh, only
             % A, resp A,B, resp A,B,C, are defined.
             
-            if nargout > this.dim
-                error('too many output arguments');
-            end
             varargout = cell(1,this.dim);
             for i = 1:this.dim
                 varargout{i} = this.vtx(this.elt(:,i),:);
+            end
+            for i = this.dim+1:4
+                varargout{i} = NaN;
             end
         end
         
@@ -219,7 +258,7 @@ classdef msh
             end
         end
         
-        % Step 
+        % Step
         function l = stp(mesh)
             mesh = mesh.edg;
             l    = mesh.vtx(mesh.elt(:,2),:) - mesh.vtx(mesh.elt(:,1),:);
@@ -231,13 +270,24 @@ classdef msh
         function b = is1d(mesh)
             b = is2d(mesh) && (max(abs(mesh.vtx(:,2))) < 1e-12);
         end
+        
         function b = is2d(mesh)
             b = (max(abs(mesh.vtx(:,3))) < 1e-12);
         end
         
+        % Mesh with no point / element
+        function b = istrivial(mesh)
+            b = mesh.length==0;
+        end
+        
+        % Mesh without boundary.
+        function b = isclosed(mesh)
+            b = istrivial(mesh.bnd);
+        end
+        
         %% Set properties
         
-         % Set color
+        % Set color
         function mesh = color(mesh,c)
             assert(isnumeric(c));
             mesh.col(:) = c(:);
@@ -246,10 +296,12 @@ classdef msh
         %% Geometric data
         
         % Center
-        function X = ctr(mesh)
-            X = zeros(size(mesh.elt,1),size(mesh.vtx,2));
-            for i = 1:size(mesh.elt,2)
-                X = X + (1/size(mesh.elt,2)) .* mesh.vtx(mesh.elt(:,i),:);
+        function X = ctr(this)
+            X = zeros(length(this),3);
+            [A{1},A{2},A{3},A{4}] = ABCD(this);
+            d = this.dim;
+            for d = 1:this.dim
+                X = X + (1/this.dim) .* A{d};
             end
         end
         
@@ -265,6 +317,7 @@ classdef msh
                     error('No meaningful normal on point meshes');
                 case 'segment'
                     if is2d(mesh)
+                        % Take normal in the {Z = 0} plane
                         T = mesh.tgt;
                         N = T * [0 -1 0 ; 1 0 0 ; 0 0 0]';
                     else
@@ -296,38 +349,35 @@ classdef msh
                     end
                 case 'tetrahedron'
                     error('No meaningful edge normal on tetrahedral meshes')
+                    % Although we could take the nomral in the plane ABD
+                    % for a where AB is the edge and D is the opposite
+                    % vertex of the tetrahedron. 
             end
         end
         
         % Tangents
-        function T = tgt(mesh)
-            switch mesh.type
+        function T = tgt(this)
+            switch this.type
                 case 'point'
                     error('No meaningful tangent on point meshes')
                 case 'segment'
-                    [A,B] = ABCD(mesh);
+                    [A,B] = ABCD(this);
                     T = (B-A)./(sqrt(sum((B-A).^2,2))*[1 1 1]);
-                case 'triangle'
-                    % Return a cell containing {AB,BC,CA} where A,B,C is the
-                    % order of the vertices as they appear in mesh.elt
-                    T = cell(1,3);
-                    [A,B,C] = ABCD(mesh);
-                    T{1} = (B-A)./(sqrt(sum((B-A).^2,2))*[1 1 1]);
-                    T{2} = (C-B)./(sqrt(sum((C-B).^2,2))*[1 1 1]);
-                    T{3} = (A-C)./(sqrt(sum((A-C).^2,2))*[1 1 1]);
-                    % for i = 1:3
-                    %    ip1  = mod(i,3)+1;
-                    %    ip2  = mod(ip1,3)+1;
-                    %    A    = mesh.vtx(mesh.elt(:,ip1),:);
-                    %    B    = mesh.vtx(mesh.elt(:,ip2),:);
-                    %    T{i} = (B-A)./(sqrt(sum((B-A).^2,2))*[1 1 1]);
+                otherwise
+                    T = cell(1,this.dim);
+                    [A{1},A{2},A{3},A{4}] = ABCD(this);
+                    for i = 1:this.dim
+                        ip1 = mod(i,this.dim) + 1;
+                        ip2 = mod(ip1,this.dim)+1;
+                        T{i} = (A{ip2} - A{ip1})./(sqrt(sum((A{ip2} - A{ip1}).^2,2))...
+                            *[1 1 1]);
+                        
+                    end
             end
         end
         
         
-      
-        
-        %% Submesh 
+        %% Submesh
         
         
         % Select elements
@@ -337,9 +387,22 @@ classdef msh
             mesh     = clean(mesh);
         end
         
+        % Select vertices geometrically 
+        function mesh = subVtx(mesh,vtx)
+            nvtx = size(vtx,1);
+            mp1 = mesh.prt;
+            mp2 = msh(vtx,(1:nvtx)');
+            [~,I] = intersect(mp1,mp2);
+            % I contains the indices of the vtx to be kept in mesh
+            % Only keep elements that contain only the desired vertices:
+            aux = sum(ismember(mesh.elt,I),2);
+            J = find(aux==mesh.dim);
+            mesh = sub(mesh,J);
+        end
+        
         % Face mesh
         function [mesh,elt2fce] = fce(mesh)
-            assert(mesh.dim >= 3,'Segment and triangule meshes dont have faces');
+            assert(mesh.dim >= 3,'Segment and triangular meshes dont have faces');
             [mesh,elt2fce] = mshFace(mesh);
         end
         
@@ -362,13 +425,20 @@ classdef msh
         % Refine triangle mesh with midpoint
         function [mesh,Ir] = midpoint(varargin)
             mesh = varargin{1};
-            assert(strcmp(mesh.type,'triangle'));
+%             assert(strcmp(mesh.type,'triangle'));
             if (nargin == 1)
                 I = (1:mesh.nelt)';
             else
                 I = varargin{2};
             end
-            [mesh,Ir] = mshMidpoint(mesh,I);
+            switch mesh.type
+                case 'segment'
+                    [mesh,Ir] = mshMidpointSeg(mesh,I);
+                case 'triangle'
+                    [mesh,Ir] = mshMidpoint(mesh,I);
+                otherwise
+                    error('Unavailable case');
+            end
         end
         
         % Perform several iterations of midpoint refinements on triangle
@@ -378,12 +448,12 @@ classdef msh
             % either
             % - A number : the refinement algorithm will stop well all
             % edges are smaller than spc
-            % - An array of logicals of size nelt x 1 indicating which 
-            % elements are to be refined by midpoint 
+            % - An array of logicals of size nelt x 1 indicating which
+            % elements are to be refined by midpoint
             % - An array of numbers speciying how many times each element
             % must be refined by the mipoint rule
             % - A function defined on R^3 such that f(X) is the number of
-            % times an element lying at X should be refined. 
+            % times an element lying at X should be refined.
             if ~exist('spc','var')||isempty(spc)
                 spc = ones(this.nelt,1);
             end
@@ -424,8 +494,8 @@ classdef msh
         end
         
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ALGEBRA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % SIGNATURE
+        %%  Algebra (Union, intersection, set difference)
+        % Signature
         function M = sgn(mesh)
             % Creates a matrix, each row "describing" an element by giving
             % coordinates of its vertices and midpoint.
@@ -438,16 +508,17 @@ classdef msh
             M = single(M);
         end
         
-        % UNICITY
+        % Remove duplicate vertices or elements.
         function [meshC,IA,IC] = unique(mesh)
             M         = sgn(mesh);
             [~,IA,IC] = unique(M,'rows','stable');
             meshC     = mesh.sub(IA);
         end
         
-        % INTERSECTION
-        % Non-symmetric operation
+        % Intersection
         function [meshC,IA,IB] = intersect(meshA,meshB)
+            assert(meshA.dim == meshB.dim,...
+                'Difference of meshes reserved for meshes of same type');
             A         = sgn(meshA);
             B         = sgn(meshB);
             [~,IA,IB] = intersect(A,B,'rows','stable');
@@ -456,14 +527,18 @@ classdef msh
         
         % DIFFERENCE
         function [meshC,IA] = setdiff(meshA,meshB)
+            assert(meshA.dim == meshB.dim,...
+                'Difference of meshes reserved for meshes of same type');
             A      = sgn(meshA);
             B      = sgn(meshB);
             [~,IA] = setdiff(A,B,'rows','stable');
             meshC  = meshA.sub(IA);
         end
         
-        % UNION
+        % Union
         function [meshC,IA,IB] = union(meshA,meshB)
+            assert(meshA.dim == meshB.dim,...
+                'Union of meshes reserved for meshes of same type');
             A         = sgn(meshA);
             B         = sgn(meshB);
             [~,IA,IB] = union(A,B,'rows','stable');
@@ -475,26 +550,32 @@ classdef msh
             meshC     = msh(vtxC,eltC,colC);
         end
         
-        % ISMEMBER
+        % Ismember
         function [IA,IB] = ismember(meshA,meshB)
             A       = sgn(meshA);
             B       = sgn(meshB);
             [IA,IB] = ismember(A,B,'rows');
         end
         
-        % FUNCTION
+        % Image of mesh by a function
         function mesh = fct(mesh,fct)
             mesh.vtx = fct(mesh.vtx);
         end
         
-        % SHUFFLE
-        function mesh = shuffle(mesh,varargin)
+        % Shuffle
+        function mesh = shuffle(mesh,~)
             Nvtx = size(mesh.vtx,1);
-            if (nargin == 2)
-                RPV = (1:Nvtx)';
-            else
-                RPV = randperm(Nvtx);
+            RPV = randperm(Nvtx);
+            
+            if nargin == 2
+                warning('This was used');
             end
+            % This seemed useless:
+            % if (nargin == 2)
+            %       RPV = (1:Nvtx)';
+            % else
+            %       RPV = randperm(Nvtx);
+            % end
             mesh.vtx(RPV,:) = mesh.vtx;
             mesh.elt        = RPV(mesh.elt);
             RPE      = randperm(length(mesh));
@@ -502,22 +583,45 @@ classdef msh
             mesh.col = mesh.col(RPE,:);
         end
         
+        % Equality (up to shuffle)
+        function b = isequal(m1,m2,varargin)
+            p = inputParser;
+            p.addOptional('upToShuffle',true)
+            p.parse(varargin{:});
+            if ~p.Results.upToShuffle
+                b = isequal(m1.vtx,m2.vtx) && isequal(m1.elt,m2.elt)...
+                    && isequal(m1.col,m2.col);
+            else
+                if m1.dim ~= m2.dim
+                    b = false;
+                else
+                    P1 = sgn(m1); P2 = sgn(m2);
+                    P1 = sort(P1); P2 = sort(P2);
+                    b = isequal(P1,P2);
+                end
+            end
+            
+        end
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%% TRANSFORMATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % TRANSLATION
+        
+        %%  Geometric transformation
+        
+        % Translation
         function mesh = translate(mesh,U)
             mesh.vtx = mesh.vtx + ones(size(mesh.vtx,1),1)*U;
         end
         
-        % ROTATION
+        % Rotation
         function mesh = rotate(mesh,U,phi)
+            % Rotate by angle phi around vector U in trigonometric
+            % direction. 
             N        = U./norm(U);
             mesh.vtx = cos(phi) * mesh.vtx + ...
                 (1-cos(phi)) .* ((mesh.vtx*N')*N) + ...
                 sin(phi) .* cross(ones(size(mesh.vtx,1),1)*N,mesh.vtx,2);
         end
         
-          % Swap
+        % Swap
         function mesh = swap(varargin)
             mesh = varargin{1};
             Ielt = 1:size(mesh.elt,1);
@@ -532,17 +636,18 @@ classdef msh
             end
         end
         
-        % SPLIT
+        % Split
         function [mesh1,mesh2] = split(varargin)
             [mesh1,mesh2] = mshSplit(varargin{:});
         end
         
+        % Explode
         function [new_m] = explode(m,rho)
             if ~exist('rho','var')||isempty(rho)
                 rho = 0.92;
             end
             new_elt = zeros(length(m),dim(m));
-            new_vtx = [];
+            new_vtx = zeros(m.dim*m.nelt,3);
             nvtx = 0;
             
             for i = 1:length(m)
@@ -550,7 +655,8 @@ classdef msh
                 ctr = mean(vtx_i,1);
                 delta_i = vtx_i - ones(m.dim,1)*ctr;
                 
-                new_vtx = [new_vtx; ctr + rho*delta_i];
+                new_vtx(m.dim*(i-1) + (1:m.dim),:) ...
+                    = ctr + rho*delta_i;
                 new_elt(i,:) = (nvtx+1):(nvtx+dim(m));
                 nvtx= nvtx+dim(m);
             end

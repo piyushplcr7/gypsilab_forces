@@ -1,16 +1,34 @@
-function mshPlot(mesh,colorData)
+function[] = mshPlotOn(mesh,func)
+% Plot a function defined on the mesh.
+% Patch
 
-if ~exist('colorData','var')||isempty(colorData)
-    colorData = mesh.col;
+
+
+if isa(func,'function_handle')
+    colorData = func(mesh.vtx);
+else
+    assert(size(func,1) == mesh.nvtx);
+    colorData = func;
 end
 
-if isa(colorData,'function_handle')
-    colorData = colorData(mesh.vtx);
+
+if is1d(mesh)
+    plot(mesh); hold on
+    mesh.vtx(:,2) = colorData;
+    plot(mesh.vtx(:,1),mesh.vtx(:,2));
+    return
+elseif is2d(mesh)
+    if strcmp(mesh.type,'segment')
+        plot(mesh); hold on
+    end
+    view(4,14);
+    mesh.vtx(:,3) = colorData;  
 end
 
 
-assert(or(size(colorData,1) == length(mesh),ischar(colorData)));
 H = patch('Faces',mesh.elt, 'Vertices',mesh.vtx,'Marker','o');
+
+
 
 switch mesh.type
     case 'point'
@@ -21,20 +39,20 @@ switch mesh.type
         end
     case 'segment'
         if ischar(colorData)
-            set(H,'Marker','x','MarkerEdgeColor',colorData,'MarkerSize',5);
-            set(H,'EdgeColor',colorData,'LineWidth',2);
+            set(H,'Marker','x','MarkerEdgeColor','k','MarkerSize',5);
+            set(H,'EdgeColor','interp','FaceVertexCData',colorData);
         else
-            color2 = zeros(mesh.nvtx,1);
-            color2(mesh.elt(:,1)) = colorData;
-            set(H,'EdgeColor','flat','FaceVertexCData',color2,'LineWidth',2);
-            set(H,'Marker','x','MarkerEdgeColor','k','MarkerFaceColor','none','MarkerSize',5);
+            set(H,'EdgeColor','flat','FaceVertexCData',colorData,'LineWidth',2);
+            set(H,'Marker','none');
+            
         end
         
     case 'triangle'
         if ischar(colorData)
-            set(H,'Marker','.','MarkerFaceColor','k','EdgeColor','k','FaceColor',colorData)
+            set(H,'Marker','.','MarkerFaceColor','k','FaceColor',colorData)
         else
-            set(H,'FaceVertexCData',colorData,'FaceColor','flat');
+            set(H,'FaceVertexCData',colorData,'FaceColor','interp');
+            set(H,'EdgeColor','none');
             set(H,'Marker','.');
         end
         
@@ -53,5 +71,4 @@ switch mesh.type
                 plot(m);
             end
         end
-end
 end

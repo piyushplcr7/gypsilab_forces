@@ -54,7 +54,7 @@ nrm  = Ydom.msh.nrm;
 stp  = Ydom.msh.stp;
 lgt  = Ydom.msh.ndv;
 tau  = Ydom.msh.tgt;
-nu   = cell2mat(Ydom.msh.nrmEdg);
+nu   = cell2mat({tau,tau});
 Nelt = size(elt,1);
 
 % Quadrature data from Y

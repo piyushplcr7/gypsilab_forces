@@ -1,5 +1,8 @@
 clean;
 
+%% 1°) PLOT MESH ITSLEF
+
+
 %% Point mesh
 
 N = 8;
@@ -58,12 +61,11 @@ subplot(1,2,2);
 plot(m);
 hold on
 plotNrm(m);
-axis equal;git
+axis equal;
 view(178,28);
 
 %% Tetrahedral mesh
 
-close all;
 N = 8; 
 m = mshCube(N,[1 1 1]);
 m.col = (1:m.nelt)';
@@ -81,3 +83,25 @@ plotNrm(m.explode(0.85).fce,'r');
 axis equal;
 view(12,46);
 % We can't plot normals on a tetrahedral mesh.
+
+
+%% 2°) Plot functions defined on the mesh
+
+
+%% Point mesh
+
+m = prt(mshSphere(50,1)); 
+f = @(X)(cos(X(:,1) + sin(X(:,2))));
+figure;
+plot(m,f)
+
+%% Segment mesh
+
+
+m = meshCurve(openline(-1,1),10); 
+f = @(X)(cos(X(:,1)));
+plotOn(m,f);
+
+%% 
+
+

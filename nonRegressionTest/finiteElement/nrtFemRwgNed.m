@@ -33,9 +33,6 @@ clear all
 close all
 clc
 
-% Gypsilab path
-run('../../addpathGypsilab.m')
-
 disp('---- 2D problems --');
 % Meshes
 Nvtx = 1e3;
@@ -115,6 +112,8 @@ tic
 I = integral(omega2,curl(w),curl(w));
 t4=toc
 size(I)
+
+Isave = I;
 
 disp('~~> Michto gypsilab !')
 

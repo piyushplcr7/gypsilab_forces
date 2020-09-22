@@ -68,7 +68,6 @@ mesh          = mshSphere(Nvtx,1);
 mesh1 = run(mmg(mesh1));
 mesh2 = run(mmg(mesh2));
 
-
 % Graphical representation
 figure
 hold on
@@ -80,6 +79,18 @@ xlabel('X')
 ylabel('Y')
 zlabel('Z')
 
+% Explode
+
+m = mshCube(5,[1,1,1]);
+m = color(m,1:length(m));
+
+figure
+plot(m.explode);
+axis equal
+view(45,45)
+xlabel('X')
+ylabel('Y')
+zlabel('Z')
 
 
 

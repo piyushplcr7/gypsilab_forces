@@ -33,7 +33,7 @@ close all
 clc;
 
 % Create mesh
-Nvtx = 1e3;
+Nvtx = 50;
 L    = [4 3 2];
 mesh = mshCube(Nvtx,L);
 
@@ -53,6 +53,8 @@ plot(mesh)
 alpha(0.1)
 colorbar
 
+close all
+
 % Sub-meshing
 mesh1 = mesh.sub(mesh.col==1);
 mesh2 = mesh.sub(mesh.col==2);
@@ -68,6 +70,9 @@ hold on
 plot(mesh2)
 plot(mesh3)
 colorbar
+
+close all
+
 
 % Center
 Xctr = mesh.ctr;
@@ -114,6 +119,9 @@ norm(I-(1:size(mesh1.elt,1))','inf')
 [tmp,I] = union(mesh,mesh1);
 norm(I-(1:size(mesh.elt,1))','inf')
 
+
+close all
+
 % Difference
 [mesh4,~] = setdiff(mesh,mesh1);
 figure
@@ -124,6 +132,8 @@ colorbar
 mesh5 = union(mesh1,mesh2);
 mesh5 = union(mesh5,mesh3);
 setdiff(mesh,mesh5)
+
+close all
 
 % Boundary
 bound = mesh5.bnd;
@@ -152,6 +162,8 @@ hold off
 
 % Boundary of the boundary
 bound.bnd
+
+close all
 
 % Clean degenerated mesh
 mesh6 = mesh;
