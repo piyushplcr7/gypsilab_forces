@@ -155,6 +155,7 @@ classdef (Abstract) Fe < fem
             % If the op(phi_i) is not scalar, then M is a cell
             % and M{i} is the matrix corresponding to the i-th coordinate.
             [X,dof_jb] = this.dof;
+            [Xhat,Nabla] = this.refCoords(Y);
             ndof = size(X,1);
             P = this.elimination;
             N = size(Y,1); nelt = length(this.msh); Q = N/nelt;
@@ -167,13 +168,13 @@ classdef (Abstract) Fe < fem
             end
             switch this.opr
                 case '[psi]'
-                    val = feOpPsi(this,Y);
+                    val = feOpPsi(this,Y,Xhat,Nabla);
                 case 'grad[psi]'
-                    val = feOpGrad(this,Y);
+                    val = feOpGrad(this,Y,Xhat,Nabla);
                 case 'n*[psi]'
-                    val = feOpNtimes(this,Y);
+                    val = feOpNtimes(this,Y,Xhat,Nabla);
                 case 'x*[psi]'
-                    val = feOpXtimes(this,Y);
+                    val = feOpXtimes(this,Y,Xhat,Nabla);
             end
             s = size(val{1});
             if isequal(s,[1,1])
@@ -205,16 +206,15 @@ classdef (Abstract) Fe < fem
         % For example, k = 1, l = 1 for A = Id, when [psi] are scalar FE. 
         % and k = 1, l = 3 for A = grad, when [psi] are scalar FE. 
         
-        function [val] = feOpPsi(this,Y)
+        function [val] = feOpPsi(this,~,Xhat,~)
             % operator = [psi]
-            Xhat = this.refCoords(Y);
             val = cell(this.nb,1);
             for b = 1:this.nb
                 val{b} = this.psi_b(b,Xhat);
             end
         end
         
-        function [val] = feOpGrad(this,Y)
+        function [val] = feOpGrad(this,~,Xhat,Nabla)
             % operator = grad[psi] (tangential gradient)
             try [~,d] = size(gradPsi_b(this,1,zeros(1,this.dim -1)));
                 % Basis functions are P-dimensional
@@ -224,14 +224,13 @@ classdef (Abstract) Fe < fem
                 error(['Grad is not implemented by ' this.name])
             end
             assert(d == this.dim -1,'Error of implementation of gradient');
-            [Xhat,Nabla] = this.refCoords(Y);
             val = cell(this.nb,1);
             for b = 1:this.nb
                 val{b} = cellMatrixProd(this.gradPsi_b(b,Xhat),Nabla);
             end
         end
         
-        function[val] = feOpNtimes(this,Y)
+        function[val] = feOpNtimes(this,Y,~,~)
             Q = size(Y,1)/length(this.msh);
             nrm = this.mesh.nrm;
             nrm = repeatLines(nrm,Q);
@@ -245,7 +244,7 @@ classdef (Abstract) Fe < fem
             end
         end
         
-        function[val] = feOpXtimes(this,X)
+        function[val] = feOpXtimes(this,X,~,~)
             aux = feOpPsi(this,X);
             val = cell(this.nb,1);
             for b = 1:this.nb

@@ -46,10 +46,10 @@ elseif (size(mesh.elt,2) == 3)
     % Basis vector
     E1 = mesh.vtx(mesh.elt(:,2),:) - mesh.vtx(mesh.elt(:,1),:);
     E2 = mesh.vtx(mesh.elt(:,3),:) - mesh.vtx(mesh.elt(:,1),:);
-    E3 = cross(E1,E2,2);
-    
+%     E3 = cross(E1,E2,2); % Too much info 
+    d = scal3D(E1,E1).*scal3D(E2,E2) - scal3D(E1,E2).^2; % This is faster. Modif by Martin A, 22/09/2020
     % Volume
-    V = 0.5*sqrt(sum(E3.^2,2));
+    V = 0.5*sqrt(d);
     
 % Tetrahedral mesh
 elseif (size(mesh.elt,2) == 4)
