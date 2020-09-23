@@ -1,4 +1,4 @@
-% Compare assembling time for FEM operators
+% Compare assembling time 
 
 %% P1
 
@@ -25,6 +25,8 @@ M1 = integral(Gamma,Vh,Vh);
 K1 = integral(Gamma,grad(Vh),grad(Vh));
 toc;
 
+% new class Fe P1 
+
 
 %% P2
 
@@ -43,3 +45,5 @@ tic;
 M2 = integral(Gamma,Wh,Wh);
 K2 = integral(Gamma,grad(Wh),grad(Wh));
 toc;
+
+% new class Fe P2 faster.

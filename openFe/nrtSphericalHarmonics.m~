@@ -35,6 +35,7 @@ for i = 1:N
         view(49,25);
         caxis([-1,1])
         title(sprintf('lambda = %s',num2str(d(k))));
+        vie
     end
 end
     
