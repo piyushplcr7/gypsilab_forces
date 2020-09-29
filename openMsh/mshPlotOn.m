@@ -17,14 +17,14 @@ if is1d(mesh)
     mesh.vtx(:,2) = colorData;
     plot(mesh.vtx(:,1),mesh.vtx(:,2));
     return
-elseif is2d(mesh)
-    if strcmp(mesh.type,'segment')
-        plot(mesh); hold on
-    end
-    view(4,14);
-    mesh.vtx(:,3) = colorData;  
+% elseif is2d(mesh)
+%     if strcmp(mesh.type,'segment')
+%         plot(mesh); hold on
+%     end
+%     view(4,14);
+%     mesh.vtx(:,3) = colorData;  
+% end
 end
-
 
 H = patch('Faces',mesh.elt, 'Vertices',mesh.vtx,'Marker','o');
 

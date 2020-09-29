@@ -67,8 +67,8 @@ gradxPW{2} = @(X) 1i*k*X0(2) .* PW(X);
 gradxPW{3} = @(X) 1i*k*X0(3) .* PW(X);
 
 % Incident wave representation
-plot(sphere,real(PW(sphere.vtx)))
-plot(square,real(PW(square.vtx)))
+plotOn(sphere,real(PW(sphere.vtx)))
+plotOn(square,real(PW(square.vtx)))
 title('Incident wave')
 xlabel('X');   ylabel('Y');   zlabel('Z');
 hold off
