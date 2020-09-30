@@ -9,8 +9,7 @@ theta = rand(1); u = [cos(theta), sin(theta),0]; % direction of propagation.
 j = exp(1i*2*pi/3);
 p = [1,j,j^2];
 
-% m = meshCurve(ellipse(1,2),100);
-m = polymesh(p,20);
+m = bnd(mshSquare(100,[1,1]));
 x = linspace(-3,3,100);
 y = x;
 [Xgrid,Ygrid] = meshgrid(x,y);
@@ -20,9 +19,9 @@ radiat = [Xgrid(:), Ygrid(:), 0*Ygrid(:)];
 Gamma = dom(m,3);
 Vh = fem(m,'P1');
 
-k0 = 10;
-ks = linspace(k0 - 1.5,k0+1.5,20);
-sigma = 5;
+k0 = 5;
+ks = linspace(k0-3,k0+5,30);
+sigma = 1;
 amps = exp(-sigma/2*(ks-k0).^2);
 figure;
 plot(ks,amps);
@@ -51,10 +50,7 @@ for i = 1:length(ks)
     DL = DL + reg;
     
     tot{i} = amp*(PW(radiat) - DL*mu);
-    close all;
     vals = reshape(tot{i},length(x),length(y));
-    imagesc(x,y,real(vals));
-    view(0,90);
 end
 
 

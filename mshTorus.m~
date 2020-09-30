@@ -1,0 +1,25 @@
+function[m] = mshTorus(N,r1,r2)
+
+x = [];
+y = [];
+z = [];
+
+N1 = fix(sqrt(r1/r2*N))+1;
+N2 = fix(N/N1)+1;
+phi1 = linspace(0,2*pi,N1);
+phi2 = linspace(0,2*pi,N2);
+
+for i = 1:N1
+    thetas = phi2;
+    z = [z,r2*cos(thetas)];
+    r = r1 + sin(phi2);
+    phi = phi1(i);
+    x = [x,r.*cos(phi)];
+    y = [y,r.*sin(phi)];
+end
+
+DT = delaunayTriangulation([x(:),y(:),z(:)]);
+[elt,vtx] = freeBoundary(DT);
+m = msh(vtx,elt);
+
+end
