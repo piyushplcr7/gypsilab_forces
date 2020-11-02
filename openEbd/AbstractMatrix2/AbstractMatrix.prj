@@ -1,0 +1,71 @@
+<deployment-project plugin="plugin.toolbox" plugin-version="1.0">
+  <configuration build-checksum="3890316414" file="/home/martin/MatlabCodes/PackagesDev/AbstractMatrix/AbstractMatrix.prj" location="/home/martin/MatlabCodes/PackagesDev/AbstractMatrix" name="AbstractMatrix" target="target.toolbox" target-name="Package Toolbox">
+    <param.appname>AbstractMatrix</param.appname>
+    <param.authnamewatermark>Martin Averseng</param.authnamewatermark>
+    <param.email>martin.averseng@polytechnique.edu</param.email>
+    <param.company>CMAP polytechnique</param.company>
+    <param.summary>Algebra over Abstract Matrix, that is composed of a concrete part (sparse matrix) and abstract part (funcion handle returning matrix-vector)</param.summary>
+    <param.description />
+    <param.screenshot />
+    <param.version>1.0</param.version>
+    <param.output>${PROJECT_ROOT}/AbstractMatrix.mltbx</param.output>
+    <param.products.name />
+    <param.products.id />
+    <param.products.version />
+    <param.platforms />
+    <param.guid>331b6e3c-223c-4534-baa4-f1c9d59b9c14</param.guid>
+    <param.exclude.filters />
+    <param.examples />
+    <param.demosxml />
+    <param.apps />
+    <param.docs />
+    <param.matlabpath.excludes />
+    <unset>
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.description />
+      <param.screenshot />
+      <param.version />
+      <param.output />
+      <param.products.name />
+      <param.products.id />
+      <param.products.version />
+      <param.platforms />
+      <param.exclude.filters />
+      <param.examples />
+      <param.demosxml />
+      <param.apps />
+      <param.docs />
+      <param.matlabpath.excludes />
+    </unset>
+    <fileset.rootdir />
+    <fileset.rootfiles />
+    <fileset.depfun.included />
+    <fileset.depfun.excluded />
+    <fileset.package />
+    <build-deliverables>
+      <file location="/home/martin/MatlabCodes/PackagesDev/AbstractMatrix" name="AbstractMatrix.mltbx" optional="false">/home/martin/MatlabCodes/PackagesDev/AbstractMatrix/AbstractMatrix.mltbx</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>/usr/local/MATLAB/R2016a</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>true</unix>
+      <mac>false</mac>
+      <windows>false</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>true</linux>
+      <solaris>false</solaris>
+      <osver>4.10.0-42-generic</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>glnxa64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
