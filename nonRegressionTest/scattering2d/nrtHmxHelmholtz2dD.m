@@ -30,13 +30,13 @@
 % Cleaning
 clear all
 close all
-clc
+% clc
 
-% Gypsilab path
-run('../../addpathGypsilab.m')
+% % Gypsilab path
+% run('../../addpathGypsilab.m')
 
 % Parameters
-N   = 1e3
+N   = 1e2
 tol = 1e-3
 typ = 'P1'
 gss = 3
@@ -71,7 +71,7 @@ f = (k*340)/(2*pi);
 PW = @(X) exp(1i*k*X*X0');
 
 % Incident wave representation
-plot(radiat,real(PW(radiat.vtx)))
+plotOn(radiat,real(PW(radiat.vtx)))
 title('Incident wave')
 xlabel('X');   ylabel('Y');   zlabel('Z');
 hold off
@@ -99,7 +99,7 @@ Id = integral(sigma,u,v);
 
 % Finite element boundary operator --> \int_Sx \int_Sy psi(x)' dnyG(x,y) psi(y) dx dy 
 tic
-D = (1i/4) .* integral(sigma,sigma,u,dyGxy,ntimes(v),tol);
+D = (1i/4) .* integral(sigma,sigma,u,dyGxy,ntimes(v));
 toc
 
 % Regularization
@@ -191,7 +191,7 @@ Pdom(r<=1.01) = Pinc(r<=1.01);
 
 % Graphical representation
 figure
-plot(radiat,abs(Pdom))
+plotOn(radiat,abs(Pdom))
 axis equal
 title('Total field solution')
 colorbar
@@ -203,7 +203,7 @@ Pdom = diskHelmholtz('dom','dir',1,k,radiat.vtx) + PW(radiat.vtx);
 
 % Solution representation
 figure
-plot(radiat,abs(Pdom))
+plotOn(radiat,abs(Pdom))
 axis equal;
 title('Analytical solution')
 colorbar

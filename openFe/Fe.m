@@ -139,10 +139,10 @@ classdef (Abstract) Fe < fem
         
         function[M]     =   uqm(this,Omega)
             Xqud = qud(Omega);
-            M = this.dof2Y(Xqud);
+            M = this.dof2Y(Xqud,Omega);
         end
         
-        function[M]     =   dof2Y(this,Y)
+        function[M]     =   dof2Y(this,Y,Omega)
             % Returns the matrix M of the linear application L_Y :
             % R^{ndof} -> R^{nY} which maps the values of f \in Vh to the
             % values of op(f) at the points Y. Here, op is the operator
@@ -168,13 +168,21 @@ classdef (Abstract) Fe < fem
             end
             switch this.opr
                 case '[psi]'
-                    val = feOpPsi(this,Y,Xhat,Nabla);
+                    val = feOpPsi(this,Y,Xhat,Nabla,Omega);
+                case 'nxgrad[psi]'
+                    val = feOpGrad(this,Y,Xhat,Nabla,Omega);
                 case 'grad[psi]'
-                    val = feOpGrad(this,Y,Xhat,Nabla);
+                    val = feOpGrad(this,Y,Xhat,Nabla,Omega);
                 case 'n*[psi]'
-                    val = feOpNtimes(this,Y,Xhat,Nabla);
+                    val = feOpNtimes(this,Y,Xhat,Nabla,Omega);
                 case 'x*[psi]'
-                    val = feOpXtimes(this,Y,Xhat,Nabla);
+                    val = feOpXtimes(this,Y,Xhat,Nabla,Omega);
+                case 'tau*[psi]'
+                    val = feOpTautimes(this,Y,Xhat,Nabla,Omega);
+                case 'omega2*[psi]'
+                    val = feOpOmega2times(this,Y,Xhat,Nabla,Omega);
+                case 'omegaDomega*[psi]'
+                    val = feOpOmegaDOmegatimes(this,Y,Xhat,Nabla,Omega);
             end
             s = size(val{1});
             if isequal(s,[1,1])
@@ -206,15 +214,15 @@ classdef (Abstract) Fe < fem
         % For example, k = 1, l = 1 for A = Id, when [psi] are scalar FE. 
         % and k = 1, l = 3 for A = grad, when [psi] are scalar FE. 
         
-        function [val] = feOpPsi(this,~,Xhat,~)
+        function [val] = feOpPsi(this,~,Xhat,~,~)
             % operator = [psi]
             val = cell(this.nb,1);
             for b = 1:this.nb
                 val{b} = this.psi_b(b,Xhat);
             end
         end
-        
-        function [val] = feOpGrad(this,~,Xhat,Nabla)
+       
+        function [val] = feOpGrad(this,~,Xhat,Nabla,~)
             % operator = grad[psi] (tangential gradient)
             try [~,d] = size(gradPsi_b(this,1,zeros(1,this.dim -1)));
                 % Basis functions are P-dimensional
@@ -230,11 +238,11 @@ classdef (Abstract) Fe < fem
             end
         end
         
-        function[val] = feOpNtimes(this,Y,~,~)
-            Q = size(Y,1)/length(this.msh);
-            nrm = this.mesh.nrm;
+        function[val] = feOpNtimes(this,X,Xhat,~,~)
+            Q = size(X,1)/length(this.msh);
+            nrm = this.msh.nrm;
             nrm = repeatLines(nrm,Q);
-            aux = feOpPsi(this,Y);
+            aux = feOpPsi(this,X,Xhat);
             val = cell(this.nb,1);
             for b = 1:this.nb
                 val{b} = cell(1,3);
@@ -244,8 +252,8 @@ classdef (Abstract) Fe < fem
             end
         end
         
-        function[val] = feOpXtimes(this,X,~,~)
-            aux = feOpPsi(this,X);
+        function[val] = feOpXtimes(this,X,Xhat,~,~)
+            aux = feOpPsi(this,X,Xhat);
             val = cell(this.nb,1);
             for b = 1:this.nb
                 val{b} = cell(1,3);
@@ -254,6 +262,62 @@ classdef (Abstract) Fe < fem
                 val{b}{1,3} = aux{b}{1}.*X(:,3);
             end
         end
+        
+        function[val] = feOpTautimes(this,X,Xhat,~,Omega)
+            aux = feOpPsi(this,X,Xhat);
+            tau = this.msh.tgt;
+            tau = repeatLines(tau,Omega.gss);
+            val = cell(this.nb,1);
+            for b = 1:this.nb
+                val{b} = cell(1,3);
+                val{b}{1,1} = aux{b}{1}.*tau(:,1);
+                val{b}{1,2} = aux{b}{1}.*tau(:,2);
+                val{b}{1,3} = aux{b}{1}.*tau(:,3);
+            end
+        end
+        
+        function[val] = feOpOmega2times(this,X,Xhat,~,Omega)
+            aux = feOpPsi(this,X,Xhat);
+            omega2Y = Omega.w(X);
+            val = cell(this.nb,1);
+            for b = 1:this.nb
+                P = size(aux{b},1);
+                val{b} = cell(P,1);
+                for p = 1:P
+                    val{b}{p} = aux{b}{p,1}.*omega2Y;
+                end
+            end
+        end
+        
+        function[val] = feOpOmegaDOmegatimes(this,X,Xhat,Nabla,Omega)
+            aux1 = feOpPsi(this,X,Xhat);
+            aux3 = feOpGrad(this,X,Xhat,Nabla,Omega);
+            
+            omega = Omega.w;
+            omegaX = omega(X);
+            omegaX2 = 1./(omegaX.^2);
+            Domega = Omega.dw;
+            if isempty(Domega)
+                error('No Dw supplied. Use supplyDw(Wdom)');
+            end
+            tau = this.msh.tgt;
+            tau = repeatLines(tau,Omega.gss);
+            tauDomega = Domega{1}(X).*tau(:,1) ...
+                + Domega{2}(X).*tau(:,2)...
+                + Domega{3}(X).*tau(:,3);
+            omega_tauDomega = 1./(omegaX).*tauDomega;
+            
+            val = cell(this.nb,1);
+            for b = 1:this.nb
+                val{b} = cell(1);
+                val{b}{1} = omega_tauDomega.*aux1{b}{1};
+                for k = 1:3
+                    val{b}{1} = val{b}{1} + tau(:,k).*omegaX2.*aux3{b}{1,k};
+                end
+            end
+        end
+        
+        
         
         %% Operators shortcuts
         
@@ -273,6 +337,12 @@ classdef (Abstract) Fe < fem
             this.opr = 'x*[psi]';
         end
         
+        function fe = omegaDomega(fe)
+            fe.opr = 'omegaDomega*[psi]';
+        end
+
+        
+   
         
         %% Value at vertices
         

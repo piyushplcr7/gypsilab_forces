@@ -138,7 +138,8 @@ elseif isa(data{1},'dom') && (isa(data{2},'function_handle') || iscell(data{2}))
     
     
 %%% FINITE ELEMENT INTEGRATION --> \int_{domain(x)} psi(x)' f(x)  dx
-elseif isa(data{1},'dom') && isa(data{2},'fem') && (isa(data{3},'function_handle') || iscell(data{3}))
+elseif isa(data{1},'dom') && isa(data{2},'fem') && ...
+        (isa(data{3},'function_handle') || iscell(data{3}) || isa(data{3},'FunR3'))
     % Domain with quadrature
     Xdom   = data{1};
     [X,Wx] = Xdom.qud;
@@ -194,9 +195,7 @@ elseif isa(data{1},'dom') && isa(data{2},'fem') && isa(data{3},'fem')
     Mv = v.uqm(Xdom);
     
     % Integration
-    I = femMultiplyCell(Mu,Mv);
-    
-    
+    I = femMultiplyCell(Mu,Mv);    
 else
     error('domIntegral3.m : unavailable case')
 end

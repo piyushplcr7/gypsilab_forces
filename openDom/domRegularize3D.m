@@ -267,7 +267,15 @@ for el = 1:Nelt
                     V{1}(:,j)   = sgnS .* gradRm1xXmS(:,1);
                     V{2}(:,j)   = sgnS .* gradRm1xXmS(:,2);
                     V{3}(:,j)   = sgnS .* gradRm1xXmS(:,3);
-                    
+                elseif strcmp(green,'grady[1/r]') && strcmp(v.opr,'nx[psi]')
+                    nxXmS = 0*XmS;
+                    nxXmS(:,1) = Nel(2)*XmS(:,3) - Nel(3)*XmS(:,2); 
+                    nxXmS(:,2) = Nel(3)*XmS(:,1) - Nel(1)*XmS(:,3); 
+                    nxXmS(:,3) = Nel(1)*XmS(:,2) - Nel(2)*XmS(:,1); 
+                    gradRm1nxXmS = cross(gradRm1,nxXmS);
+                    V{1}(:,j)   = sgnS .* gradRm1nxXmS(:,1);
+                    V{2}(:,j)   = sgnS .* gradRm1nxXmS(:,2);
+                    V{3}(:,j)   = sgnS .* gradRm1nxXmS(:,3);
                 else
                     error('domRegularize3D.m : unavailable case')
                 end

@@ -126,9 +126,12 @@ end
 % Singularity
 if strcmp(green,'[exp(ikr)/r]')
     Gxy(Rxy<1e-12) = 0 + 1i*k;
+elseif strcmp(green,'[log(r)]')
+    Gxy(Rxy < 1e-13) = log(1e-13);
 elseif strcmp(green,'[H0(kr)]')
-    gamma         = 0.5772156649;
-    Gxy(Rxy<1e-12) = 1 + 1i*(2/pi*(gamma+log(k/2)));    
+%     gamma         = 0.5772156649;
+%     Gxy(Rxy < 1e-13) = 1 + 1i*(2/pi*(gamma+log(k/2)));
+    Gxy(Rxy < 1e-13) = besselh(0,k*1e-13);
 else
     Gxy(Rxy<1e-12) = 0;
 end

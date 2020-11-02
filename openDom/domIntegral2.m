@@ -40,16 +40,20 @@ if iscell(F)
     Fx{1} = F{1}(X);
     Fx{2} = F{2}(X);
     Fx{3} = F{3}(X);
+    
+elseif isa(F,'fem')
+    Fx = F.uqm(Xdom);
 else
     Fx = F(X);
 end
 
+
 % Integration
 if iscell(Fx)
-    I{1} = Wx' * Fx{1};
-    I{2} = Wx' * Fx{2};
-    I{3} = Wx' * Fx{3};
-else
-    I = Wx' * Fx;
+    I{1} = Fx{1}.'*Wx;
+    I{2} = Fx{2}.'*Wx;
+    I{3} = Fx{3}.'*Wx;
+else 
+    I = Fx.'*Wx;
 end
 end

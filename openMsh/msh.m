@@ -418,8 +418,8 @@ classdef msh
         end
         
         % Boundary
-        function mesh = bnd(mesh)
-            mesh = mshBoundary(mesh);
+        function [mesh,I] = bnd(mesh)
+            [mesh,I] = mshBoundary(mesh);
         end
         
         % Refine triangle mesh with midpoint

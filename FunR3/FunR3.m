@@ -1,4 +1,4 @@
-classdef FunR3
+classdef FunR3 < handle
     % Function R^2 -> R
     properties
         f
@@ -125,6 +125,9 @@ classdef FunR3
         end
         function[C] = power(A,n)
             C = mpower(A,n);
+        end
+        function[C] = abs(A)
+            C = applyFun(A,@abs);
         end
         function[C] = atan2(Y,X)
             C = FunR3(@(Z)(atan2(Y.f(Z),X.f(Z))));

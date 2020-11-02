@@ -34,7 +34,7 @@ close all
 clc
 
 % Gypsilab path
-run('../../addpathGypsilab.m')
+% run('../../addpathGypsilab.m')
 
 % Parameters
 N   = 1e3
@@ -67,7 +67,7 @@ PWH{2} = @(X) exp(1i*k*X*X0') * H(2);
 PWH{3} = @(X) exp(1i*k*X*X0') * H(3);
 
 % Incident wave representation
-plot(sphere,real(PWH{1}(sphere.vtx)))
+plotOn(sphere,real(PWH{1}(sphere.vtx)))
 title('Incident wave')
 xlabel('X');   ylabel('Y');   zlabel('Z');
 hold off
@@ -91,7 +91,7 @@ Id = integral(sigma,u,v);
 
 % Finite element boundary operator
 tic
-nxK = 1/(4*pi) * integral(sigma, sigma, nx(v), Hxy, u, tol); 
+nxK = 1/(4*pi) * integral(sigma, sigma, nx(v), Hxy, u); 
 toc
 
 % Regularization

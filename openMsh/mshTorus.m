@@ -15,4 +15,6 @@ z = r2*cos(theta);
 m.vtx = [r.*cos(phi),r.*sin(phi),z];
 
 
+m = clean(m);
+
 end

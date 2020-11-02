@@ -132,7 +132,7 @@ if size(fe.msh.elt,2)==3 % Triangular elements
         % Restriction
         ind     = str2double(fe.opr(end));
         M       = uqm{ind};
-
+        
         
         %%%% NORMAL x DQM
     elseif strcmp(fe.opr,'nx[psi]')
@@ -179,6 +179,51 @@ if size(fe.msh.elt,2)==3 % Triangular elements
         M = spdiags(N(:,jp1),0,m,m) * uqm{jp2} - ...
             spdiags(N(:,jp2),0,m,m) * uqm{jp1};
         
+    elseif strcmp(fe.opr,'nx([psi]xn)')
+        % Finite element
+        tmp     = fem(fe.msh,fe.typ);
+        tmp.opr = 'nx[psi]';
+        nxPsi     = tmp.uqm(domain);
+        Psixn     = cell(1,3);
+        for i = 1:3
+            Psixn{i} = -nxPsi{i};
+        end
+        nrm  = domain.qudNrm;
+        m    = size(nrm,1);
+        N{1} = spdiags(nrm(:,1),0,m,m);
+        N{2} = spdiags(nrm(:,2),0,m,m);
+        N{3} = spdiags(nrm(:,3),0,m,m);
+        
+        M = cell(1,3);
+        for i = 1:3
+            ip1  = mod(i,3) + 1;
+            ip2  = mod(ip1,3) + 1;
+            M{i} = N{ip1} * Psixn{ip2} - N{ip2} * Psixn{ip1};
+        end
+       
+        
+        
+        %%%% NORMAL x DQM (j)
+    elseif strcmp(fe.opr(1:end-1),'nx[psi]xn')
+        % Component
+        tmp     = fem(fe.msh,fe.typ);
+        tmp.opr = 'nx[psi]';
+        nxPsi     = tmp.uqm(domain);
+        Psixn     = cell(1,3);
+        for i = 1:3
+            Psixn{i} = -nxPsi{i};
+        end
+        nrm  = domain.qudNrm;
+        m    = size(nrm,1);
+        N{1} = spdiags(nrm(:,1),0,m,m);
+        N{2} = spdiags(nrm(:,2),0,m,m);
+        N{3} = spdiags(nrm(:,3),0,m,m);
+        
+       
+        jp1 = mod(j,3) + 1;
+        jp2 = mod(jp1,3) + 1;
+        
+        M = N{jp1} * Psixn{jp2} - N{jp2} * Psixn{jp1};
     else
         error('femRaoWiltonGlisson.m : unavailable case')
     end
@@ -216,7 +261,7 @@ elseif size(fe.msh.elt,2)==4 % Tetrahedral elements
             M{n} = sparse(idx(:),jdx(:),val(:),Nqud,Ndof);
         end
         
-    % Scalar operator div[PSI]
+        % Scalar operator div[PSI]
     elseif strcmp(fe.opr,'div[psi]')
         % Initialization
         val = zeros(Nelt,Nbas,Ngss);

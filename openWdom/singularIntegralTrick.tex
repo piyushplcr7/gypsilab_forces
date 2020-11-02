@@ -1,0 +1,30 @@
+\documentclass[french]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper]{geometry}
+\usepackage{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\begin{document}
+
+The weighted integral operators involve the computation of singular integrals of the type
+\[I = \int_{[A,B]} \frac{\ln|X-Y|}{\omega(Y)}dY\]
+where $[A,B]$ is an element of the mesh (in 2D), $|X|$ represents the Euclidean norm of $X$ and $\omega(Y) = d(A,Y)^\alpha$ for some $\alpha$. 
+Let $X = d\vec{n} + x \vec u$ where $\vec n$ is a unit normal vector to $[A,B]$ and $u = \frac{\overrightarrow{AB}}{|B-A|}$. Let $g(x) = \ln\sqrt{d^2 + x^2}$. Then we have
+\[I = \int_{0}^{|B - A|} \frac{g(x-y)}{y^\alpha}dy\,.\]
+It is easier to compute 
+\[J = \int_{0}^{|B - A|} \frac{g\left(\frac{k(x)-k(y)}{k'(x)}\right)}{y^\alpha}dy\]
+where $k$ is chosen so that $k'(y) = \frac{1}{y^\alpha}$, that is $k(y) = \dfrac{y^{1 - \alpha}}{1-\alpha}$. Then we have simply have simply
+\[J = \left[k'(x)G\left(k'(x)[k(x) - k(y)]\right)\right]_{0}^{|B-A|}\,\]
+where $G(x) = - x + x\ln\sqrt{d^2 + x^2} + d \arctan\frac{x}{d}$ is a primitive of $g$. When $d = 0$, one should put instead $G(x) = -x + x\ln|x|$ which is the limit of the previous expression when $d \to 0$.   
+The first integral $I$ can be seen as an approximation of $J$ replacing the term $k(x) - k(y)$ by its first order Taylor expansion.
+In fact the remainder $J - I$ is of the form
+\[J - I = \int_{0}^{|B - A|} \frac{f(y)}{y^\alpha}dy\]
+where $f(y) = \ln  \lvert \frac{k(x) - k(y)}{k'(x)(x - y)}\rvert$. When $x \neq 0$, this is a smooth function of $y$. When $x= 0$, $f$ is not well defined, but the initial integral has the form
+\[I = \int_0^{|B-A|} \ln \frac{\sqrt{d^2 + y^2}}{y^\alpha}dy\,.\]
+When $d \neq 0$, this is already of the form $I = \int_{0}^{|B - A|}\frac{f(y)}{y^\alpha}$ where $f$ is a smooth function. When $d = 0$, then letting $u = y^{1 - \alpha}$, we have explicitly 
+\[I = \int_{0}^{|B-A|^{1 - \alpha}} \ln |u| du = \left[G(u)\right]_{0}^{|B-A|^{1 - \alpha}}\]
+with $G(u) = u\ln|u| - u$.  
+
+\end{document}

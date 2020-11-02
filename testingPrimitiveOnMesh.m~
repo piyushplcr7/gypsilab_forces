@@ -1,0 +1,64 @@
+% Creation of uniform meshes with respect to a weight function
+% Computation of Gaussian quadrature adapted to the weight function. 
+
+%% Uniform mesh adapted to the weight
+
+clear all 
+close all
+
+c = openline(-1,1);
+singVtx = [1 0 0; -1 0 0; 0 0 0];
+singPow = [-1/2;-1/2;-0.8];
+[X,Y,Z] = FunR3.XYZ;
+omega = 1/sqrt(1 - X^2).*(abs(X)).^(singPow(3));
+m = WuniformMesh(c,50,omega,singVtx,singPow);
+
+plot(m);
+
+
+
+
+%% Chebyshev weight 
+
+m = openline(-1,1);
+m = meshCurve(m,100);
+[~,B] = m.ABCD; % 
+singVtx = [-1,0,0;1,0,0];
+singPow = [-1/2;-1/2];
+[X,Y,Z] = FunR3.XYZ;
+omega = 1/sqrt(1-X^2);
+p = WprimitiveOnMesh(m,B,omega,singVtx,singPow,5);
+sum(p) - pi
+plot(pi - acos(m.vtx(:,1)));
+hold on
+plot(cumsum([0;p]),'--');
+
+
+%% Spirale, with a singularity outside the curve. 
+
+c = spirale;
+c = c.normalParam;
+m = meshCurve(c,100);
+boundary = bnd(m);
+[~,B] = m.ABCD;
+singVtx = boundary.vtx;
+X1 = singVtx(1,:);
+X2 = singVtx(2,:);
+X3 = [0.5,0,0];
+dX1 = sqrt((X-X1(1))^2 + (Y - X1(2))^2);
+dX2 = sqrt((X-X2(1))^2 + (Y - X2(2))^2);
+dX3 = sqrt((X-X3(1))^2 + (Y - X3(2))^2);
+omega = 1/sqrt(dX1*dX2)
+singPow = [-1/2;-1/2];
+
+p = WprimitiveOnMesh(m,B,omega,singVtx,singPow,20);
+plot(cumsum([0;p]));
+
+m = WuniformMesh(c,100,omega,singVtx,singPow);
+[~,B] = m.ABCD;
+p = WprimitiveOnMesh(m,B,omega,singVtx,singPow,10);
+
+figure
+plot(m);
+axis equal
+

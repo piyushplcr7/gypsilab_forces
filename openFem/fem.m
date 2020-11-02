@@ -97,6 +97,9 @@ methods
         
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OPERATORS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % multiplication by a function
+    
+    
     % RESTRICTION OF THE BASIS FUNCTION 
     function fe = rest(fe,i)
         fe.opr = ['[psi]',num2str(i)];
@@ -131,6 +134,15 @@ methods
             fe.opr = ['n*[psi]',num2str(varargin{2})];
         end
     end
+    
+    function fe = tautimes(varargin)
+        fe = varargin{1};
+        if (nargin == 1)
+            fe.opr = 'tau*[psi]';
+        else
+            fe.opr = ['tau*[psi]',num2str(varargin{2})];
+        end
+    end
 
     % QUADRATURE TIMES BASIS FUNCTION
     function fe = qtimes(varargin)
@@ -156,6 +168,16 @@ methods
             fe.opr = ['nx[psi]',num2str(varargin{2})];
         end
     end
+    
+    % Normal cross (basis function cross normal)
+    function fe = nxxn(varargin)
+        fe = varargin{1};
+        if (nargin == 1)
+            fe.opr = 'nx([psi]xn)';
+        else
+            fe.opr = ['nx([psi]xn)',num2str(varargin{2})];
+        end
+    end
         
     % NORMAL CROSS GRADIENT OF THE BASIS FUNCTION
     function fe = nxgrad(varargin)
@@ -171,7 +193,9 @@ methods
     function fe = divnx(fe)
         fe.opr = 'curl[psi]';
     end    
-
+    
+    % misc. 
+    
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%% UNKNOWNS AND DOF %%%%%%%%%%%%%%%%%%%%%%%%%
     % DIRICHLET

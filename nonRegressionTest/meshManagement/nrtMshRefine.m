@@ -34,7 +34,8 @@ clc
 
 % Create mesh
 Nvtx = 50;
-mesh = mshSquare(Nvtx,[2 2]);
+mesh = mshTorus(Nvtx,3,1);
+mesh = clean(mesh);
 
 % Colours
 mesh.col(1:20)                 = -1;

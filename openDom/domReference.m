@@ -12,6 +12,7 @@ if (size(domain.msh.elt,2) == 1)
 elseif (size(domain.msh.elt,2) == 2)
     [x,w] = Gauss_Legendre1D(domain.gss,0,1);
     
+    
 % Triangular mesh
 elseif (size(domain.msh.elt,2) == 3)
     if (domain.gss == 1)

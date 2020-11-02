@@ -43,7 +43,7 @@ a  = XA*tau';
 b  = XB*tau';  
 
 % Check distance to (AB)
-bool = (abs(d)>1e-8);
+bool = (abs(d)>1e-15);
 
 % Initialization
 logR = zeros(Nx,1);
@@ -64,7 +64,6 @@ rlogR    = rlogRtau*tau + rlogRn*n;
 % \int grad(logr)
 gradlogRtau       = 1/2*log((b.^2 + d.^2)./(a.^2 + d.^2));
 gradlogRtau(I)    = log(abs(b(I)./a(I)));
-gradlogRtau(a<=0 & b>=0 & ~bool) = 0;
 gradlogRn         = -atan(b./d) + atan(a./d);
 gradlogRn(I)      = 0;
 gradlogR          = gradlogRtau*tau + gradlogRn*n;
@@ -91,7 +90,7 @@ end
 
 function y = xlog(x)
 y    = x.*log(abs(x));
-I    = (abs(x)<1e-8); 
+I    = (abs(x)<1e-15); 
 y(I) = 0;
 end
 

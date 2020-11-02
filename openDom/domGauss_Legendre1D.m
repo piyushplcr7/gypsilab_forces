@@ -1,7 +1,5 @@
-function [x,w]=Gauss_Legendre1D(N,a,b)
+function [x,w]=domGauss_Legendre1D(N,a,b)
 
-% lgwt.m
-%
 % This script is for computing definite integrals using Legendre-Gauss 
 % Quadrature. Computes the Legendre-Gauss nodes and weights  on an interval
 % [a,b] with truncation order N
@@ -12,6 +10,7 @@ function [x,w]=Gauss_Legendre1D(N,a,b)
 % the definite integral using sum(f.*w);
 %
 % Written by Greg von Winckel - 02/25/2004
+
 N=N-1;
 N1=N+1; N2=N+2;
 
@@ -53,7 +52,8 @@ while max(abs(y-y0))>eps
 end
 
 % Linear map from[-1,1] to [a,b]
-x=(a*(1-y)+b*(1+y))/2;      
+x=(a*(1-y)+b*(1+y))/2;   
+x = sort(x);
 
 % Compute the weights
 w=(b-a)./((1-y.^2).*Lp.^2)*(N2/N1)^2;

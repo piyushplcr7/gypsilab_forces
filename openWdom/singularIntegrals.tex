@@ -1,0 +1,80 @@
+\documentclass[french]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper]{geometry}
+\usepackage{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\begin{document}
+
+\section{Gaussian quadrature adapted to a weight}
+
+We look to design a quadrature formula adapted to the computation of integrals of the form 
+
+\[I = \int_{[A,B]} \frac{f(Y)}{\omega(Y)}dY\]
+where $f$ is a smooth function and $\omega$ is a singular weight of the form $\omega(Y) = d(A,Y)^\alpha$. For this we use a Gaussian quadrature adapted to the weight. The problem is reduced to finding nodes $(x_k)$ and weights $w_k$ such that 
+\[\int_{0}^1 \frac{f(y)}{y^\alpha} dy \approx \sum_{k = 1}^n f(x_k) w_k\,.\]
+The method for the latter is to find a family of orthogonal polynomials $p_q$ such that 
+\[\int_{0}^1 \frac{p_q(x) p_r(x)}{x^\alpha} = 0\]
+with $\textup{deg}(p_q) = q$. Then, the quadrature nodes are the roots of $p_n$ in $[0,1]$ and the weights are obtained numerically using the Golub-Welsch algorithm. 
+
+
+\textbf{Remark:} One can replace the integrals appearing above by principal values or finite part integrals. For $\alpha \notin \mathbb{Z}$, this gives well-defined nodes and weights $(x_k,w_k)$, which are in general complex ($x_k$ do no longer lie in $[0,1]$). This behavior is known (thesis of kutt). 
+
+
+\section{Multiply singular integrals}
+
+
+\subsection{Weakly singular kernel}
+
+The weighted integral operators involve the computation of singular integrals of the type
+\[I = \int_{[A,B]} \frac{\ln|X-Y|}{\omega(Y)}dY\]
+where $[A,B]$ is an element of the mesh (in 2D), $|X|$ represents the Euclidean norm of $X$ and $\omega(Y) = d(A,Y)^\alpha$ for some $\alpha$. 
+Let $X = d\vec{n} + x \vec u$ where $\vec n$ is a unit normal vector to $[A,B]$ and $u = \frac{\overrightarrow{AB}}{|B-A|}$. Let $g(x) = \ln\sqrt{d^2 + x^2}$. Then we have
+\[I = \int_{0}^{|B - A|} \frac{g(x-y)}{y^\alpha}dy\,.\]
+It is easier to compute 
+\[J = \int_{0}^{|B - A|} \frac{g\left(\frac{k(x)-k(y)}{k'(x)}\right)}{y^\alpha}dy\]
+where $k$ is chosen so that $k'(y) = \frac{1}{y^\alpha}$, that is $k(y) = \dfrac{y^{1 - \alpha}}{1-\alpha}$. Then we have simply have simply
+\[J = \left[k'(x)G\left(\frac{[k(x) - k(y)]}{k'(x)}\right)\right]_{0}^{|B-A|}\,\]
+where $G(x) = - x + x\ln\sqrt{d^2 + x^2} + d \arctan\frac{x}{d}$ is a primitive of $g$. When $d = 0$, one should put instead $G(x) = -x + x\ln|x|$ which is the limit of the previous expression when $d \to 0$.   
+The first integral $I$ can be seen as an approximation of $J$ replacing the term $k(x) - k(y)$ by its first order Taylor expansion.
+In fact the remainder $J - I$ is of the form
+\[J - I = \int_{0}^{|B - A|} \frac{f(y)}{y^\alpha}dy\]
+where $f(y) = \ln  \lvert \frac{k(x) - k(y)}{k'(x)(x - y)}\rvert$. When $x \neq 0$, this is a smooth function of $y$. When $x= 0$, $f$ is not well defined, but the initial integral has the form
+\[I = \int_0^{|B-A|}  \frac{\ln\sqrt{d^2 + y^2}}{y^\alpha}dy\,.\]
+When $d \neq 0$, this is already of the form $I = \int_{0}^{|B - A|}\frac{f(y)}{y^\alpha}$ where $f$ is a smooth function. When $d = 0$, then letting $u = y^{1 - \alpha}$, we have explicitly 
+\[I = \int_{0}^{|B-A|^{1 - \alpha}} \ln |u| du = \left[G(u)\right]_{0}^{|B-A|^{1 - \alpha}}\]
+with $G(u) = u\ln|u| - u$.  
+
+We also need to compute integrals of the form
+\[J = \int_{[A,B]} \frac{(Y-X)\ln|X - Y|}{\omega(Y)}\,.\]
+Let $n$ be the normal vector to $[A,B]$. Then 
+\[J\cdot n = \int_{[A,B]} \frac{d \ln |X - Y|}{\omega(Y)}\]
+where $d = (X - A) \cdot n$. This is regularized with the same method as above, though it is expected that the error is small because when $|X - Y|$ is small, then $d$ is small too. 
+The tangential component of $J$ has the form 
+\[J \cdot t = \frac{1}{2}\int_{0}^b y^{-\alpha} (x - y)\ln (d^2 + (x-y)^2)\,.\]
+One approach to approximate this when $d = 0$ could be to write 
+\[J \cdot t =x \int_{0}^b y^{-\alpha} \ln|x - y| - \int_{0}^by^{-\beta} \ln|x -y|\]
+each term is computed as before. Note that in the second term, $\beta = \alpha - 1$ is smaller than $\alpha$ so we expect the regularization to perform better.  
+
+
+\subsection{Principal value}
+
+We now show how to deal with integrals of the form 
+\[J = \textup{PV}\int_{0}^b \frac{y^{-\alpha}}{(x - y)}dy\]
+where the PV abbreviation denotes the fact that the integral is understood in the sense of the Cauchy principal value, that is
+\[J = \lim_{\varepsilon \to 0^+} \int_{0}^{x - \varepsilon} + \int_{x + \varepsilon}^b \frac{y^{-\alpha}}{(y-x)}dy\,.\]
+This limit exists indeed as we can see by adding and subtracting to $J$ the term
+\[x^{-\alpha} \textup{PV}\int_{0}^b \frac{1}{(y-x)} = x^{-\alpha} \ln \frac{|b-x|}{x}\,,\]
+which leads to the following expression of $J$:
+\[J = x^{-\alpha} \ln \frac{|b-x|}{x} + \int_{0}^b \frac{y^{-\alpha} - x^{-\alpha}}{(y-x)}\,.\]
+
+Note that there exists a relation between this integral and the previous one. 
+By formally integrating by parts, we find
+\[J = \int_{0}^b \alpha y^{- \alpha-1} \ln |x-y| + b^{-\alpha}\ln|b - x|\]
+
+
+
+
+\end{document}

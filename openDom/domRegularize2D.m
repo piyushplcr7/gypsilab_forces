@@ -31,6 +31,13 @@ function Ms = domRegularize2D(data)
 %+========================================================================+
 
 %%% INPUT ANALYSIS
+
+if isa(data{2},'Wdom')
+    Ms = WdomRegularize2D(data);
+    return
+end
+
+
 if (length(data) == 4)
     X     = data{1};
     Ydom  = data{2};
@@ -104,8 +111,11 @@ for el = 1:Nelt
     if ~isempty(Ix)
         %%% CORRECTION WITH SEMI-ANALYTIC INTEGRATION
         % Analytical integration
+        
+        
         [logR,rlogR,gradlogR] = domSemiAnalyticInt2D(X(Ix,:),Sel,Nel,Tel);
-%         logR(:) = 0; rlogR(:) = 0; gradlogR(:) = 0;                                         %%% DEBUG %%%
+        
+        %         logR(:) = 0; rlogR(:) = 0; gradlogR(:) = 0;                                         %%% DEBUG %%%
         
         % Vector yg-x
         Xun = ones(length(Ix),1);

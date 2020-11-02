@@ -43,8 +43,8 @@ elseif (size(mesh.elt,2) == 2)
     elt = find(mlt==1);
     
     % Inherit colours 
-    [mesh,~,IB] = intersect(msh(mesh.vtx,elt),part);
-    mesh.col    = part.col(IB);
+    [mesh,~,I] = intersect(msh(mesh.vtx,elt),part);
+    mesh.col    = part.col(I);
     
 % Triangular mesh
 elseif (size(mesh.elt,2) == 3)

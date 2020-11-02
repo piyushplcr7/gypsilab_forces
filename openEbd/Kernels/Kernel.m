@@ -102,12 +102,12 @@ classdef Kernel
         function[out] = eval(this,x)
             fun = this.func;
             out = fun(x);
-            out(abs(x) < 1e-12) = this.lim0;
+            out(abs(x) < 1e-13) = this.func(1e-13);
         end
         function[out] = evalDer(this,x)
             fun = this.der;
             out = fun(x);
-            out(abs(x) < 1e-12) = 0;
+            out(abs(x) < 1e-13) = 0;
         end
         % Setters
         function[this] = setScalFunc(this,f)
