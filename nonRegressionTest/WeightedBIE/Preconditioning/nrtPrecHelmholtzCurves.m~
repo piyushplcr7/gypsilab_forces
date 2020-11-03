@@ -88,7 +88,7 @@ Iomega_1 = integral(Gamma,Vh,Vh);
 
 
 K = omegaDx2 - k^2*L^2/4*(Omega2/(L^2/4) - Iomega_1);
-keps = k + 1i*0.04*k^(1/3);
+keps = k - 1i*0.04*k^(1/3);
 SQ1 = @(u)(DarbasPadeSqrt(u,20,pi/3,keps,L^2/4*Iomega_1,K));
 PrecSQ1 = @(v)(Iomega_1\SQ1(Iomega_1\v));
 

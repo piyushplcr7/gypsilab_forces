@@ -56,7 +56,7 @@ classdef Kernel
     methods (Access = public)
         
         % Efficient Bessel Decomposition for the kernel.        
-        function[onlineEBD,rq,loc] = offlineEBD(this,X,Y,a,tol)
+        function[onlineEBD,rq,loc,mv] = offlineEBD(this,X,Y,a,tol)
             
             % Rescaling
             rMax = rMaxCalc(X,Y); % diameter
@@ -75,6 +75,7 @@ classdef Kernel
             loc = localCorrections(x,y,a,k1,rq,tol,false);
             % We are ready to compute fast convolutions. 
             onlineEBD = @(v)(q2d.conv(x,y,v) + loc*v); 
+            mv = @(v)(q2d.conv(x,y,v));
         end
         function[MVx,MVy,rq,locx,locy] = offline_dEBD(this,X,Y,a,tol)
             

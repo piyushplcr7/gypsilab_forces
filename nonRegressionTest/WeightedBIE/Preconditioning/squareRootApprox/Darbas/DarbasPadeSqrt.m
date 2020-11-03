@@ -1,7 +1,7 @@
 function [ phi ] = DarbasPadeSqrt( l,Np,theta,keps,I,D)
 
 
-k = real(keps);
+k = keps; %real(keps);
 [ C0,Aj,Bj ] = rotatingPadeRacine(Np,theta);
 phi = 1i*k*C0*I*l;
 

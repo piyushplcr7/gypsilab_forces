@@ -30,9 +30,9 @@ if N < Ncompress
     loc = 0;
 else
     a = lambda/N^(2/3);
-    disp('Computing EBD')
-    [~,rq,loc,mv] = offlineEBD(G,X,X,a,tol);
-    Gxy = AbstractMatrix(loc,mv,N,N);
+    display('Computing E
+    [A,rq,loc] = offlineEBD(G,X,X,a,tol);
+    Gxy = AbstractMatrix([],@(x)A(x),N,N);
 end
 
 % Single layer :
@@ -40,7 +40,6 @@ Mu = Vh.uqm(Gamma);
 Wx = spdiags(W,0,size(W,1),size(W,1));
 MWu = Wx*Mu;
 S = MWu'*(Gxy*MWu);
-disp('Regularization SL')
 Sreg = regularize(Gamma,Gamma,Vh,'[log(r)]',Vh);
 Somega = C*S  - 1/(2*pi)*Sreg;
 
@@ -48,9 +47,7 @@ Somega = C*S  - 1/(2*pi)*Sreg;
 % Part 1: 
 v = omegaDomega(Vh);
 Mv = v.uqm(Gamma);
-MWv = Wx*Mv;
-N1 = MWv'*(Gxy*MWv);
-disp('Regularization N1')
+N1 = Mv.'*Wx*Gxy*Wx*Mv;
 N1reg = regularize(Gamma,Gamma,v,'[log(r)]',v);
 Nomega1 = C*N1 -1/(2*pi)*N1reg;
 % Part 2 if k > 0
@@ -64,7 +61,7 @@ if k > 0
        MWj = Womega2X*Mw{j};
        N2 = N2 + MWj.'*(Gxy*MWj); 
     end
-    disp('Regularization N2')
+    
     N2reg = regularize(Gamma,Gamma,w,omega2,'omega2[log(r)]',w);
     Nomega2 = C*N2 - 1/(2*pi)*N2reg;
 else
