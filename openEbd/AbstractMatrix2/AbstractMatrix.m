@@ -240,7 +240,7 @@ classdef AbstractMatrix
                 if ~exist('x0','var')
                     x0 = [];
                 end
-                [x,flag,relres,iter,resvec] = gmresMartin(@(x)(this*x),b,restart,tol,maxit,M1,M2,x0);                
+                [x,flag,relres,iter,resvec] = gmres(@(x)(this*x),b,restart,tol,maxit,M1,M2,x0);                
             end
         end
         function[x,flag,relres,iter,resvec] = gmres(this,b,varargin)

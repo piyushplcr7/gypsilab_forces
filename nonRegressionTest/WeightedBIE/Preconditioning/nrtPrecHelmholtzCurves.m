@@ -1,23 +1,23 @@
 %% Square-root preconditioners for the Helmholtz equation on a curved screen
 
-clear all;
+clearvars;
 close all;
 clc;
 
 %% Mesh and boundary element space
 
-nn = 200;
-lambdaEBD = 20;
+nn = 400;
+lambdaEBD = 10;
 tolEBD = 1e-3;
 
 GMRESTOL = 1e-8;
 GMRESIT = 500;
 
-% c = openline(-1,1); theta_inc = pi/4; 
+c = openline(-1,1); theta_inc = pi/4; 
 % c = semicircle; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.2; theta_inc = pi/2;
 % c = parabola; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 0.4; theta_inc = -pi/6;
 % c = Scurve; x1 = -1.2; x2 = 1.2; y1 = -1; y2 = 1; theta_inc = -pi/6;
-c = spirale; theta_inc = pi/4;
+% c = spirale; theta_inc = pi/4;
 
 k = nn/length(c)*pi;
 N = fix(k*length(c)*5)+1;
