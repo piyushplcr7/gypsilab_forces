@@ -6,7 +6,7 @@ clc;
 
 %% Mesh and boundary element space
 
-nn = 200;
+nn = 800;
 lambdaEBD = 20;
 tolEBD = 1e-3;
 
