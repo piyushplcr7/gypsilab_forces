@@ -1,4 +1,4 @@
-%% Square-root preconditioners for the Helmholtz equation on a flat screen. 
+%% Square-root preconditioners for the Helmholtz equation on a curved screen
 
 clear all;
 close all;
@@ -7,7 +7,7 @@ clc;
 %% Mesh and boundary element space
 
 nn = 800;
-lambdaEBD = 8;
+lambdaEBD = 15;
 tolEBD = 1e-3;
 
 GMRESTOL = 1e-8;
