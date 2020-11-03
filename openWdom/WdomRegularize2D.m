@@ -99,6 +99,7 @@ for el = 1:Nelt
         WrlogR(:,2) = WrlogR(:,2) - rlogR2 * Wq;
         WrlogR(:,3) = WrlogR(:,3) - rlogR3 * Wq;    
         WrlogR(isnan(WrlogR)) = 0;
+        WrlogR = 0*WrlogR;
         
         R_2           = 1./R2;
         R_2(isinf(R_2)) = 0;
@@ -163,7 +164,7 @@ for el = 1:Nelt
                     V{3}(:,j) = Vx .* X(Ix,3);
                 
                 elseif strcmp(green,'omega2[log(r)]') && strcmp(v.opr,'n*[psi]')
-                    Vx        = WlogR.*tmp + WrlogR*NUel(j,:)'/hj;
+                    Vx        = WlogR.*tmp+ WrlogR*NUel(j,:)'/hj;
                     V{1}(:,j) = omegaX_1.^2.*Vx .* Nel(1);
                     V{2}(:,j) = omegaX_1.^2.*Vx .* Nel(2);
                     V{3}(:,j) = omegaX_1.^2.*Vx .* Nel(3);
