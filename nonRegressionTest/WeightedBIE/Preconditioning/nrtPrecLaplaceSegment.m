@@ -6,12 +6,11 @@
 close all;
 clear all; %#ok
 clc;
-tinit = tic;
 
 %% Mesh and boundary element space
 
 c = openline(-1,1);
-N = 32000;
+N = 8000;
 m = meshCurve(c,N,'varChange',{@cos,[-pi,0]});
 edges = bnd(m);
 % Weight definition :
@@ -37,7 +36,6 @@ Gamma = Gamma.supplyDw(dOmega);
 Vh = P1(m);
 GMRESTOL = 1e-8;
 GMRESMAXIT = 500;
-tinit = toc(tinit);
 
 %% 1°) Symm's equation
 
@@ -47,7 +45,7 @@ k = 0;
 GXY = @(X,Y)femGreenKernel(X,Y,'[log(r)]',k);
 
 tolEBD = 1e-3;
-
+lambdaEBD = 20;
 
 % Symm's integral operator
 if N<5e3
@@ -56,7 +54,8 @@ if N<5e3
         + regularize(Gamma,Gamma,Vh,'[log(r)]',Vh));
 else
     Somega = -1/(2*pi)*(...
-        integralEbd(Gamma,Gamma,Vh,'[log(r)]',0,Vh,tolEBD)  ...
+        integralEbd(Gamma,Gamma,Vh,'[log(r)]',0,Vh,...
+        tolEBD,lambdaEBD)  ...
         + regularize(Gamma,Gamma,Vh,'[log(r)]',Vh));
 end
 
@@ -79,30 +78,31 @@ Prec = @(u)(Iomega_1\(aux(Iomega_1\u)));
 
 % rhs "almost singular"
 rhs = integral(Gamma,Vh,1/sqrt(1/N^2 + X^2));
-
-tic
-[~,~,~,~,RESVEC0]  = gmres(Somega,rhs,[],GMRESTOL,GMRESMAXIT);
-toc
-tic
-[~,~,~,~,RESVEC1]  = gmres(Somega,rhs,[],GMRESTOL,GMRESMAXIT,Iomega_1);
-toc
+% 
 tic
 [~,~,~,~,RESVEC2]  = gmres(Somega,rhs,[],GMRESTOL,GMRESMAXIT,Prec);
 toc
+tic
+[~,~,~,~,RESVEC0]  = gmres(Somega,rhs,[],GMRESTOL,500);
+toc
+% tic
+% [~,~,~,~,RESVEC1]  = gmres(Somega,rhs,[],GMRESTOL,GMRESMAXIT,Iomega_1);
+% toc
+
 
 fprintf('No preconditioner : %s iterations \n',num2str(length(RESVEC0)));
-fprintf('Mass matrix preconditioner : %s iterations \n',num2str(length(RESVEC1)));
+% fprintf('Mass matrix preconditioner : %s iterations \n',num2str(length(RESVEC1)));
 fprintf('Square-root preconditioner : %s iterations \n',num2str(length(RESVEC2)));
-
-figure; 
-semilogy(1:length(RESVEC0),RESVEC0./norm(rhs));
-hold on
-semilogy(1:length(RESVEC1),RESVEC1./norm(Iomega_1\rhs));
-semilogy(1:length(RESVEC2),RESVEC2/norm(Prec(rhs)));
-legend({'No preconditioner','Mass matrix','Square-root Laplacian'})
-legend boxoff
-xlabel('Iteration count')
-ylabel('Relative residual')
+% 
+% figure; 
+% semilogy(1:length(RESVEC0),RESVEC0./norm(rhs));
+% hold on
+% semilogy(1:length(RESVEC1),RESVEC1./norm(Iomega_1\rhs));
+% semilogy(1:length(RESVEC2),RESVEC2/norm(Prec(rhs)));
+% legend({'No preconditioner','Mass matrix','Square-root Laplacian'})
+% legend boxoff
+% xlabel('Iteration count')
+% ylabel('Relative residual')
 
 %% 2°) Hypersingular equation
 
@@ -116,7 +116,8 @@ if N < 5e3
         + regularize(Gamma,Gamma,omegaDomega(Vh),'[log(r)]',omegaDomega(Vh)));
 else
     Nomega = -1/(2*pi)*(...
-        integralEbd(Gamma,Gamma,omegaDomega(Vh),'[log(r)]',0,omegaDomega(Vh),tolEBD)  ...
+        integralEbd(Gamma,Gamma,omegaDomega(Vh),'[log(r)]',0,omegaDomega(Vh),...
+        tolEBD,lambdaEBD)  ...
         + regularize(Gamma,Gamma,omegaDomega(Vh),'[log(r)]',omegaDomega(Vh)));
 
 end
@@ -141,28 +142,28 @@ rhs = integral(Gamma,Vh,omega2*(sqrt((1/N^2 + X^2))));
 tic
 [X0,~,~,~,RESVEC0]  = gmres(Nomega,rhs,[],GMRESTOL,GMRESMAXIT);
 toc
-tic
-[X1,~,~,~,RESVEC1]  = gmres(Nomega,rhs,[],GMRESTOL,GMRESMAXIT,Iomega);
-toc
+% tic
+% [X1,~,~,~,RESVEC1]  = gmres(Nomega,rhs,[],GMRESTOL,GMRESMAXIT,Iomega);
+% toc
 tic
 [X2,~,~,~,RESVEC2]  = gmres(Nomega,rhs,[],GMRESTOL,GMRESMAXIT,Prec);
 toc
 
 fprintf('No preconditioner : %s iterations \n',num2str(length(RESVEC0)));
-
-fprintf('Mass matrix preconditioner : %s iterations \n',num2str(length(RESVEC1)));
+% 
+% fprintf('Mass matrix preconditioner : %s iterations \n',num2str(length(RESVEC1)));
 fprintf('Square-root preconditioner : %s iterations \n',num2str(length(RESVEC2)));
-
-figure; 
-semilogy(1:length(RESVEC0),RESVEC0./norm(rhs));
-
-hold on
-semilogy(1:length(RESVEC1),RESVEC1./norm(Iomega\rhs));
-semilogy(1:length(RESVEC2),RESVEC2/norm(Prec(rhs)));
-
-legend({'No preconditioner','Mass matrix','Square-root Laplacian'})
-legend boxoff
-xlabel('Iteration count')
-ylabel('Relative residual')
-
-
+% 
+% figure; 
+% semilogy(1:length(RESVEC0),RESVEC0./norm(rhs));
+% 
+% hold on
+% semilogy(1:length(RESVEC1),RESVEC1./norm(Iomega\rhs));
+% semilogy(1:length(RESVEC2),RESVEC2/norm(Prec(rhs)));
+% 
+% legend({'No preconditioner','Mass matrix','Square-root Laplacian'})
+% legend boxoff
+% xlabel('Iteration count')
+% ylabel('Relative residual')
+% 
+% 

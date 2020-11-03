@@ -6,16 +6,21 @@ clc;
 
 %% Mesh and boundary element space
 
-nn = 200;
+nn = 800;
+lambdaEBD = 8;
+tolEBD = 1e-3;
 
-%c = openline(-1,1); theta_inc = pi/4; 
+GMRESTOL = 1e-8;
+GMRESIT = 500;
+
+c = openline(-1,1); theta_inc = pi/4; 
 % c = semicircle; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.2; theta_inc = pi/2;
 % c = parabola; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 0.4; theta_inc = -pi/6;
 % c = Scurve; x1 = -1.2; x2 = 1.2; y1 = -1; y2 = 1; theta_inc = -pi/6;
-c = spirale;x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.8; theta_inc = pi/4;
+% c = spirale; theta_inc = pi/4;
 
-k = nn/length(c);
-N = k*length(c)*3;
+k = nn/length(c)*pi;
+N = fix(k*length(c)*5)+1;
 
 m = meshCurve(c,N,'varChange',{@cos,[-pi,0]});
 L = sum(m.ndv);
@@ -53,7 +58,7 @@ singPow = [-1/2;-1/2]; % Power law of the singularities
 sing = {singVtx,singPow};
 
 % Integration domain
-gss = 5;
+gss = 3;
 Gamma = Wdom(m,gss,1/omega,sing);
 
 Gamma = Gamma.supplyDw(dOmega);
@@ -66,12 +71,16 @@ Vh = P1(m);
 disp('Assembling operators')
 
 
-GXY = @(X,Y)femGreenKernel(X,Y,'[H0(kr)]',k);
+[Somega,Nomega,rq,loc] = weightedBIO(Gamma,Vh,k,...
+    'lambda',lambdaEBD,'tol',tolEBD);
 
-disp('Single layer')
 
-Somega = 1i/4*integral(Gamma,Gamma,Vh,GXY,Vh)  ...
-    -1/(2*pi)*regularize(Gamma,Gamma,Vh,'[log(r)]',Vh);
+disp('Done');
+
+% disp('Single layer')
+
+% Somega = 1i/4*integral(Gamma,Gamma,Vh,GXY,Vh)  ...
+%     -1/(2*pi)*regularize(Gamma,Gamma,Vh,'[log(r)]',Vh);
 
 omegaDx2 = integral(Gamma,grad(Vh),omega2,grad(Vh));
 Omega2 = integral(Gamma,Vh,omega2,Vh);
@@ -83,19 +92,6 @@ keps = k + 1i*0.0025*k^(1/3);
 SQ1 = @(u)(DarbasPadeSqrt(u,20,pi/3,keps,L^2/4*Iomega_1,K));
 PrecSQ1 = @(v)(Iomega_1\SQ1(Iomega_1\v));
 
-% Debug
-
-disp('Hypersingular');
-
-
-omega2GXYomega2 = @(X,Y)(omega2(X).*omega2(Y).*femGreenKernel(X,Y,'[H0(kr)]',k));
-
-N1 = 1i/4*integral(Gamma,Gamma,omegaDomega(Vh),GXY,omegaDomega(Vh))...
-    -1/(2*pi)*regularize(Gamma,Gamma,omegaDomega(Vh),'[log(r)]',omegaDomega(Vh));
-N2 = -k^2*(...
-    1i/4*integral(Gamma,Gamma,ntimes(Vh),omega2GXYomega2,ntimes(Vh))...
-    -1/(2*pi)*regularize(Gamma,Gamma,ntimes(Vh),omega2,'omega2[log(r)]',ntimes(Vh)));
-Nomega = N1 + N2;
 
 dxOmega2 = integral(Gamma,omegaDomega(Vh),omegaDomega(Vh));
 Omega2 = integral(Gamma,Vh,omega2^2,Vh);
@@ -113,36 +109,38 @@ PrecSN = @(u)(Iomega_1\(Somega*(Iomega\u)));
 PrecNS = @(u)(Iomega\(Nomega*(Iomega_1\u)));
 
 %% Dirichlet problem:
-GMRESTOL = 1e-8;
 disp('Dirichlet problem')
 
 PW = exp(1i*k*(X*cos(theta_inc) + Y*sin(theta_inc)));
 rhs1 = -integral(Gamma,Vh,PW);
 
 
-[Lambda,~,~,~,RESVEC0] = gmres(Somega,rhs1,[],GMRESTOL,size(Somega,1));
-[~,~,~,~,RESVEC1] = gmres(Iomega_1\Somega,Iomega_1\rhs1,[],GMRESTOL,size(Somega,1));
-[~,~,~,~,RESVEC2] = gmres(Somega,rhs1,[],GMRESTOL,size(Somega,1),PrecSQ1);
-[~,~,~,~,RESVEC3] = gmres(Somega,rhs1,[],GMRESTOL,size(Somega,1),PrecNS);
+% [Lambda,~,~,~,RESVEC0] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT);
+% [~,~,~,~,RESVEC1] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT,Iomega_1);
+t2 = tic;
+[~,~,~,~,RESVEC2] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT,PrecSQ1);
+t2 = toc(t2);
+fprintf('Square-root preconditioner : %s iterations in %s seconds \n',...
+    num2str(length(RESVEC2)),num2str(t2));
 
+t3 = tic;
+[~,~,~,~,RESVEC3] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT,PrecNS);
+t3 = toc(t3);
+fprintf('Generalized Calderon preconditioner : %s iterations in %s seconds \n',...
+    num2str(length(RESVEC3)),num2str(t3));
 
-fprintf('No preconditioner : %s iterations \n',num2str(length(RESVEC0)));
-fprintf('Mass matrix preconditioner : %s iterations \n',num2str(length(RESVEC1)));
-fprintf('Square-root preconditioner : %s iterations \n',num2str(length(RESVEC2)));
-fprintf('Generalized Calderon preconditioner : %s iterations \n',num2str(length(RESVEC3)));
-
-
-figure; 
-semilogy(1:length(RESVEC0),RESVEC0./norm(rhs1));
-hold on
-semilogy(1:length(RESVEC1),RESVEC1./norm(Iomega_1\rhs1));
-semilogy(1:length(RESVEC2),RESVEC2/norm(PrecSQ1(rhs1)));
-semilogy(1:length(RESVEC3),RESVEC3/norm(PrecNS(rhs1)));
-legend({'No preconditioner','Mass matrix',...
-    'Square-root Laplacian','Gen. Calderon Preconditioner'})
-legend boxoff
-xlabel('Iteration count')
-ylabel('Relative residual')
+% 
+% figure; 
+% % semilogy(1:length(RESVEC0),RESVEC0./norm(rhs1));
+% % hold on
+% % semilogy(1:length(RESVEC1),RESVEC1./norm(Iomega_1\rhs1));
+% semilogy(1:length(RESVEC2),RESVEC2/norm(PrecSQ1(rhs1)));
+% semilogy(1:length(RESVEC3),RESVEC3/norm(PrecNS(rhs1)));
+% legend({'No preconditioner','Mass matrix',...
+%     'Square-root Laplacian','Gen. Calderon Preconditioner'})
+% legend boxoff
+% xlabel('Iteration count')
+% ylabel('Relative residual')
 
 %% 2°) Hypersingular equation
 
@@ -158,26 +156,34 @@ omega2dPW{3} = 0*PW;
 rhs2 = integral(Gamma,ntimes(Vh),omega2dPW);
 
 
-[Mu,~,~,~,RESVEC0] = gmres(Nomega,rhs2,[],GMRESTOL,size(Nomega,1));
-[~,~,~,~,RESVEC1] = gmres(Nomega,rhs2,[],GMRESTOL,size(Nomega,1),Iomega);
+% [Mu,~,~,~,RESVEC0] = gmres(Nomega,rhs2,[],GMRESTOL,size(Nomega,1));
+% [~,~,~,~,RESVEC1] = gmres(Nomega,rhs2,[],GMRESTOL,size(Nomega,1),Iomega);
+t2 = tic;
 [~,~,~,~,RESVEC2] = gmres(Nomega,rhs2,[],GMRESTOL,size(Nomega,1),PrecSQ2);
+t2 = toc(t2);
+fprintf('Square-root preconditioner : %s iterations in %s seconds \n',...
+    num2str(length(RESVEC2)),num2str(t2));
+
+t3 = tic;
 [~,~,~,~,RESVEC3] = gmres(Nomega,rhs2,[],GMRESTOL,size(Nomega,1),PrecSN);
+t3 = toc(t3);
+fprintf('Generalized Calderon preconditioner : %s iterations in %s seconds \n',...
+    num2str(length(RESVEC3)),num2str(t3));
 
 
-
-fprintf('No preconditioner : %s iterations \n',num2str(length(RESVEC0)));
-fprintf('Mass matrix preconditioner : %s iterations \n',num2str(length(RESVEC1)));
+% fprintf('No preconditioner : %s iterations \n',num2str(length(RESVEC0)));
+% fprintf('Mass matrix preconditioner : %s iterations \n',num2str(length(RESVEC1)));
 fprintf('Square-root preconditioner : %s iterations \n',num2str(length(RESVEC2)));
 fprintf('Generalized Calderon preconditioner : %s iterations \n',num2str(length(RESVEC3)));
 
-figure; 
-semilogy(1:length(RESVEC0),RESVEC0/norm(rhs2));
-hold on
-semilogy(1:length(RESVEC1),RESVEC1/norm((Iomega\rhs2)));
-semilogy(1:length(RESVEC2),RESVEC2/norm(PrecSQ2(rhs2)));
-semilogy(1:length(RESVEC3),RESVEC3/norm(PrecSN(rhs2)));
-legend({'No preconditioner','Mass matrix','Square-root Laplacian','Gen. Calderon Preconditioner'})
-legend boxoff
-xlabel('Iteration count')
-ylabel('Relative residual')
+% figure; 
+% % semilogy(1:length(RESVEC0),RESVEC0/norm(rhs2));
+% hold on
+% % semilogy(1:length(RESVEC1),RESVEC1/norm((Iomega\rhs2)));
+% semilogy(1:length(RESVEC2),RESVEC2/norm(PrecSQ2(rhs2)));
+% semilogy(1:length(RESVEC3),RESVEC3/norm(PrecSN(rhs2)));
+% legend({'No preconditioner','Mass matrix','Square-root Laplacian','Gen. Calderon Preconditioner'})
+% legend boxoff
+% xlabel('Iteration count')
+% ylabel('Relative residual')
 

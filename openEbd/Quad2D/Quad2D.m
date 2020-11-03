@@ -38,7 +38,9 @@ classdef Quad2D
                 q2d.offset = alpha(1);
                 alpha = alpha(2:end);
                 rho = rho(2:end);
-                Ns = fix((Quad2D.gamma * rho  + (4*log(P*abs(alpha)/(tol+10^(-10)))))/2 + 1)*2+1;
+                Ns = max(...
+                    fix((Quad2D.gamma * rho  + (4*log(P*abs(alpha)/(tol+10^(-10)))))/2 + 1)*2+1,...
+                    10);
                 N = sum(Ns);
                 xxi_nu = zeros(N,2);
                 ww_nu = zeros(N,1);

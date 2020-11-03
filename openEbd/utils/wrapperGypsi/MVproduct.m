@@ -21,7 +21,7 @@ p.parse(varargin{:});
 lambda = p.Results.lambda;
 Nx = size(X,1);
 Ny = size(Y,1);
-a = lambda*1/sqrt(sqrt(Nx*Ny)); % Dichotomy instead ? 
+a = lambda*1/(Nx*Ny).^(1/3); % Dichotomy instead ? 
 switch(kernel_string)
     case '[log(r)]'
         K = LogKernel(1);

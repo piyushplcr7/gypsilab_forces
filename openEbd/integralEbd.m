@@ -1,6 +1,6 @@
 function [A,loc] = integralEbd(varargin)
 
-if nargin == 6
+if nargin == 7
     % --> \int_{mesh(x)} \int_{mesh(y)} psi(x)' f(x,y) psi(y) dxdy
     X    = varargin{1};
     Ydom    = varargin{2};
@@ -8,6 +8,7 @@ if nargin == 6
     k       = varargin{4};
     v       = varargin{5};
     tol     = varargin{6};
+    lambda  = varargin{7};
     
     
     
@@ -29,14 +30,14 @@ if nargin == 6
         Mv = Wy * Mv;
     end
     
-    [Gxy,loc]       = MVproduct(green,X(:,1:2),Y(:,1:2),tol,k);
+    [Gxy,loc]       = MVproduct(green,X(:,1:2),Y(:,1:2),tol,k,'lambda',lambda);
     aP	= @(V) Gxy(Mv*V);
     A               = AbstractMatrix([],aP,Nx,size(Mv,2));
     loc             = loc*Mv;
     
     
     %%% EFFCIENT BESSEL DECOMPOSITION WITH BOUNDARY ELEMENT OPERATOR
-elseif nargin == 7
+elseif nargin == 8
     % --> \int_{mesh(x)} \int_{mesh(y)} psi(x)' f(x,y) psi(y) dxdy
     
     Xdom    = varargin{1};
@@ -46,7 +47,7 @@ elseif nargin == 7
     k       = varargin{5};
     v       = varargin{6};
     tol     = varargin{7};
-    
+    lambda  = varargin{8};
     
     
     
@@ -81,7 +82,7 @@ elseif nargin == 7
         Mv = Wy * Mv;
     end
     
-    [Gxy,loc] = MVproduct(green,X(:,1:2),Y(:,1:2),tol,k,'lambda',1);
+    [Gxy,loc] = MVproduct(green,X(:,1:2),Y(:,1:2),tol,k,'lambda',lambda);
     aP        = @(V) Mu*Gxy(Mv*V);
     A         = AbstractMatrix([],aP,size(Mu,1),size(Mv,2));
     loc       = Mu*loc*Mv;

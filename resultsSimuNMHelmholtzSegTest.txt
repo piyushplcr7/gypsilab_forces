@@ -1,0 +1,68 @@
+
+
+N = 20 : 
+
+
+Dirichlet problem 
+
+No prec. : 20 iterations in 0.002598 seconds 
+Square-root : 8 iterations in 0.005519 seconds 
+Calderon : 11 iterations in 0.002527 seconds 
+
+
+Neumann problem 
+
+No prec. : 22 iterations in 0.002502 seconds 
+Square-root : 6 iterations in 0.004265 seconds 
+Calderon : 10 iterations in 0.002479 seconds 
+
+
+N = 79 : 
+
+
+Dirichlet problem 
+
+No prec. : 35 iterations in 0.005051 seconds 
+Square-root : 8 iterations in 0.005243 seconds 
+Calderon : 14 iterations in 0.00219 seconds 
+
+
+Neumann problem 
+
+No prec. : 81 iterations in 0.018774 seconds 
+Square-root : 7 iterations in 0.004266 seconds 
+Calderon : 13 iterations in 0.001845 seconds 
+
+
+N = 315 : 
+
+
+Dirichlet problem 
+
+No prec. : 64 iterations in 0.41555 seconds 
+Square-root : 9 iterations in 0.079596 seconds 
+Calderon : 18 iterations in 0.54622 seconds 
+
+
+Neumann problem 
+
+No prec. : 316 iterations in 10.2553 seconds 
+Square-root : 10 iterations in 0.55554 seconds 
+Calderon : 16 iterations in 1.0123 seconds 
+
+
+N = 1257 : 
+
+
+Dirichlet problem 
+
+No prec. : 101 iterations in 7.0693 seconds 
+Square-root : 10 iterations in 0.59784 seconds 
+Calderon : 20 iterations in 5.4848 seconds 
+
+
+Neumann problem 
+
+No prec. : 501 iterations in 119.8616 seconds 
+Square-root : 10 iterations in 3.0083 seconds 
+Calderon : 17 iterations in 4.2672 seconds 

@@ -183,6 +183,9 @@ classdef AbstractMatrix
                 C = AbstractMatrix(cC,mvC,NN1,NN2);
             end
         end
+        function[v] = feval(A,x)
+            v = A*x;
+        end
         function[A] = concrete(A)
             if A.isConcrete
                 % nothing to do;
@@ -237,7 +240,7 @@ classdef AbstractMatrix
                 if ~exist('x0','var')
                     x0 = [];
                 end
-                [x,flag,relres,iter,resvec] = gmres(@(x)(this*x),b,restart,tol,maxit,M1,M2,x0);                
+                [x,flag,relres,iter,resvec] = gmresMartin(@(x)(this*x),b,restart,tol,maxit,M1,M2,x0);                
             end
         end
         function[x,flag,relres,iter,resvec] = gmres(this,b,varargin)
