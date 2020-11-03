@@ -7,7 +7,7 @@ clc;
 %% Mesh and boundary element space
 
 nn = 800;
-lambdaEBD = 15;
+lambdaEBD = 25;
 tolEBD = 1e-3;
 
 GMRESTOL = 1e-8;
