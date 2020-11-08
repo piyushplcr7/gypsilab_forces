@@ -1,4 +1,4 @@
-function [Somega,Nomega,rq,loc] = weightedBIO(Gamma,Vh,k,varargin)
+function [Somega,Nomega,rq,cP] = weightedBIO(Gamma,Vh,k,varargin)
 
 p = inputParser;
 p.addOptional('lambda',1);
@@ -31,8 +31,8 @@ if N < Ncompress
 else
     a = lambda/N^(2/3);
     disp('Computing EBD')
-    [mv,rq,loc,~] = offlineEBD(G,X,X,a,tol);
-    Gxy = AbstractMatrix([],mv,N,N);
+    [~,rq,cP,aP] = offlineEBD(G,X,X,a,tol);
+    Gxy = AbstractMatrix(cP,aP,N,N);
 end
 
 % Single layer :

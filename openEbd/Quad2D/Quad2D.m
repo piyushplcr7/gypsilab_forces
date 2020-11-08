@@ -140,19 +140,21 @@ classdef Quad2D
             time = tic;
             xxi_nu = this.xi_nu;
             ww_nu = this.w_nu;
-            Nxi = length(xxi_nu);
+            Nxi = size(xxi_nu,1);
             ttol = min(this.tol/10 + 1e-10,1e-6);
             if Nxi > 0
                 %% Space to Fourier
-                V_nu = nufft2d3(size(y,1), y(:,1), y(:,2), ...
-                    V, -1, ttol, Nxi, xxi_nu(:,1), xxi_nu(:,2) );
-                V_nubis = finufft2d3(y(:,1), y(:,2), ...
+%                 V_nu = nufft2d3(size(y,1), y(:,1), y(:,2), ...
+%                     V, -1, ttol, Nxi, xxi_nu(:,1), xxi_nu(:,2) );
+                V_nu = finufft2d3(y(:,1), y(:,2), ...
                     V, -1, ttol, xxi_nu(:,1), xxi_nu(:,2) );
                 %% Convolution becomes multiplication of Fourier weights
                 fV_nu = V_nu.*ww_nu;
                 %% Back from Fourier to Space
-                q = nufft2d3(Nxi, xxi_nu(:,1), xxi_nu(:,2), ...
-                    fV_nu, +1, ttol, size(x,1), x(:,1), x(:,2));
+%                 q = nufft2d3(Nxi, xxi_nu(:,1), xxi_nu(:,2), ...
+%                     fV_nu, +1, ttol, size(x,1), x(:,1), x(:,2));
+                q = finufft2d3(xxi_nu(:,1), xxi_nu(:,2), ...
+                    fV_nu, +1, ttol, x(:,1), x(:,2));
                 time = toc(time);
                 %% Adding offset
                 q = q + this.offset*sum(V);

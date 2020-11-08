@@ -5,8 +5,8 @@ close all;
 
 %% Mesh and boundary element space
 
-nn = 20;
-lambdaEBD = 5;
+nn = 400;
+lambdaEBD = 10;
 tolEBD = 1e-3;
 GMRESIT = 500;
 GMRESTOL = 1e-8;
@@ -71,7 +71,7 @@ Vh = P1(m);
 disp('Assembling operators')
 
 % 
-[Somega,Nomega,rq,~] = weightedBIO(Gamma,Vh,k,...
+[Somega,Nomega,~,~] = weightedBIO(Gamma,Vh,k,...
     'lambda',lambdaEBD,'tol',tolEBD,'Ncompress',100);
 
 
