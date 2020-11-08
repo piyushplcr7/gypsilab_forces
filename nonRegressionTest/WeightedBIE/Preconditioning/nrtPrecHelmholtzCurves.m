@@ -7,6 +7,7 @@ close all;
 
 nn = 400;
 lambdaEBD = 10;
+
 tolEBD = 1e-3;
 GMRESIT = 500;
 GMRESTOL = 1e-8;
@@ -68,6 +69,10 @@ Vh = P1(m);
 
 %% 1°) Operator assembling
 
+fprintf('\n\nnn = %s\n',num2str(nn))
+fprintf('k = %s\n',num2str(k))
+fprintf('N = %s\n',num2str(N))
+fprintf('lambda = %s\n',num2str(lambdaEBD))
 disp('Assembling operators')
 
 % 
