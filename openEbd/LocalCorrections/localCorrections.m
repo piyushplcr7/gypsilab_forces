@@ -14,9 +14,9 @@ function[C] = localCorrections(x,y,a,G,rq,tol,gradOpt)
 
 N1 = size(x,1);
 N2 = size(y,1);
-[I,rxyTemp] = rangesearch(y,x,a*1.05);
+[I,rxy] = rangesearch(y,x,a*1.05);
 jdx = cell2mat(I')';
-rxy = cell2mat(rxyTemp')';
+rxy = cell2mat(rxy')';
 idx = zeros(size(jdx));
 sp_ind = 1;
 for x_ind=1:length(I)
@@ -49,8 +49,9 @@ if NCI ~= 0
     % quadrature contribution (using interpolation to avoid evaluating at
     % all points).
     
-    C_val = exact_Interactions - radial_quadratureNear0;
-    C = sparse(idx,jdx,C_val,N1,N2);
+    C = exact_Interactions - radial_quadratureNear0;
+    clear exact_Interactions radial_quadratureNear0
+    C = sparse(idx,jdx,C,N1,N2);
     
     if gradOpt
         Tx = sparse(idx,jdx,y(jdx,1) - x(idx,1),N1,N2);
@@ -58,10 +59,11 @@ if NCI ~= 0
         idx = idx(rxy> 1e-12);
         jdx = jdx(rxy> 1e-12);
         rxy = rxy(rxy> 1e-12);
-        R =  sparse(idx,jdx,1./rxy,N1,N2);
-        Cx = C.*R.*Tx;
-        Cy = C.*R.*Ty;
+        R_1 =  sparse(idx,jdx,1./rxy,N1,N2);
+        Cx = C.*R_1.*Tx;
+        Cy = C.*R_1.*Ty; % save memory by overriding R. 
         C = {Cx,Cy};
+        clear rxy jdx idx R 
     end
 else
     % No close interactions
@@ -71,3 +73,6 @@ else
         C = sparse(N1,N2); % all zeros
     end
 end
+
+clear rxy idx jdx
+
