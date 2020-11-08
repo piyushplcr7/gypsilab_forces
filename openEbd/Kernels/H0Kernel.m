@@ -23,9 +23,9 @@ classdef H0Kernel < Kernel
             this.lim0 = this.C*(Jk.lim0 + 1i*Yk.lim0);
         end
         function[out] = dilatation(this,lambda)
-            lim0keep = this.lim0;
+            old = this.lim0;
             out = H0Kernel(this.k*lambda,this.C);
-            out.lim0 = lim0keep;
+            out.lim0 = old;
         end
         function[out] = mtimes(this,mu)
             if isa(this,'Kernel')

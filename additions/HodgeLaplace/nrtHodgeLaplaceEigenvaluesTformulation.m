@@ -49,6 +49,10 @@ disp(max(abs(U)));
 % Eigenvalues 
 [P,D] = eig(full(M\system));
 d = diag(D);
+[~,i] = min(d);
+f = P(1:size(Vh),i);
+
+alpha = U((size(Vh)+1):end);
 
 figure;
 semilogy(sort(abs(d)),'*');

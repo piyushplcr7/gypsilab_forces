@@ -146,6 +146,8 @@ classdef Quad2D
                 %% Space to Fourier
                 V_nu = nufft2d3(size(y,1), y(:,1), y(:,2), ...
                     V, -1, ttol, Nxi, xxi_nu(:,1), xxi_nu(:,2) );
+                V_nubis = finufft2d3(y(:,1), y(:,2), ...
+                    V, -1, ttol, xxi_nu(:,1), xxi_nu(:,2) );
                 %% Convolution becomes multiplication of Fourier weights
                 fV_nu = V_nu.*ww_nu;
                 %% Back from Fourier to Space

@@ -46,7 +46,9 @@ u = cell(1,3);
 u{1} = u1; u{2} = u2; u{3} = u3;
 
 divu = 2*X + 2*Y + 2*Z;
-
+nxcurlu{1} = 2*Z;
+nxcurlu{2} = 2*X;
+nxcurlu{3} = 2*Y;
 
 % Let (q,v) = T_D(u), i.e.
 % q = Y_t(u) = nx(uxn)
@@ -142,6 +144,13 @@ alphaTheoPlot = feval(Wh,alphaTheo,mesh);
 figure;
 plotOn(mesh,alphaTheoPlot);
 
+% f = nxcurl(u)
+
+fTheo = IVh\integral(Gamma,Vh,nxcurlu);
+plot(fTheo - f);
+
+
+plotOn(mesh,alphaTheoPlot - alphaPlot);
 
 %% Hodge-Laplacian : N formulation.
 

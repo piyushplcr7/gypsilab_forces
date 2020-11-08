@@ -1,8 +1,8 @@
 function [arc ] = Scurve()
 
 a= 0.2;
-b= 0.2;
-c= 4;
+b= -0.2;
+c= 6;
 s0 = 0;
 x = @(s)(s);
 y = @(s)(a*exp(b*c*(s+s0)).*sin(c*(s+s0)));
