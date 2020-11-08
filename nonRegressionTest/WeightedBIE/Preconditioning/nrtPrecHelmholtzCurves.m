@@ -1,17 +1,15 @@
 %% Square-root preconditioners for the Helmholtz equation on a curved screen
 
-clearvars;
+% clearvars;
 close all;
-clc;
 
 %% Mesh and boundary element space
 
-nn = 400;
-lambdaEBD = 10;
+nn = 20;
+lambdaEBD = 5;
 tolEBD = 1e-3;
-
-GMRESTOL = 1e-8;
 GMRESIT = 500;
+GMRESTOL = 1e-8;
 
 c = openline(-1,1); theta_inc = pi/4; 
 % c = semicircle; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.2; theta_inc = pi/2;
@@ -20,14 +18,16 @@ c = openline(-1,1); theta_inc = pi/4;
 % c = spirale; theta_inc = pi/4;
 
 k = nn/length(c)*pi;
-N = fix(k*length(c)*5)+1;
+% N = fix(k*length(c)*5)+1;
+N = fix(10*k);
+
+GMRESIT = min(GMRESIT,N);
+
 
 m = meshCurve(c,N,'varChange',{@cos,[-pi,0]});
 L = sum(m.ndv);
 edges = bnd(m);
 % Weight definition :
-
-
 
 X1 = edges.vtx(1,:);
 X2 = edges.vtx(2,:);
@@ -70,9 +70,22 @@ Vh = P1(m);
 
 disp('Assembling operators')
 
-
+% 
 [Somega,Nomega,rq,~] = weightedBIO(Gamma,Vh,k,...
-    'lambda',lambdaEBD,'tol',tolEBD);
+    'lambda',lambdaEBD,'tol',tolEBD,'Ncompress',100);
+
+
+% GXY = @(X,Y)femGreenKernel(X,Y,'[H0(kr)]',k);
+% omega2GXYomega2 = @(X,Y)(omega2(X).*omega2(Y).*GXY(X,Y));
+% 
+% Nomega = 1i/4*integral(Gamma,Gamma,omegaDomega(Vh),GXY,omegaDomega(Vh))...
+%     -1/(2*pi)*regularize(Gamma,Gamma,omegaDomega(Vh),'[log(r)]',omegaDomega(Vh));
+% Nomega = Nomega - k^2*(...
+%     1i/4*integral(Gamma,Gamma,ntimes(Vh),omega2GXYomega2,ntimes(Vh))...
+%     -1/(2*pi)*regularize(Gamma,Gamma,ntimes(Vh),omega2,'omega2[log(r)]',ntimes(Vh)));
+% 
+% Somega = 1i/4*integral(Gamma,Gamma,Vh,GXY,Vh)  ...
+%     -1/(2*pi)*regularize(Gamma,Gamma,Vh,'[log(r)]',Vh);
 
 
 disp('Done');
@@ -118,13 +131,13 @@ rhs1 = -integral(Gamma,Vh,PW);
 % [Lambda,~,~,~,RESVEC0] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT);
 % [~,~,~,~,RESVEC1] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT,Iomega_1);
 t2 = tic;
-[~,~,~,~,RESVEC2] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT,PrecSQ1);
+[Lambda,~,~,~,RESVEC2] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT,PrecSQ1);
 t2 = toc(t2);
 fprintf('Square-root preconditioner : %s iterations in %s seconds \n',...
     num2str(length(RESVEC2)),num2str(t2));
 
 t3 = tic;
-[~,~,~,~,RESVEC3] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT,PrecNS);
+[~,~,~,NITER,RESVEC3] = gmres(Somega,rhs1,[],GMRESTOL,GMRESIT,PrecNS);
 t3 = toc(t3);
 fprintf('Generalized Calderon preconditioner : %s iterations in %s seconds \n',...
     num2str(length(RESVEC3)),num2str(t3));
@@ -173,8 +186,8 @@ fprintf('Generalized Calderon preconditioner : %s iterations in %s seconds \n',.
 
 % fprintf('No preconditioner : %s iterations \n',num2str(length(RESVEC0)));
 % fprintf('Mass matrix preconditioner : %s iterations \n',num2str(length(RESVEC1)));
-fprintf('Square-root preconditioner : %s iterations \n',num2str(length(RESVEC2)));
-fprintf('Generalized Calderon preconditioner : %s iterations \n',num2str(length(RESVEC3)));
+% fprintf('Square-root preconditioner : %s iterations \n',num2str(length(RESVEC2)));
+% fprintf('Generalized Calderon preconditioner : %s iterations \n',num2str(length(RESVEC3)));
 
 % figure; 
 % % semilogy(1:length(RESVEC0),RESVEC0/norm(rhs2));

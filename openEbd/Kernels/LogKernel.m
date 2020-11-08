@@ -20,7 +20,7 @@ classdef LogKernel < Kernel
             kernel.gamma_est = @LogKernel.gamma_est;
             kernel.R = RR;
             kernel.C = CC;
-            kernel.singular = false;
+            kernel.singular = true;
         end
     end
     methods (Access = public)

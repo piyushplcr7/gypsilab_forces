@@ -23,11 +23,9 @@ classdef Y0Kernel < Kernel
             kernel = kernel.setScalFunc(@(a,b,rho)(CC*kernel.scalFuncHelmholtz(a,b,rho)));
             kernel = kernel.setNormFunc(@(a,b)(CC*kernel.normFuncHelmholtz(a,b)));
             kernel = kernel.setStartFreq(RR);
-            kernel.singular = false;
-            gamm = 0.577215664901532;
-            kernel.lim0 = 2/pi*(gamm + log(RR/2)); 
+            kernel.singular = true;
+            kernel.lim0 = CC*bessely(0,RR*1e-13); 
         end
-        
     end
     methods (Access = public)
         

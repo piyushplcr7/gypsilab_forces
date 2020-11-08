@@ -48,7 +48,7 @@ classdef Kernel
                 kernel.gamma_est = @(tol)deal(0,3); % No fine tuning of gamma
                 kernel.lim0 = func(0);
             else
-                kernel.lim0 = 0;
+                kernel.lim0 = kernel.func(1e-13);
             end
         end
     end
@@ -103,7 +103,7 @@ classdef Kernel
         function[out] = eval(this,x)
             fun = this.func;
             out = fun(x);
-            out(abs(x) < 1e-13) = this.func(1e-13);
+            out(abs(x) < 1e-13) = this.lim0;
         end
         function[out] = evalDer(this,x)
             fun = this.der;

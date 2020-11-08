@@ -1,13 +1,13 @@
 function [arc ] = Vcurve
 
 
-x = @(s)(abs(s));
-y = @(s)(s/3);
+y = @(s)(abs(s));
+x = @(s)(s);
 I = [-1,1];
 arc = SimpleCurve(x,y,I);
 
-dx = @(s)(sign(s));
-dy = @(s)(1/3 + 0*s);
+dy = @(s)(sign(s));
+dx = @(s)(0*s + 1);
 arc = supplyDer(arc,dx,dy);
 
 end

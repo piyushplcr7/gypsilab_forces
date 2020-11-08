@@ -5,13 +5,16 @@ close all;
 clc
 
 
-k = 50; N = 5*k;
+
 
 % c = semicircle; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.2; theta_inc = pi/2;
-c = parabola; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 0.4; theta_inc = -pi/6;
+% c = parabola; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 0.4; theta_inc = -pi/6;
 % c = Scurve; x1 = -1.2; x2 = 1.2; y1 = -1; y2 = 1; theta_inc = -pi/6;
 % c = spirale;x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.8; theta_inc = pi/4;
+c = Vcurve; x1 = -4; x2 = 4; y1 = -2; y2 = 3; theta_inc = pi/2;
 
+
+k = 80*pi/2; N = 5*k*2;
 m = meshCurve(c,N,'varChange',{@cos,[-pi,0]});
 edges = bnd(m);
 % Weight definition :
@@ -76,8 +79,8 @@ figure;
 plot(m.vtx(:,1),real(mu));
 
 
-x = linspace(x1,x2,2e3);
-y = linspace(y1,y2,2e3);
+x = linspace(x1,x2,4e3);
+y = linspace(y1,y2,4e3);
 [X,Y] = meshgrid(x,y);
 M = [X(:),Y(:),0*X(:)];
 NM = size(M,1);
@@ -88,7 +91,7 @@ K = H0Kernel(k);
 Ny = size(Y,1);
 Wyomega2 = spdiags(Wy.*omega2(Y),0,Ny,Ny);
 Mv = uqm(ntimes(Vh),Gamma);
-a = 1/sqrt(sqrt(NM*Ny));
+a = 0.2/sqrt(sqrt(NM*Ny));
 [Dx,Dy] = offline_dEBD(K,M,Y,a,tol);
 A = AbstractMatrix([],...
     @(V)(Dx(Wyomega2*(Mv{1}*V))...
@@ -97,8 +100,9 @@ A = AbstractMatrix([],...
 DLomega = 1i/4*A;
 
 
-figure,
-val = (abs(DLomega*mu + PW(M)));
+figure;
+Dmu = DLomega*mu;
+val = abs(Dmu + PW(M));
 imagesc(x,y,reshape(val,length(x),length(y)));
 axis xy;
 axis equal
@@ -106,4 +110,4 @@ axis off
 hold on
 plot(c);
 
-caxis([0.5,3.5]);
+caxis([0.3,3])

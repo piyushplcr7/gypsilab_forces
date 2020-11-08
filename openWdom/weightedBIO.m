@@ -3,7 +3,7 @@ function [Somega,Nomega,rq,loc] = weightedBIO(Gamma,Vh,k,varargin)
 p = inputParser;
 p.addOptional('lambda',1);
 p.addOptional('tol',1e-3);
-p.addOptional('Ncompress',15e3);
+p.addOptional('Ncompress',100);
 p.parse(varargin{:});
 lambda = p.Results.lambda;
 tol = p.Results.tol;
@@ -31,8 +31,8 @@ if N < Ncompress
 else
     a = lambda/N^(2/3);
     disp('Computing EBD')
-    [~,rq,loc,mv] = offlineEBD(G,X,X,a,tol);
-    Gxy = AbstractMatrix(loc,mv,N,N);
+    [mv,rq,loc,~] = offlineEBD(G,X,X,a,tol);
+    Gxy = AbstractMatrix([],mv,N,N);
 end
 
 % Single layer :
@@ -55,6 +55,7 @@ N1reg = regularize(Gamma,Gamma,v,'[log(r)]',v);
 Nomega1 = C*N1 -1/(2*pi)*N1reg;
 % Part 2 if k > 0
 if k > 0
+    disp('Regularization N2')
     w = ntimes(Vh);
     Mw = w.uqm(Gamma);
     omega2 = 1/(Gamma.w)^2;
@@ -64,7 +65,6 @@ if k > 0
        MWj = Womega2X*Mw{j};
        N2 = N2 + MWj.'*(Gxy*MWj); 
     end
-    disp('Regularization N2')
     N2reg = regularize(Gamma,Gamma,w,omega2,'omega2[log(r)]',w);
     Nomega2 = C*N2 - 1/(2*pi)*N2reg;
 else
