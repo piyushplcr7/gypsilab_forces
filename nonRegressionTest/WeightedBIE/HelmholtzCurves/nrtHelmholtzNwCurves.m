@@ -109,6 +109,6 @@ axis equal
 axis off
 hold on
 plot(c);
-saveas(h,'spiraleCorlorized');
+saveas(h,'../spiraleCorlorized');
 
 
