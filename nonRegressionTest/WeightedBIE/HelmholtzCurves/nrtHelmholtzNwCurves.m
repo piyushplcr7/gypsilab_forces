@@ -110,4 +110,4 @@ axis off
 hold on
 plot(c);
 
-caxis([0.2,3.5])
+caxis([0.2,5])
