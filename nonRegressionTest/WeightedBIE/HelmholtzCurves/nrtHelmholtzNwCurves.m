@@ -72,15 +72,16 @@ N2 = -k^2*(...
     1i/4*integral(Gamma,Gamma,ntimes(Vh),omega2GXYomega2,ntimes(Vh))...
     -1/(2*pi)*regularize(Gamma,Gamma,ntimes(Vh),omega2,'omega2[log(r)]',ntimes(Vh)));
 Nomega = N1 + N2;
-
+clear N1 N2
 % mu = gmres(Nomega,rhs,[],1e-12,size(Nomega,1));
 mu = Nomega\rhs;
+clear Nomega 
 figure;
 plot(m.vtx(:,1),real(mu));
 
 
-x = linspace(x1,x2,2e3);
-y = linspace(y1,y2,2e3);
+x = linspace(x1,x2,3e3);
+y = linspace(y1,y2,3e3);
 [X,Y] = meshgrid(x,y);
 M = [X(:),Y(:),0*X(:)];
 NM = size(M,1);
@@ -91,17 +92,16 @@ K = H0Kernel(k);
 Ny = size(Y,1);
 Wyomega2 = spdiags(Wy.*omega2(Y),0,Ny,Ny);
 Mv = uqm(ntimes(Vh),Gamma);
-a = 0.6/sqrt(sqrt(NM*Ny));
+a = 0.8/sqrt(sqrt(NM*Ny));
 [Dx,Dy] = offline_dEBD(K,M,Y,a,tol);
 A = AbstractMatrix([],...
     @(V)(Dx(Wyomega2*(Mv{1}*V))...
     + Dy(Wyomega2*(Mv{2}*V))),...
     NM,length(Vh));
-DLomega = 1i/4*A;
 
 
 figure;
-Dmu = DLomega*mu;
+Dmu = 1i/4*(A*mu);
 val = abs(Dmu + PW(M));
 imagesc(x,y,reshape(val,length(x),length(y)));
 axis xy;
@@ -110,4 +110,4 @@ axis off
 hold on
 plot(c);
 
-caxis([0.2,5])
+caxis([0.3,3])
