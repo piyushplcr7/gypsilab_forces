@@ -6,7 +6,7 @@ close all;
 %% Mesh and boundary element space
 
 nn = 400;
-lambdaEBD = 8;
+lambdaEBD = 10;
 
 tolEBD = 1e-3;
 GMRESIT = 500;

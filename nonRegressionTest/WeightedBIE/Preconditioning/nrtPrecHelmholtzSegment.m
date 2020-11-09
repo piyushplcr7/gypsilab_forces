@@ -8,7 +8,7 @@ GMRESTOL = 1e-8;
 
 %% Mesh and boundary element space
 
-k = 200*pi/2; N = fix(5*k*2);
+k = 50*pi/2; N = fix(5*k*2);
 
 c = openline(-1,1);
 m = meshCurve(c,N,'varChange',{@cos,[-pi,0]});

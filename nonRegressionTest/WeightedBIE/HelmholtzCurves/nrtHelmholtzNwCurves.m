@@ -10,11 +10,11 @@ clc
 % c = semicircle; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.2; theta_inc = pi/2;
 % c = parabola; x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 0.4; theta_inc = -pi/6;
 % c = Scurve; x1 = -1.2; x2 = 1.2; y1 = -1; y2 = 1; theta_inc = -pi/6;
-% c = spirale;x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.8; theta_inc = pi/4;
-c = Vcurve; x1 = -4; x2 = 4; y1 = -2; y2 = 3; theta_inc = pi/2;
+c = spirale;x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.8; theta_inc = 0;
+% c = Vcurve; x1 = -4; x2 = 4; y1 = -2; y2 = 3; theta_inc = pi/2;
 
 
-k = 80*pi/2; N = 5*k*2;
+k = 200*pi/2; N = fix(5*k*2)+1;
 m = meshCurve(c,N,'varChange',{@cos,[-pi,0]});
 edges = bnd(m);
 % Weight definition :
@@ -48,7 +48,7 @@ singPow = [-1/2;-1/2]; % Power law of the singularities
 sing = {singVtx,singPow};
 
 % Integration domain
-gss = 5;
+gss = 3;
 Gamma = Wdom(m,gss,1/omega,sing);
 
 Gamma = Gamma.supplyDw(dOmega);
@@ -79,8 +79,8 @@ figure;
 plot(m.vtx(:,1),real(mu));
 
 
-x = linspace(x1,x2,4e3);
-y = linspace(y1,y2,4e3);
+x = linspace(x1,x2,2e3);
+y = linspace(y1,y2,2e3);
 [X,Y] = meshgrid(x,y);
 M = [X(:),Y(:),0*X(:)];
 NM = size(M,1);
@@ -91,7 +91,7 @@ K = H0Kernel(k);
 Ny = size(Y,1);
 Wyomega2 = spdiags(Wy.*omega2(Y),0,Ny,Ny);
 Mv = uqm(ntimes(Vh),Gamma);
-a = 0.2/sqrt(sqrt(NM*Ny));
+a = 0.6/sqrt(sqrt(NM*Ny));
 [Dx,Dy] = offline_dEBD(K,M,Y,a,tol);
 A = AbstractMatrix([],...
     @(V)(Dx(Wyomega2*(Mv{1}*V))...
@@ -110,4 +110,4 @@ axis off
 hold on
 plot(c);
 
-caxis([0.3,3])
+caxis([0.2,3.5])
