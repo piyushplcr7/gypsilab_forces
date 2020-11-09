@@ -201,7 +201,8 @@ for el = 1:Nelt
                     
                 elseif strcmp(green,'grady[log(r)]') && strcmp(v.opr,'n*[psi]')
                     V(:,j) = tmp .* (WgradlogR * Nel');
-                    
+                elseif strcmp(green,'grady[log(r)]omega2') && strcmp(v.opr,'n*[psi]')
+                    V(:,j) = tmp .* omegaX_1.^2.*(WgradlogR * Nel');
                 else
                     error('WdomRegularize2D.m : unavailable case')
                 end

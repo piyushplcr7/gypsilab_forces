@@ -182,11 +182,12 @@ else
             if startFreq==0
                 rho = besselJroots(0,Pup);
             else
-                rho = unique([besselJroots(startFreq,fix(Pup/2)+1);besselJroots(0,fix(Pup/2)+1)],'stable');
                 count = Pup;
+                rho = unique([besselJroots(0,fix(count/4)+1); besselJroots(startFreq,fix(count/2)+1);besselJroots(0,fix(count/4)+1)],'stable');
+                
                 while length(rho) < Pup
                     count = count*2;
-                    rho = unique([besselJroots(startFreq,fix(count/2)+1);besselJroots(0,fix(count/2)+1)],'stable');
+                    rho = unique([besselJroots(0,fix(count/4)+1); besselJroots(startFreq,fix(count/2)+1);besselJroots(0,fix(count/4)+1)],'stable');
                 end
                 Pup = length(rho);
             end

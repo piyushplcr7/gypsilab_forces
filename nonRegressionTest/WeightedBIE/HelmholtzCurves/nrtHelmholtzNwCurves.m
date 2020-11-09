@@ -14,7 +14,7 @@ c = spirale;x1 = -1.5; x2 = 1.5; y1 = -1.5; y2 = 1.8; theta_inc = 0;
 % c = Vcurve; x1 = -4; x2 = 4; y1 = -2; y2 = 3; theta_inc = pi/2;
 
 
-k = 200*pi/2; N = fix(5*k*2)+1;
+k = 50*pi/2; N = fix(5*k*2)+1;
 m = meshCurve(c,N,'varChange',{@cos,[-pi,0]});
 edges = bnd(m);
 % Weight definition :
@@ -80,8 +80,8 @@ figure;
 plot(m.vtx(:,1),real(mu));
 
 
-x = linspace(x1,x2,3e3);
-y = linspace(y1,y2,3e3);
+x = linspace(x1,x2,1e3);
+y = linspace(y1,y2,1e3);
 [X,Y] = meshgrid(x,y);
 M = [X(:),Y(:),0*X(:)];
 NM = size(M,1);
@@ -92,16 +92,16 @@ K = H0Kernel(k);
 Ny = size(Y,1);
 Wyomega2 = spdiags(Wy.*omega2(Y),0,Ny,Ny);
 Mv = uqm(ntimes(Vh),Gamma);
-a = 0.8/sqrt(sqrt(NM*Ny));
+a = 1.5/sqrt(sqrt(NM*Ny));
 [Dx,Dy] = offline_dEBD(K,M,Y,a,tol);
 A = AbstractMatrix([],...
     @(V)(Dx(Wyomega2*(Mv{1}*V))...
     + Dy(Wyomega2*(Mv{2}*V))),...
     NM,length(Vh));
 
-
-figure;
-Dmu = 1i/4*(A*mu);
+Reg = regularize(M,Gamma,'grady[log(r)]omega2',ntimes(Vh));
+h = figure;
+Dmu = 1i/4*(A*mu) - 1/(2*pi)*Reg*mu;
 val = abs(Dmu + PW(M));
 imagesc(x,y,reshape(val,length(x),length(y)));
 axis xy;
@@ -109,5 +109,6 @@ axis equal
 axis off
 hold on
 plot(c);
+saveas(h,'spiraleCorlorized');
 
-caxis([0.3,3])
+
