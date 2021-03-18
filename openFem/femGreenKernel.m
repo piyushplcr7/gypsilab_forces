@@ -72,6 +72,12 @@ elseif strcmp(green(1:end-1),'gradx[1/r]')
     j = str2double(green(end));
     Gxy = - (X(:,j)-Y(:,j)) ./ (Rxy.^3);
     
+    elseif strcmp(green(1:end-1),'myKernel[1/r]')    
+    j = str2double(green(end));
+    Gxy = - (X(:,j)-Y(:,j)) ./ (Rxy.^3);
+    % Avoid the Nans. 
+
+    
 elseif strcmp(green(1:end-1),'grady[1/r]')     
     j = str2double(green(end));
     Gxy = (X(:,j)-Y(:,j)) ./ (Rxy.^3);    
@@ -127,7 +133,7 @@ end
 if strcmp(green,'[exp(ikr)/r]')
     Gxy(Rxy<1e-12) = 0 + 1i*k;
 elseif strcmp(green,'[log(r)]')
-    Gxy(Rxy < 1e-13) = log(1e-13);
+    Gxy(Rxy < 1e-12) = log(1e-12);
 elseif strcmp(green,'[H0(kr)]')
 %     gamma         = 0.5772156649;
 %     Gxy(Rxy < 1e-13) = 1 + 1i*(2/pi*(gamma+log(k/2)));

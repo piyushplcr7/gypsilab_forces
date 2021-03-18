@@ -30,13 +30,19 @@ function M = femUnk2Qud(fe,domain)
 %|  `---'  |                finite elements                               |
 %+========================================================================+
 
-% Unknown to degrees of freedom matrix 
+% Unknown to degrees of freedom matrix
 [~,P] = fe.unk;
 
 % Surfacic restriction (trace)
 if (size(fe.msh.elt,2) == size(domain.msh.elt,2) + 1)
-    bound  = fe.msh.bnd;
-    P      = restriction(fe,bound) * P;
+    m = fe.msh;
+    bound = m.bnd;
+    if strcmp(fe.typ,'P0')
+        elt2elt = mshEltVol2eltSurf(m,bound);
+        P = elt2elt*P;
+    else
+        P      = restriction(fe,bound) * P;
+    end
     fe.msh = bound;
 end
 
@@ -51,7 +57,7 @@ else
     error('fem.m : unavailable case')
 end
 
-% Unknown to quadrature 
+% Unknown to quadrature
 if iscell(M)
     M{1} = M{1} * P;
     M{2} = M{2} * P;

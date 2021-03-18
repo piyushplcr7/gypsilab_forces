@@ -5,7 +5,7 @@ close all;
 
 %% Mesh and boundary element space
 
-nn = 400;
+nn = 20;
 lambdaEBD = 10;
 
 tolEBD = 1e-3;
@@ -77,7 +77,7 @@ disp('Assembling operators')
 
 % 
 [Somega,Nomega,~,~] = weightedBIO(Gamma,Vh,k,...
-    'lambda',lambdaEBD,'tol',tolEBD,'Ncompress',100);
+    'lambda',lambdaEBD,'tol',tolEBD,'Ncompress',2000);
 
 
 % GXY = @(X,Y)femGreenKernel(X,Y,'[H0(kr)]',k);
@@ -105,9 +105,14 @@ Omega2 = integral(Gamma,Vh,omega2,Vh);
 Iomega_1 = integral(Gamma,Vh,Vh);
 
 
-K = omegaDx2 - k^2*L^2/4*(Omega2/(L^2/4) - Iomega_1);
-keps = k + 1i*0.04*k^(1/3);
-SQ1 = @(u)(DarbasPadeSqrt(u,20,pi/3,keps,L^2/4*Iomega_1,K));
+K = omegaDx2 + k^2*(L^2/4*Iomega_1 - Omega2);
+keps = k + 1i*0.05*k^(1/3);
+eta = 0*1i;
+D = omegaDx2 - k^2*Omega2 + eta*L^2/4*Iomega_1;
+
+
+SQ1 = @(u)(k*L/2*DarbasPadeSqrt(u,5,pi/2,Iomega_1,D/(k^2*L^2/4)));
+% SQ1 = @(u)(Iomega_1*(mpower(full(Iomega_1\D),1/2))*u);
 PrecSQ1 = @(v)(Iomega_1\SQ1(Iomega_1\v));
 
 
@@ -119,6 +124,7 @@ K = dxOmega2 - k^2*L^2/4*(4*Omega2/L^2 - Iomega);
 D = dxOmega2 - k^2*Omega2;
 
 SQ2 = @(u)DarbasPadeSqrt(u,15,pi/3,keps,L^2/4*Iomega,K);
+
 PrecSQ2 = @(u)(D\SQ2(Iomega\u));
 
 % Calderon preconditioners

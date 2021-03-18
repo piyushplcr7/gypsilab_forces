@@ -63,11 +63,17 @@ methods
     end
     
     function surf(fe,V)
-        V = feval(fe,V,fe.msh);
-        if iscell(V)
-            V = sqrt( V{1}.^2 + V{2}.^2 + V{3}.^2 );
+        if strcmp(fe.typ,'P0')
+            [~,I] = ismembertol(fe.msh.ctr,fe.dof,'ByRows',true);
+            plot(fe.msh,V(I));
+        else
+            V = feval(fe,V,fe.msh);
+            if iscell(V)
+                V = sqrt( V{1}.^2 + V{2}.^2 + V{3}.^2 );
+            end
+            m = fe.msh;
+            plotOn(m,V);
         end
-        plot(fe.msh,V);
     end
     
     function graph(fe,V)
@@ -77,14 +83,19 @@ methods
         end
         nrm        = feval(fem(fe.msh,'P0'),fe.msh.nrm,fe.msh);
         fe.msh.vtx = fe.msh.vtx + (V*ones(1,3)).*nrm;
-        plot(fe.msh,V)
+        plotOn(fe.msh,V)
     end
     
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%% GLOBAL DATA  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%m = %%%%%%%%%%%%%%%%%%%%%%%% GLOBAL DATA  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % LENGTH
     function s = length(fe)
         s = size(fe.unk,1);
+    end
+    
+    function n = ndof(fe)
+        X = fe.dof;
+        n = size(X,1);
     end
     
     % SIZE
@@ -193,6 +204,26 @@ methods
     function fe = divnx(fe)
         fe.opr = 'curl[psi]';
     end    
+     
+    
+    % TRACE OF THE FUNCTION
+    function fe = gamma(fe)
+        fe.opr = 'gamma[psi]';
+    end
+    
+    
+    % EXTENSION OF THE FUNCTION IN THE VOLUME
+    function fe = ext(fe)
+        fe.opr = 'ext[psi]';
+    end
+    
+    % GRADIENT OF EXTENSION IN THE VOLUME
+    function fe = gradext(fe)
+        fe.opr = 'gradext[psi]';
+    end
+    
+    
+    
     
     % misc. 
     
@@ -224,6 +255,8 @@ methods
         M = femUnk2Qud(fe,domain);
     end
     
+    
+    
     % UNKNOWNS DATA TO VERTEX
     function I = feval(v,f,mesh)
         bool   = (size(mesh.elt,2) == 4);
@@ -242,7 +275,7 @@ methods
     end
     
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%% USEFULL MATRIX %%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%% USEFUL MATRIX %%%%%%%%%%%%%%%%%%%%%%%%%%
     % RESTRICTION MATRIX
     function M = restriction(u,mesh)
         v         = fem(mesh,u.typ);
@@ -253,7 +286,7 @@ methods
     % ELIMINATION MATRIX
     function M = elimination(u,mesh)
         v         = fem(mesh,u.typ);
-        [~,nodir] = setdiff(u.dof,v.dof,'rows');
+        [~,nodir] = setdiff(u.dof,v.dof,'rows','stable');
         M         = sparse(nodir,1:length(nodir),1,size(u.dof,1),length(nodir));
     end
 end

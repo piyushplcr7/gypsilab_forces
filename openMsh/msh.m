@@ -52,7 +52,7 @@ classdef msh
             end
             
             % Clean mesh
-            this = clean(this);
+%             this = clean(this);
         end
         
         % Clean: Remove duplicate vertices, remove unused vertices and relabel
@@ -103,10 +103,11 @@ classdef msh
             end
             switch mesh.type
                 case 'segment'
-                    Xctr = mesh.ctr;
+                    [A,B] = ABCD(mesh);
+                    Xstart = A + (B-A)/3;
                     Vtgt = mesh.tgt;
                     Vtgt = Vtgt.*(mesh.ndv*([1 1 1]));
-                    quiver3(Xctr(:,1),Xctr(:,2),Xctr(:,3),Vtgt(:,1),Vtgt(:,2),Vtgt(:,3),...
+                    quiver3(Xstart(:,1),Xstart(:,2),Xstart(:,3),Vtgt(:,1),Vtgt(:,2),Vtgt(:,3),...
                         'Color',spc,'LineWidth',2);
                 otherwise
                     % Orientation will be arbitrary, since an edge can be
@@ -153,18 +154,25 @@ classdef msh
             this = varargin{1};
             assert(this.dim<=3);
             spc  = 'r';
-            if (nargin == 2)
+            J = 1:this.nelt;
+            if (nargin >= 2)
                 spc = varargin{2};
+            end
+            if (nargin ==3)
+                J = varargin{3};
             end
             switch this.type
                 case 'segment'
                     plotNrm(this);
                 case 'triangle'
                     [A,B,C] = ABCD(this);
-                    I{1} = (A+B)/2; I{2} = (B+C)/2; I{3} = (A+C)/2;
-                    nu = this.nrmEdg;
+                    I{1} = (A(J,:)+B(J,:))/2; 
+                    I{2} = (B(J,:)+C(J,:))/2; 
+                    I{3} = (A(J,:)+C(J,:))/2;
+                    nu = this.nrmEdg(J);
                     for d = 1:3
-                        quiver3(I{d}(:,1),I{d}(:,2),I{d}(:,3),...
+                        dp1 = mod(d,3)+1;
+                        quiver3(I{dp1}(:,1),I{dp1}(:,2),I{dp1}(:,3),...
                             nu{d}(:,1),nu{d}(:,2),nu{d}(:,3),...
                         'color',spc,'AutoScaleFactor',.3);
                         hold on
@@ -299,7 +307,6 @@ classdef msh
         function X = ctr(this)
             X = zeros(length(this),3);
             [A{1},A{2},A{3},A{4}] = ABCD(this);
-            d = this.dim;
             for d = 1:this.dim
                 X = X + (1/this.dim) .* A{d};
             end
@@ -333,7 +340,7 @@ classdef msh
         end
         
         % Edge normals
-        function Nu = nrmEdg(mesh)
+        function Nu = nrmEdg(mesh,I)
             switch mesh.type
                 case 'point'
                     error('No meaningful edge normal on point meshes')
@@ -344,14 +351,14 @@ classdef msh
                     % Previously, it was Nu{1} = mesh.tgt; Nu{2} = -mesh.tgt;
                 case 'triangle'
                     Nu = cell(1,3);
+                    t = mesh.tgt;
+                    n = mesh.nrm;
                     for i = 1:3
-                        Nu{i} = cross(mesh.tgt{i},mesh.nrm,2);
+                        ip1 = mod(i,3)+1;
+                        Nu{i} = cross(t{ip1}(I,:),n(I,:),2);
                     end
                 case 'tetrahedron'
                     error('No meaningful edge normal on tetrahedral meshes')
-                    % Although we could take the nomral in the plane ABD
-                    % for a where AB is the edge and D is the opposite
-                    % vertex of the tetrahedron. 
             end
         end
         
@@ -368,8 +375,7 @@ classdef msh
                     [A{1},A{2},A{3},A{4}] = ABCD(this);
                     for i = 1:this.dim
                         ip1 = mod(i,this.dim) + 1;
-                        ip2 = mod(ip1,this.dim)+1;
-                        T{i} = (A{ip2} - A{ip1})./(sqrt(sum((A{ip2} - A{ip1}).^2,2))...
+                        T{i} = (A{ip1} - A{i})./(sqrt(sum((A{ip1} - A{i}).^2,2))...
                             *[1 1 1]);
                         
                     end
@@ -518,7 +524,7 @@ classdef msh
         % Intersection
         function [meshC,IA,IB] = intersect(meshA,meshB)
             assert(meshA.dim == meshB.dim,...
-                'Difference of meshes reserved for meshes of same type');
+                'Intersection of meshes reserved for meshes of same type');
             A         = sgn(meshA);
             B         = sgn(meshB);
             [~,IA,IB] = intersect(A,B,'rows','stable');

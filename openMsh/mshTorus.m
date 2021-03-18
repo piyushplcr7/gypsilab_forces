@@ -14,7 +14,8 @@ z = r2*cos(theta);
 
 m.vtx = [r.*cos(phi),r.*sin(phi),z];
 
-
+m = swap(m); % normal must go out.
 m = clean(m);
+
 
 end

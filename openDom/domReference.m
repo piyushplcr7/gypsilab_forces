@@ -10,7 +10,7 @@ if (size(domain.msh.elt,2) == 1)
     
 % Edge mesh
 elseif (size(domain.msh.elt,2) == 2)
-    [x,w] = Gauss_Legendre1D(domain.gss,0,1);
+    [x,w] = domGauss_Legendre1D(domain.gss,0,1);
     
     
 % Triangular mesh

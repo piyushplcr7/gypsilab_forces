@@ -1,13 +1,13 @@
-function [ phi ] = DarbasPadeSqrt( l,Np,theta,keps,I,D)
+function [ phi ] = DarbasPadeSqrt( u,Np,theta,I,D)
 
+% Approximation of R = I * sqrtm(I^{-1}D)
 
-k = keps; %real(keps);
 [ C0,Aj,Bj ] = rotatingPadeRacine(Np,theta);
-phi = 1i*k*C0*I*l;
+phi = C0*I*u;
 
 for j = 1:Np
-    phi_j = (-Bj(j)/keps^2*D + I)\(I*l);
-    phi = phi + (-1i*k*Aj(j)/keps^2)*(D*phi_j);
+    phi_j = (Bj(j)*(D-I) + I)\(I*u);
+    phi = phi + Aj(j)*(D-I)*phi_j;
 end
 
 

@@ -10,12 +10,12 @@ clc;
 k = 4;
 
 
-Ns = [10 20 40 80 160];
+Ns = [2 3 4 5];
 u = [1 1 1]/sqrt(3);
 figure;
 resvec = cell(length(Ns),1);
 for n = 1:length(Ns)
-    m = mshSphere(Ns(n),1);
+    m = mshTetra(n);
     [lambda,niter(n),resvec{n}] = solveSingleLayer(m,k,u);
     resvec{n}(resvec{n}==0) = 1e-15;
     semilogy(1:(niter(n)+1),resvec{n},'DisplayName',num2str(Ns(n)));

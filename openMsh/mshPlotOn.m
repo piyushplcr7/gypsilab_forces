@@ -42,7 +42,7 @@ switch mesh.type
             set(H,'Marker','x','MarkerEdgeColor','k','MarkerSize',5);
             set(H,'EdgeColor','interp','FaceVertexCData',colorData);
         else
-            set(H,'EdgeColor','flat','FaceVertexCData',colorData,'LineWidth',2);
+            set(H,'EdgeColor','flat','FaceVertexCData',colorData(H.Faces(:,1)),'LineWidth',2);
             set(H,'Marker','none');
             
         end

@@ -1,4 +1,4 @@
-function [mesh,I] = mshBoundary(mesh)
+function [bound,I] = mshBoundary(mesh)
 %+========================================================================+
 %|                                                                        |
 %|                 OPENMSH - LIBRARY FOR MESH MANAGEMENT                  |
@@ -43,8 +43,8 @@ elseif (size(mesh.elt,2) == 2)
     elt = find(mlt==1);
     
     % Inherit colours 
-    [mesh,~,I] = intersect(msh(mesh.vtx,elt),part);
-    mesh.col    = part.col(I);
+    [bound,~,I] = intersect(msh(mesh.vtx,elt),part);
+    bound.col    = part.col(I);
     
 % Triangular mesh
 elseif (size(mesh.elt,2) == 3)
@@ -59,9 +59,9 @@ elseif (size(mesh.elt,2) == 3)
     
     % Inherit colours
     edges       = mesh.edg;   
-    [mesh,~,IB] = intersect(msh(vtx,elt),edges);
-    mesh.col    = edges.col(IB);
-    
+    [bound,~,IB] = intersect(msh(vtx,elt),edges);
+    bound.col    = edges.col(IB);
+    bound = swap(bound); % The normals are always reversed.
 % Tetrahedral mesh
 elseif (size(mesh.elt,2) == 4)
     % Triangular boundary
@@ -75,9 +75,13 @@ elseif (size(mesh.elt,2) == 4)
     
     % Inherit colours
     face        = mesh.fce;   
-    [mesh,~,IB] = intersect(msh(vtx,elt),face);
-    mesh.col    = face.col(IB);
+    [bound,~,IB] = intersect(msh(vtx,elt),face);
+    bound.col    = face.col(IB);
 else
     error('mshBoundary.m : unavailable case')
 end
+
+
+
+
 end

@@ -29,19 +29,40 @@ function mesh = mshSphere(N,rad)
 %|  `---'  |                                                              |
 %+========================================================================+
 
-% Fibonnacci rules
-or     = (1+sqrt(5))/2;
-theta  = (mod((2*pi/or) .* (0:N-1),2*pi))';
-phi    = asin( -1 + 2/(N-1) * (0:N-1))';
 
-% Carthesian coordinates
-[x,y,z] = sph2cart(theta,phi,rad);
-X       = [0 0 0 ; x y z];
 
-% Delaunay triangulation
-DT        = delaunayTriangulation(X);
-[elt,vtx] = freeBoundary(DT);
+if N==6
+    theta = [pi/2 0 0 0 0 -pi/2]';
+    phi = [0 0 pi/2 pi 3*pi/2 0]';
+    [x,y,z] = sph2cart(theta,phi,rad);
+    X       = [0 0 0 ; x y z];
+    
+    % Delaunay triangulation
+    DT        = delaunayTriangulation(X);
+    [elt,vtx] = freeBoundary(DT);
+    
+    % Mesh
+    mesh = msh(vtx,elt);
+else
+    % Fibonnacci rules
+    or     = (1+sqrt(5))/2;
+    theta  = (mod((2*pi/or) .* (0:N-1),2*pi))';
+    phi    = asin( -1 + 2/(N-1) * (0:N-1))';
+    
+    % Carthesian coordinates
+    [x,y,z] = sph2cart(theta,phi,rad);
+    X       = [0 0 0 ; x y z];
+    
+    % Delaunay triangulation
+    DT        = delaunayTriangulation(X);
+    [elt,vtx] = freeBoundary(DT);
+    
+    % Mesh
+    mesh = msh(vtx,elt);
+    
+end
 
-% Mesh
-mesh = msh(vtx,elt);
+
+
+
 end

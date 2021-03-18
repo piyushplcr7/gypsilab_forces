@@ -125,7 +125,7 @@ for el = 1:Nelt
         % Distance r = |yg-x|
         Rxy               = sqrt(XY1.^2 + XY2.^2);
         logRxy            = log(Rxy);
-        logRxy(Rxy<1e-12) = 0;
+        logRxy(Rxy<1e-12) = log(1e-12);
         
         % Int_el(log(|r|)) - Sum_g log(|yg-x|)
         logR = logR - logRxy * Wy(Iy);

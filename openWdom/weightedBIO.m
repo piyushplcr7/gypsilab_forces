@@ -27,7 +27,7 @@ if N < Ncompress
         Gxy(:,j) = G.eval(norm3D(X-X(j,:)));
     end
     rq = 0;
-    loc = 0;
+    cP = 0;
 else
     a = lambda/N^(2/3);
     disp('Computing EBD')

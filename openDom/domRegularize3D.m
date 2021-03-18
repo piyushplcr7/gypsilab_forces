@@ -221,7 +221,7 @@ for el = 1:Nelt
                     NxNUj     = cross(Nel,NUel(j,:));
                     V{1}(:,j) = NxNUj(1)/hj .* Rm1;
                     V{2}(:,j) = NxNUj(2)/hj .* Rm1;
-                    V{3}(:,j) = NxNUj(3)/hj .* Rm1;
+                    V{3}(:,j) = NxNUj(3)/hj .* Rm1;  
                     
                 elseif strcmp(green,'grady[1/r]') && strcmp(v.opr,'n*[psi]')
                     V(:,j) = tmp .* (gradRm1 * Nel');

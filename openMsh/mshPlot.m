@@ -12,6 +12,7 @@ end
 assert(or(size(colorData,1) == length(mesh),ischar(colorData)));
 H = patch('Faces',mesh.elt, 'Vertices',mesh.vtx,'Marker','o');
 
+axis equal
 switch mesh.type
     case 'point'
         if ischar(colorData)
@@ -24,11 +25,11 @@ switch mesh.type
             set(H,'Marker','x','MarkerEdgeColor',colorData,'MarkerSize',5);
             set(H,'EdgeColor',colorData,'LineWidth',2);
         else
-            color2 = zeros(mesh.nvtx,1);
-            color2(mesh.elt(:,1)) = colorData;
+            color2 = colorData;
             set(H,'EdgeColor','flat','FaceVertexCData',color2,'LineWidth',2);
             set(H,'Marker','x','MarkerEdgeColor','k','MarkerFaceColor','none','MarkerSize',5);
         end
+        set(H,'Marker','none');
         
     case 'triangle'
         if ischar(colorData)
@@ -40,7 +41,7 @@ switch mesh.type
         
     case 'tetrahedron'
         
-        m = mesh.bnd; % as we cannot se the interior...
+        m = mesh.bnd; % as we cannot see the interior...
         
         for i = 1:mesh.nelt % In this loop : assign to each face the color
             % of one associated tetrahedron that it touches. Faces will be

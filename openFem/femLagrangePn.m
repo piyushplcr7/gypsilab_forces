@@ -506,6 +506,32 @@ elseif strcmp(fe.opr(1:end-1),'nxgrad[psi]')
     M = spdiags(N(:,jp1),0,m,m) * uqm{jp2} - ...
         spdiags(N(:,jp2),0,m,m) * uqm{jp1};
     
+    
+%%% TRACE OPERATOR
+elseif strcmp(fe.opr,'gamma[psi]')
+    if strcmp(fe.typ,'P0')
+        
+    else
+    end
+    
+    
+%%% EXTENSION
+elseif strcmp(fe.opr,'ext[psi]')
+    tmp     = fem(domain.msh,fe.typ);
+    tmp.opr = '[psi]';
+    Tr = trace(tmp);
+    ExtMat = Tr.';
+    
+    M     = tmp.uqm(domain)*ExtMat;
+
+%%%% GRADIENT OF EXTENSION    
+elseif strcmp(fe.opr,'gradext[psi]')
+    tmp     = fem(domain.msh,fe.typ);
+    tmp.opr = '[psi]';
+    Tr = trace(tmp);
+    tmp = grad(tmp);
+    ExtMat = Tr.';
+    M     = femMultiplyCell(tmp.uqm(domain),ExtMat);
 else
     error('femLagrangePn.m : unavailable case')
 end
