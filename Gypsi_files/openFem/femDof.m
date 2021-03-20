@@ -68,6 +68,11 @@ elseif strcmp(fe.typ,'RWG')
         [face,elt2dof] = fe.msh.fce;
         X              = face.ctr;
     end
+elseif strcmp(fe.typ(1:5),'multi')
+    [X,elt2dof] = dofMS(fe);
+    
+   
+    
     
 % Others
 else

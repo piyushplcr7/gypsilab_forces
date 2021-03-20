@@ -618,13 +618,15 @@ classdef msh
         end
         
         % Rotation
-        function mesh = rotate(mesh,U,phi)
-            % Rotate by angle phi around vector U in trigonometric
+        function mesh = rotate(mesh,center,U,phi)
+            % Rotate by angle phi around axis center + kU in trigonometric
             % direction. 
             N        = U./norm(U);
-            mesh.vtx = cos(phi) * mesh.vtx + ...
-                (1-cos(phi)) .* ((mesh.vtx*N')*N) + ...
-                sin(phi) .* cross(ones(size(mesh.vtx,1),1)*N,mesh.vtx,2);
+            mtemp = translate(mesh,-center);
+            mtemp.vtx = cos(phi) * mtemp.vtx + ...
+                (1-cos(phi)) .* ((mtemp.vtx*N')*N) + ...
+                sin(phi) .* cross(ones(size(mtemp.vtx,1),1)*N,mtemp.vtx,2);
+            mesh = translate(mtemp,center);
         end
         
         % Swap

@@ -53,6 +53,8 @@ elseif strcmp(fe.typ,'RWG')
     M = femRaoWiltonGlisson(fe,domain);
 elseif strcmp(fe.typ,'NED')
     M = femNedelec(fe,domain);
+elseif strcmp(fe.typ(1:5),'multi')
+    M = femMultiScreen(fe,domain);
 else
     error('fem.m : unavailable case')
 end

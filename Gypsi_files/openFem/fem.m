@@ -42,7 +42,7 @@ methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%% CONSTRUCTOR %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function fe = fem(mesh,str)
         if nargin == 0
-            % Needed for child class. Martin A 22/09/2020
+            % Needed for child class
             return
         end
         fe.typ = str;
