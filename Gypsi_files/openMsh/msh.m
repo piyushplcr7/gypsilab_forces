@@ -341,6 +341,9 @@ classdef msh
         
         % Edge normals
         function Nu = nrmEdg(mesh,I)
+            if ~exist('I','var')||isempty(I)
+                I = 1:mesh.nelt;
+            end
             switch mesh.type
                 case 'point'
                     error('No meaningful edge normal on point meshes')

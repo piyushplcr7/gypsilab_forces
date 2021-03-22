@@ -53,7 +53,9 @@ ctr  = Ydom.msh.ctr;
 nrm  = Ydom.msh.nrm;
 stp  = Ydom.msh.stp;
 srf  = Ydom.msh.ndv;
-tau  = cell2mat(Ydom.msh.tgt);
+tau  = Ydom.msh.tgt;
+tau2{1} = tau{2}; tau2{2} = tau{3}; tau2{3} = tau{1};
+tau = cell2mat(tau2);
 nu   = cell2mat(Ydom.msh.nrmEdg);
 Nelt = size(elt,1);
 

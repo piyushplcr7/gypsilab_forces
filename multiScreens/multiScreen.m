@@ -56,7 +56,9 @@ classdef multiScreen
         function[b] = bnd(this)
             b = bnd(this.singleMesh);
         end
-        
+        function[M] = regularize(varargin)
+            
+        end
         
         
     end
