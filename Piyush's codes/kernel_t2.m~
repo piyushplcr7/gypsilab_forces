@@ -1,0 +1,3 @@
+function out = kernel_t2(x,y,nu)
+if norm
+end

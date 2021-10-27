@@ -255,6 +255,11 @@ methods
         M = femUnk2Qud(fe,domain);
     end
     
+    % Get the reference shape functions
+    function rsfs = rsf(fe)
+       rsfs = femRSF(fe); 
+    end
+    
     
     
     % UNKNOWNS DATA TO VERTEX

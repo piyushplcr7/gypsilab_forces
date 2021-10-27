@@ -37,8 +37,11 @@ end
 
 % Nodes
 str = fgets(fid);
+i=0;
 while isempty(strfind(str,'Vertices'))
     str = fgets(fid);
+    i = i+1;
+    disp(i);
 end
 Nvtx = str2double(fgets(fid));
 vtx  = zeros(Nvtx,3);

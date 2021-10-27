@@ -1,0 +1,59 @@
+% inputs: mesh needs to be a boundary mesh as we need to compute the full
+% gradients at the boundary
+
+function sg = energyshapegradient(mesh,g,nu)
+
+bnd_mesh = mesh.bnd;
+
+% getting the state solution
+psi = Dirichlet_DFK(bnd_mesh,g);
+% getting the adjoint solution
+p = bem_sg_adjoint(bnd_mesh,g);
+
+% Creating the necessary BEM spaces
+S1_Gamma = fem(bnd_mesh,'P1');
+S0_Gamma = fem(bnd_mesh,'P0');
+S1_Omega = fem(mesh,'P1');
+S0_Omega = fem(mesh,'P0');
+
+% Creating the integration domains
+Gamma = dom(mesh,3);
+Omega = dom(mesh,3);
+
+g_N = g(S1_Omega.dof);
+
+% Evaluating the coefficients for gradient of g, which lies in the space P0
+gradg = cell(3,1);
+% Computing the LHS Mass matrix
+M00 = integral(Omega,S0_Omega,S0_Omega);
+% Computing the RHS Matrix X vector
+
+% Getting coefficients of gradu in terms of basis functions of gradspace
+gradg{1} = M00\(integral(Omega,S0_Omega,grad(S1_Omega,1)) * g_N);
+gradg{2} = M00\(integral(Omega,S0_Omega,grad(S1_Omega,2)) * g_N);
+gradg{3} = M00\(integral(Omega,S0_Omega,grad(S1_Omega,3)) * g_N);
+
+% Getting the P0_Omega to P0_Gamma trace operator
+tr_opr = P0_vol_to_bnd(mesh);
+
+% Getting gradg at the boundary dofs
+gradgb = cell(3,1);
+gradgb{1} = tr_opr * gradg{1};
+gradgb{2} = tr_opr * gradg{2};
+gradgb{3} = tr_opr * gradg{3};
+
+% Getting coefficients for gradg.nu, 
+gradgvec = [gradgb{1} gradgb{2} gradgb{3}];
+nuvec = nu(S0_Gamma.dof);
+gradg_nu = sum(gradgvec.*nuvec,2);
+
+% Calculating the individual terms for the shape gradient
+
+% T1 
+M00_bnd = integral(Gamma,S0_Gamma,S0_Gamma);
+T1 = psi' * M00_bnd * gradg_nu;
+
+% T6
+T6 = p'
+
+end
