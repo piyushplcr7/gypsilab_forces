@@ -45,6 +45,15 @@ vtx = [A';B';C';];
 elt = [1 2 3];
 mesh = msh(vtx,elt);
 
+KV = @(x,y,z) sqrt(1./ sum(z.^2 ,2) ) /4./pi;
+
+S0_Gamma = fem(mesh,'P0');
+mesh=refine(mesh,3);
+% Getting a matrix using Sauter and Schwab based panel oriented assembly
+M = panel_oriented_assembly(mesh,KV,S0_Gamma,S0_Gamma);
+
+mesh = refine(mesh,2);
+
 S0_Omega = fem(mesh,'P0');
 Omega = dom(mesh,3);
 plot(mesh);
@@ -55,6 +64,8 @@ V = 1/4./pi * integral(Omega,Omega,S0_Omega,Gxy,S0_Omega);
 V = V + 1/4./pi * regularize(Omega,Omega,S0_Omega,'[1/r]',S0_Omega);
 
 sum(sum(V))
+
+%%
 
 % Defining the kernel for DL
 GradG = cell(3,1);

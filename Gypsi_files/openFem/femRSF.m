@@ -34,9 +34,9 @@ function rsfs = femRSF(fe)
                 %rsfs{1} = @(X) 1 - X(1) - X(2);
                 %rsfs{2} = @(X) X(1);
                 %rsfs{3} = @(X) X(2);
-                rsfs{1} = @(X) 1 - X(1); % support at 0,0
-                rsfs{2} = @(X) X(1) - X(2); % support at 1,0 
-                rsfs{3} = @(X) X(2); % support at 1,1
+                rsfs{1} = @(X) 1 - X(1); % support at 0,0 or A
+                rsfs{2} = @(X) X(1) - X(2); % support at 1,0 or B
+                rsfs{3} = @(X) X(2); % support at 1,1 or C
        end
     end
 end

@@ -1,0 +1,7 @@
+#square and square, nu_xymn_2
+#MM NN: 5 1
+#quadrature order: 16
+#numpanels            c*(gradu.n)^2                      BEM        0.5*(gradu)^2 ex.       Boundary Formula 1       Boundary Formula 2
+      2800                        0        0.652335864362232                        0        0.628897414232362        0.628897414232362                        0
+      5600                        0        0.662532917629937                        0        0.644016903570359        0.644016903570359                        0
+      8400                        0          0.6673936664403                        0        0.651243680657157        0.651243680657157                        0

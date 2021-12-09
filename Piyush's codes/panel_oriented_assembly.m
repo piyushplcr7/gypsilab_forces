@@ -1,22 +1,32 @@
 % Panel oriented assembly for double integral with a kernel in 3D
 
 function M = panel_oriented_assembly(mesh,kernel,trial_space,test_space)
+
     % Number of elements in the mesh
-    N = mesh.elt;
+    N = size(mesh.elt,1);
     
     M = zeros(test_space.ndof,trial_space.ndof);
+    
+    % Vector storing volume of the mesh elements
+    vols = mesh.ndv;
     
     % Convention: panel i <-> chi_tau //////<-> hbasisx
     %             panel j <-> chi_t   //////<-> hbasisy
     
     % Double loop over the mesh elements
     for i = 1:N
-        area_i = mesh.ndv(i);
-        g_tau = @(x) area_i;
+        area_i = vols(i);
+        % The Jacobian of transformation from the panel in 3D to reference
+        % triangle of area 0.5
+        g_tau = @(x) 2 * area_i;
         
        for j = 1:N
-          area_j = mesh.ndv(j);
-          g_t = @(y) area_j;
+          area_j = vols(j);
+          % The Jacobian of transformation from the panel in 3D to reference
+          % triangle of area 0.5
+          g_t = @(y) 2 * area_j;
+          
+          %fprintf("Reached element i,j = %d, %d",i,j);
           
           % Finding the relation between panels i and j 
           intersection = intersect(mesh.elt(i,:),mesh.elt(j,:));
@@ -24,13 +34,16 @@ function M = panel_oriented_assembly(mesh,kernel,trial_space,test_space)
           l = length(intersection);
           switch l
               case 0
-                  relation = "far";
-                  Ai = mesh.elt(i,1);
-                  Bi = mesh.elt(i,2);
-                  Ci = mesh.elt(i,3);
-                  Aj = mesh.elt(j,1);
-                  Bj = mesh.elt(j,2);
-                  Cj = mesh.elt(j,3);
+                  relation = "far_away";
+                  % Vertices for elt i
+                  Ai = mesh.vtx(mesh.elt(i,1),:)';
+                  Bi = mesh.vtx(mesh.elt(i,2),:)';
+                  Ci = mesh.vtx(mesh.elt(i,3),:)';
+                  % Vertices for elt j
+                  Aj = mesh.vtx(mesh.elt(j,1),:)';
+                  Bj = mesh.vtx(mesh.elt(j,2),:)';
+                  Cj = mesh.vtx(mesh.elt(j,3),:)';
+                  % Parameterizations
                   chi_tau = @(xhat) Ai + [Bi-Ai Ci-Bi]*xhat;
                   chi_t = @(yhat) Aj + [Bj-Aj Cj-Bj]*yhat;
                   ABC_elti = mesh.elt(i,:);
@@ -38,7 +51,7 @@ function M = panel_oriented_assembly(mesh,kernel,trial_space,test_space)
                   
               case 1
                   relation = "common_vertex";
-                  Ai = vtcs(1); Aj = Ai;
+                  Ai = vtcs(1,:)'; Aj = Ai;
                   diffi = setdiff(mesh.elt(i,:),intersection);
                   BCi = mesh.vtx(diffi,:);
                   Bi = BCi(1,:)';
@@ -88,7 +101,9 @@ function M = panel_oriented_assembly(mesh,kernel,trial_space,test_space)
           ts_typ = test_space.typ;
           
           local_matrix = zeros(Qtr,Qts);
-          
+          if i==2 && j==4
+              disp('hi');
+          end
           for ii = 1:Qts
               for jj = 1:Qtr
                   local_matrix(ii,jj) = sstri_integrate(kernel,rsf_ts{ii},rsf_tr{jj},chi_tau,chi_t,g_tau,g_t,relation);
