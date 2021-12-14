@@ -2,8 +2,8 @@
 % the correct form. Implementation done for Triangle reference elements
 function integral = sstri_integrate(kernel,hbasisx,hbasisy,chi_tau,chi_t,g_tau,g_t,relation)
     integral = 0;
-    load('X','X');
-    load('W','W');
+    %load('X','X');
+    %load('W','W');
 
     % definition for k3
     % For vectorized operations X is assumed to be of size N X 4 where each

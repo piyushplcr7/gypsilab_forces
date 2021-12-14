@@ -3,6 +3,11 @@
 close all; clc; clear;
 addpath(genpath("../../"));
 
+global X;
+global W;
+load('X','X');
+load('W','W');
+
 % Initializing parameters for the problem
 N = 30;
 % Radius of spheres

@@ -1,7 +1,9 @@
 % Function to integrate on the 4 dimensional cube, hard coded n = 5
 function integral = integrate4dim(f)
-load('X','X');
-load('W','W');
+%load('X','X');
+%load('W','W');
+global X;
+global W;
 %     w = [0.568888888888889;
 %            0.478628670499367;
 %            0.478628670499367;
