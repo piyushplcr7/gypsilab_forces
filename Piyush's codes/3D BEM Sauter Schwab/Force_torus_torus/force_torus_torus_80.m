@@ -1,12 +1,12 @@
 %function [] = force_cube_cube_ext(N)
 
 close all; clc; clear;
-addpath(genpath("../../"));
+addpath(genpath("../../../"));
 
 global X;
 global W;
-load('X','X');
-load('W','W');
+load('X3','X');
+load('W3','W');
 
 % Initializing parameters for the problem
 
@@ -14,7 +14,7 @@ load('W','W');
 r1 = 10;
 r2 = 3;
 
-N = 100;
+N = 80;
 
 % distance between the centers
 dist = 40;
@@ -32,7 +32,7 @@ mesh_out.vtx = mesh_out.vtx + trans;
 rng(10);
 A = rand(3,3);
 [Q,R] = qr(A);
-%mesh_in.vtx = mesh_in.vtx * Q;
+mesh_in.vtx = mesh_in.vtx * Q;
 
 % Join to create the final mesh
 mesh = union(mesh_in,mesh_out);
@@ -176,5 +176,10 @@ sum(sum(t2matx))
 forcex = dot(Psi,t2matx * Rho)
 forcey = dot(Psi,t2maty * Rho)
 forcez = dot(Psi,t2matz * Rho)
+
+str1 = "Torus_Torus_";
+fname = append(str1,int2str(N));
+save(fname);
+exit;
 
 %end
