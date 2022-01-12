@@ -5,11 +5,11 @@ addpath(genpath("../../"));
 
 global X;
 global W;
-load('X','X');
-load('W','W');
+load('X3','X');
+load('W3','W');
 
 % Initializing parameters for the problem
-N = 30;
+N = 100;
 % Radius of spheres
 Rad = 10;
 % distance between the centers
@@ -168,6 +168,8 @@ t2matx = panel_oriented_assembly(mesh,kernelx,S0_Gamma,S0_Gamma);
 sum(sum(t2matx))
 
 forcex = dot(Psi,t2matx * Rho)
+
+forcex_ratio_unit = forcex/force_unit
 %forcevals = [forcevals; force];
 
 %end
