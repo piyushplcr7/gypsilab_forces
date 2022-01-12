@@ -1,15 +1,16 @@
 %function [] = force_cube_cube_ext(N)
 
-close all; clc; clear;
+%close all; clc; clear;
 addpath(genpath("../../"));
 
 global X;
 global W;
-load('X','X');
-load('W','W');
+
+load('X3','X');
+load('W3','W');
 
 % Initializing parameters for the problem
-N = 50;
+N = 40;
 %N  = getenv('TESTVAR');
 %disp(N);
 % Dimensions of the cube
@@ -72,7 +73,7 @@ M = integral(Gamma,S0_Gamma,S0_Gamma);
 
 % Defining the Dirichlet boundary condition
 R = 1.1; % Cutoff radius, also used for the velocity field
-g = @(X) (sqrt(sum(X.^2,2)) > R)*(1) + (sqrt(sum(X.^2,2)) <= R)*3;
+g = @(X) (sqrt(sum(X.^2,2)) > R)*(2) + (sqrt(sum(X.^2,2)) <= R)*4;
 
 figure;
 plot(mesh);
@@ -175,5 +176,5 @@ forcez = dot(Psi,t2matz * Rho)
 str1 = "Cube_Cube_";
 fname = append(str1,int2str(N));
 save(fname);
-exit;
+
 %end
