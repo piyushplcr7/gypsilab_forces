@@ -5,39 +5,49 @@ addpath(genpath("../../"));
 
 global X;
 global W;
-load('X','X');
-load('W','W');
+
+load('X3','X');
+load('W3','W');
 
 % Initializing parameters for the problem
+N = 100;
 
-% Torus radii
-r1 = 10;
-r2 = 3;
+% Radius of the sphere
+Rad = 5;
 
-N = 30;
-
-% distance between the centers
-dist = 30;
+% Radii for the torus
+r1 = 5;
+r2 = 2;
 
 % Mesh for the geometry
-mesh_in = mshTorus(N,r1,r2);
-mesh_out = mesh_in;
+mesh_out = mshSphere(N,Rad);
 
-% Translate the outer torus
+mesh_in = mshTorus(N,r1,r2);
+
+% Translate the outer sphere
+tx = 15;
+ty = 0;
+tz = 0;
+dist = norm([tx ty tz]);
+
 N_vtcs = size(mesh_out.vtx,1);
-trans = ones(N_vtcs,1) * [dist dist 0];
+trans = ones(N_vtcs,1) * [tx ty tz];
 mesh_out.vtx = mesh_out.vtx + trans;
 
 % Rotate the inner torus
-
+rng(10);
+A = rand(3,3);
+[Q,R] = qr(A);
+mesh_in.vtx = mesh_in.vtx * Q;
 
 % Join to create the final mesh
 mesh = union(mesh_in,mesh_out);
 
 figure;
-plot(mesh); 
+plot(mesh);
 title('Mesh');
-%%
+
+%% BEM 
 
 % Definition of FEM spaces and integration rule
 S1_Gamma = fem(mesh,'P1');
@@ -69,21 +79,14 @@ K = K +1/(4*pi)*regularize(Gamma,Gamma,S0_Gamma,'grady[1/r]',ntimes(S0_Gamma));
 M = integral(Gamma,S0_Gamma,S0_Gamma);
 
 % Defining the Dirichlet boundary condition
-% Cutoff radius for the BC
-%R = 1; 
-R = dist/2;
-%assert(R < Rad + s);
-Vin = 10;
-Vout = 10;
-g = @(X) (sqrt(sum(X.^2,2)) > R)* Vout + (sqrt(sum(X.^2,2)) <= R) * Vin;
+R = 8.5; % Cutoff radius, also used for the velocity field
+g = @(X) (sqrt(sum(X.^2,2)) > R)*(2) + (sqrt(sum(X.^2,2)) <= R)*4;
 
-% Checking the boundary condition
 figure;
 plot(mesh);
 hold on;
-PI_g = g(S0_Gamma.dof);
-plot(mesh,PI_g);
-title('Boundary condition');
+plot(mesh,g(S0_Gamma.dof));
+title('Dirichlet Boundary Condition');
 colorbar;
 
 % Constructing the RHS
@@ -92,6 +95,7 @@ g_N = integral(Gamma,S0_Gamma,g);
 % Exterior problem
 Psi = V\((-0.5 * M + K)* (M\g_N));
 
+% Getting Neumann trace on the two distinct surfaces
 Psi_in = Op_in * Psi;
 Psi_out = Op_out * Psi;
 
@@ -101,7 +105,7 @@ Rho = V\(-0.5 * g_N);
 % Visualizing the Neumann trace
 dofs = S0_Gamma.dof;
 normals = mesh.nrm;
-sPsi = 2*Psi;
+sPsi = -2*Psi;
 figure;
 plot(mesh);
 hold on;
@@ -117,45 +121,26 @@ plot(mesh,Psi);
 title("Surface charge density");
 colorbar;
 
-%%
-% Classical formula for force evaluation
+%% Torque evaluation using maxwell stress tensor on the inner object
+Xcg = [0 0 0];
+centers = mesh_in.ctr;
+Xvec = centers-(centers(:,1)==centers(:,1))*Xcg;
 normals_in = mesh_in.nrm;
-classical_force_in = 0.5 * sum( mesh_in.ndv .* Psi_in.^2.* normals_in, 1)
-
-% Alternative approach to calculating the integral shown above?
-
-charge_in = sum( mesh_in.ndv .* Psi_in, 1)
-
-normals_out = mesh_out.nrm;
-
-classical_force_out = 0.5 * sum( mesh_out.ndv .* Psi_out.^2.* normals_out, 1)
-charge_out = sum( mesh_out.ndv .* Psi_out, 1)
-
-% Analytical formula for s -> 0
-%force_exact = force_spheres(dist,Rad,1,Vin-Vout)
-coulomb_force = charge_in * charge_out / 4 / pi / dist^2
-
-force_unit = charge_in * charge_out / 4 / pi / Rad^2;
-
-force_ratio_unit = norm(classical_force_in)/force_unit
-
-force_ratio = norm(classical_force_in)/coulomb_force
-
-force_ratio_analytic = force_identical_spheres(Rad/dist)
+torque_mst = 0.5 * sum( Psi_in.^2.*cross(Xvec,normals_in) ,1)
 
 %%
 % Choice of velocity field for force computation
 % Input = N X 3, output = N X 3
 
-% Velocity fields for the far away sphere
+% Velocity fields for the far away cube
 %Nux = @(X) (sum(X.*X,2)>R*R).*[X(:,1)==X(:,1), 0 * X(:,1) , 0 * X(:,1)];
 %Nuy = @(X) (sum(X.*X,2)>R*R).*[0*X(:,1), X(:,2)==X(:,2) , 0 * X(:,1)];
 %Nuz = @(X) (sum(X.*X,2)>R*R).*[0* X(:,1), 0 * X(:,1) , X(:,3)==X(:,3)];
 
-% Velocity fields for the near sphere
-Nux = @(X) (sum(X.*X,2)<R*R).*[X(:,1)==X(:,1), 0 * X(:,1) , 0 * X(:,1)];
-Nuy = @(X) (sum(X.*X,2)<R*R).*[0*X(:,1), X(:,2)==X(:,2) , 0 * X(:,1)];
-Nuz = @(X) (sum(X.*X,2)<R*R).*[0* X(:,1), 0 * X(:,1) , X(:,3)==X(:,3)];
+% Velocity fields for the near cube
+Nux = @(X) (sum(X.*X,2)<R*R).* cross([X(:,1)==X(:,1), 0*X(:,1), 0*X(:,1)],X-Xcg);
+Nuy = @(X) (sum(X.*X,2)<R*R).* cross([0*X(:,1), X(:,1)==X(:,1), 0*X(:,1)],X-Xcg);
+Nuz = @(X) (sum(X.*X,2)<R*R).* cross([0*X(:,1), 0*X(:,1), X(:,1)==X(:,1)],X-Xcg);
 
 % Visualizing the velocity fields
 figure;
@@ -166,15 +151,24 @@ vels = Nux(vtcs);
 quiver3(vtcs(:,1),vtcs(:,2),vtcs(:,3),vels(:,1),vels(:,2),vels(:,3));
 title('Perturbation field');
 
-
 % Definition of the kernel for T2
 kernelx = @(x,y,z) sum(z.*(Nux(x) - Nux(y)), 2)./(sqrt(sum(z.^2,2)).^3)/ (4*pi);
+kernely = @(x,y,z) sum(z.*(Nuy(x) - Nuy(y)), 2)./(sqrt(sum(z.^2,2)).^3)/ (4*pi);
+kernelz = @(x,y,z) sum(z.*(Nuz(x) - Nuz(y)), 2)./(sqrt(sum(z.^2,2)).^3)/ (4*pi);
 
 t2matx = panel_oriented_assembly(mesh,kernelx,S0_Gamma,S0_Gamma);
+t2maty = panel_oriented_assembly(mesh,kernely,S0_Gamma,S0_Gamma);
+t2matz = panel_oriented_assembly(mesh,kernelz,S0_Gamma,S0_Gamma);
 
 sum(sum(t2matx))
 
 forcex = dot(Psi,t2matx * Rho)
+forcey = dot(Psi,t2maty * Rho)
+forcez = dot(Psi,t2matz * Rho)
 %forcevals = [forcevals; force];
+
+str1 = "torque_sph_tor_";
+fname = append(str1,int2str(N));
+save(fname);
 
 %end
