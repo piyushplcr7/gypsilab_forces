@@ -1,8 +1,8 @@
 %function [] = force_cube_cube_ext(N)
 
 close all; clc; clear;
-addpath(genpath("../../"));
-
+addpath(genpath("../../../"));
+format long;
 global X;
 global W;
 
@@ -18,7 +18,8 @@ Rad = 5;
 % Radii for the torus
 r1 = 5;
 r2 = 2;
-
+for N = 100:100:3000
+N
 % Mesh for the geometry
 mesh_sph = mshSphere(N,Rad);
 
@@ -125,6 +126,13 @@ hold on;
 plot(mesh,Psi);
 title("Surface charge density");
 colorbar;
+%% Checking the convergence of the Neumann trace at a point
+testpt = [Rad 0 0];
+dofs = S0_Gamma.dof;
+Ndofs = size(dofs,1);
+distances = vecnorm((dofs - ones(Ndofs,1) * testpt),2,2);
+[min_d,min_ind] = min(distances);
+Psi_testpt = Psi(min_ind)
 %% Exact solution
 % Psi_exact = -1/4/pi./vecnorm(dofs,2,2).^3 .* (dot(dofs,nrms,2));
 % 
@@ -139,18 +147,18 @@ colorbar;
 % 
 % av_err = err_vec' * V * err_vec
 %% Torque evaluation using maxwell stress tensor on the sphere
-% Xcg = [0 0 0];
-% centers = mesh_sph.ctr;
-% Xvec = centers-(centers(:,1)==centers(:,1))*Xcg;
-% normals_sph = mesh_sph.nrm;
-% torque_sph_mst = 0.5 * sum( mesh_sph.ndv.*Psi_sph.^2.*cross(Xvec,normals_sph) ,1)
+Xcg = [0 0 0];
+centers = mesh_sph.ctr;
+Xvec = centers-(centers(:,1)==centers(:,1))*Xcg;
+normals_sph = mesh_sph.nrm;
+torque_sph_mst = 0.5 * sum( mesh_sph.ndv.*Psi_sph.^2.*cross(Xvec,normals_sph) ,1)
 
 %% Torque evaluation using maxwell stress tensor on the Torus
-Xcg = [0 0 0];
-centers = mesh_tor.ctr;
-Xvec = centers-(centers(:,1)==centers(:,1))*Xcg;
-normals_tor = mesh_tor.nrm;
-torque_tor_mst = 0.5 * sum( mesh_tor.ndv.*Psi_tor.^2.*cross(Xvec,normals_tor) ,1)
+% Xcg = [0 0 0];
+% centers = mesh_tor.ctr;
+% Xvec = centers-(centers(:,1)==centers(:,1))*Xcg;
+% normals_tor = mesh_tor.nrm;
+% torque_tor_mst = 0.5 * sum( mesh_tor.ndv.*Psi_tor.^2.*cross(Xvec,normals_tor) ,1)
 
 %%
 % Choice of velocity field for force computation
@@ -171,23 +179,23 @@ quiver3(vtcs(:,1),vtcs(:,2),vtcs(:,3),vels(:,1),vels(:,2),vels(:,3));
 title('Perturbation field');
 
 % Definition of the kernel for T2
-kernelx = @(x,y,z) sum(z.*(Nux(x) - Nux(y)), 2)./(sqrt(sum(z.^2,2)).^3)/ (4*pi);
+kernelx = @(x,y,z) sum(z.*(Nux(x) - Nux(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
 kernely = @(x,y,z) sum(z.*(Nuy(x) - Nuy(y)), 2)./(sqrt(sum(z.^2,2)).^3)/ (4*pi);
 kernelz = @(x,y,z) sum(z.*(Nuz(x) - Nuz(y)), 2)./(sqrt(sum(z.^2,2)).^3)/ (4*pi);
 
-t2matx = panel_oriented_assembly(mesh,kernelx,S0_Gamma,S0_Gamma);
+%t2matx = panel_oriented_assembly(mesh,kernelx,S0_Gamma,S0_Gamma);
 %t2maty = panel_oriented_assembly(mesh,kernely,S0_Gamma,S0_Gamma);
 %t2matz = panel_oriented_assembly(mesh,kernelz,S0_Gamma,S0_Gamma);
 
 %sum(sum(t2matx))
 
-forcex = dot(Psi,t2matx * Rho)
+%forcex = dot(Psi,t2matx * Rho)
 %forcey = dot(Psi,t2maty * Rho)
 %forcez = dot(Psi,t2matz * Rho)
 %forcevals = [forcevals; force];
 
 str1 = "torque_sph_tor_";
 fname = append(str1,int2str(N));
-save(fname);
-
-%end
+%save(fname);
+close all;
+end
