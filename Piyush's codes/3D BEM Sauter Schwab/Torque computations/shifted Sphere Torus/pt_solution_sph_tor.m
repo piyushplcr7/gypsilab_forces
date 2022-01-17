@@ -10,12 +10,16 @@ rng(10);
 A = rand(3,3);
 [Q,R] = qr(A);
 
-Nvals =[];
-traces =[];
-traces_plane = [];
-
 % Initializing parameters for the problem
-N = 100;
+
+Nvals = 100:50:1700;
+sz = size(Nvals,2);
+
+l2errs = zeros(sz,1);
+averrs = zeros(sz,1);
+linferrs = zeros(sz,1);
+Tn_nearest = zeros(sz,1);
+Tn_plane = zeros(sz,1);
 
 % Radius of the sphere
 Rad = 5;
@@ -23,9 +27,9 @@ Rad = 5;
 % Radii for the torus
 r1 = 5;
 r2 = 2;
-for N = 100:50:1900
-N
-Nvals = [Nvals; N];
+for ii = 1:sz
+N = Nvals(ii)
+
 % Mesh for the geometry
 mesh_sph = mshSphere(N,Rad);
 mesh_tor = mshTorus(N,r1,r2);
@@ -60,6 +64,7 @@ ctrs = mesh.ctr;
 nrms = mesh.nrm;
 quiver3(ctrs(:,1),ctrs(:,2),ctrs(:,3),nrms(:,1),nrms(:,2),nrms(:,3));
 scatter3(0,0,0);
+scatter3(7.5,0,0);
 
 %% BEM 
 
@@ -93,8 +98,8 @@ K = K +1/(4*pi)*regularize(Gamma,Gamma,S0_Gamma,'grady[1/r]',ntimes(S0_Gamma));
 M = integral(Gamma,S0_Gamma,S0_Gamma);
 
 % Defining the Dirichlet boundary condition
-R = 8.5; % Cutoff radius, also used for the velocity field
-g = @(X) (sqrt(sum(X.^2,2)) > R)*(1.1) + (sqrt(sum(X.^2,2)) <= R)*40;
+cutoff_R = 7.5; % Cutoff radius, also used for the velocity field
+g = @(X) (sqrt(sum(X.^2,2)) > cutoff_R)*(2) + (sqrt(sum(X.^2,2)) <= cutoff_R)*4;
 %g = @(x) 1/4/pi./vecnorm(x,2,2); % Point charge at origin
 
 figure;
@@ -113,9 +118,6 @@ Psi = V\((-0.5 * M + K)* (M\g_N));
 % Getting Neumann trace on the two distinct surfaces
 Psi_tor = Proj_Op_tor * Psi;
 Psi_sph = Proj_Op_sph * Psi;
-
-% Solving the adjoint problem to get the adjoint solution
-Rho = V\(-0.5 * g_N);
 
 % Visualizing the Neumann trace
 dofs = S0_Gamma.dof;
@@ -141,10 +143,9 @@ dofs = S0_Gamma.dof;
 Ndofs = size(dofs,1);
 distances = vecnorm((dofs - ones(Ndofs,1) * testpt),2,2);
 [min_d,min_ind] = min(distances);
-Psi_testpt = Psi(min_ind)
+Tn_nearest(ii) = Psi(min_ind)
 min_d
 dofs(min_ind,:)
-traces = [traces; Psi_testpt];
 
 %% Using the plane method
 elts = mesh.elt;
@@ -159,21 +160,18 @@ end
 
 [mind_plane,minind_plane] = min(dist_elts)
 
-Psi_testpt_plane = Psi(minind_plane)
-traces_plane = [traces_plane; Psi_testpt_plane];
+Tn_plane(ii) = Psi(minind_plane)
 %% Exact solution
-% Psi_exact = -1/4/pi./vecnorm(dofs,2,2).^3 .* (dot(dofs,nrms,2));
-% 
-% % Visualizing the exactness
-% figure;
-% plot(Psi./Psi_exact);
-% 
-% err_vec = Psi-Psi_exact;
-% 
-% % L2 Error
-% l2_err = norm(err_vec)
-% 
-% av_err = err_vec' * V * err_vec
+err_vec = Psi;
+
+% L2 Error
+l2errs(ii) = err_vec' * M * err_vec %norm(err_vec)
+
+averrs(ii) = err_vec' * V * err_vec
+
+linferrs(ii) = max(abs(err_vec))
 
 close all;
 end
+
+save('dirichlet_sol_sph_tor.mat',"averrs","l2errs","Tn_plane","Tn_nearest","Nvals","linferrs");
