@@ -6,10 +6,6 @@ global W;
 load('X3','X');
 load('W3','W');
 
-rng(10);
-A = rand(3,3);
-[Q,R] = qr(A);
-
 % Initializing parameters for the problem
 
 Nvals = 100:50:1700;
@@ -24,36 +20,16 @@ Tn_plane = zeros(sz,1);
 % Radius of the sphere
 Rad = 5;
 
-% Radii for the torus
-r1 = 5;
-r2 = 2;
 for ii = 1:sz
 N = Nvals(ii)
-
 % Mesh for the geometry
-mesh_sph = mshSphere(N,Rad);
-mesh_tor = mshTorus(N,r1,r2);
-
-% Rotate the torus
-mesh_tor.vtx = mesh_tor.vtx * Q;
-
-% Translate the torus
-tx = 15;
-ty = 0;
-tz = 0;
-N_vtcs = size(mesh_tor.vtx,1);
-trans = ones(N_vtcs,1) * [tx ty tz];
-mesh_tor.vtx = mesh_tor.vtx + trans;
+mesh = mshSphere(N,Rad);
 
 % Translate the sphere
 %sph_vtcs = mesh_sph.vtx;
 %sph_vtcs(:,1) = sph_vtcs(:,1)*0.5;
 %mesh_sph.vtx = sph_vtcs;
-mesh_sph.vtx = mesh_sph.vtx + ones(size(mesh_sph.vtx,1),1) * [1 0 0];
-
-
-% Join to create the final mesh
-mesh = union(mesh_tor,mesh_sph);
+mesh.vtx = mesh.vtx + ones(size(mesh.vtx,1),1) * [1 0 0];
 
 figure;
 plot(mesh);
@@ -72,9 +48,6 @@ S1_Gamma = fem(mesh,'P1');
 S0_Gamma = fem(mesh,'P0');
 order = 3;
 Gamma = dom(mesh,order);
-
-Proj_Op_tor = restriction(S0_Gamma,mesh_tor);
-Proj_Op_sph = restriction(S0_Gamma,mesh_sph);
 
 % Solving a Direct first kind BVP to get the representation of the state
 % V Psi = (0.5*M+K) g_N (Interior problem)
@@ -97,7 +70,7 @@ K = K +1/(4*pi)*regularize(Gamma,Gamma,S0_Gamma,'grady[1/r]',ntimes(S0_Gamma));
 M = integral(Gamma,S0_Gamma,S0_Gamma);
 
 % Defining the Dirichlet boundary condition
-g = @(x) 1/4/pi./vecnorm(x,2,2); % Point charge at origin
+g = @(x) (x(:,1)==x(:,1))*1; % Point charge at origin
 
 figure;
 plot(mesh);
@@ -112,10 +85,6 @@ g_N = integral(Gamma,S0_Gamma,g);
 % Exterior problem
 Psi = V\((-0.5 * M + K)* (M\g_N));
 
-% Getting Neumann trace on the two distinct surfaces
-Psi_tor = Proj_Op_tor * Psi;
-Psi_sph = Proj_Op_sph * Psi;
-
 % Visualizing the Neumann trace
 dofs = S0_Gamma.dof;
 normals = mesh.nrm;
@@ -123,7 +92,7 @@ sPsi = -2*Psi;
 figure;
 plot(mesh);
 hold on;
-quiver3(dofs(:,1),dofs(:,2),dofs(:,3),normals(:,1).*sPsi,normals(:,2).*sPsi,normals(:,3).*sPsi,0);
+quiver3(dofs(:,1),dofs(:,2),dofs(:,3),normals(:,1).*sPsi,normals(:,2).*sPsi,normals(:,3).*sPsi);
 title('Field on the surface');
 %quiver3(dofs(:,1),dofs(:,2),dofs(:,3),normals(:,1),normals(:,2),normals(:,3));
 
@@ -159,23 +128,14 @@ end
 [mind_plane,minind_plane] = min(dist_elts)
 
 Tn_plane(ii) = Psi(minind_plane)
+
 %% Exact solution
-Psi_exact = -1/4/pi./vecnorm(dofs,2,2).^3 .* (dot(dofs,nrms,2));
-Psi_tor_exact = Proj_Op_tor * Psi_exact;
-Psi_sph_exact = Proj_Op_sph * Psi_exact;
+Psi_exact = -1/Rad * (Psi == Psi);
 
 % Visualizing the exactness
 figure;
 plot(Psi./Psi_exact);
 title('Psi/Psi exact');
-
-figure;
-plot(Psi_sph./Psi_sph_exact);
-title('Psi_sph/Psi sph exact');
-
-figure;
-plot(Psi_tor./Psi_tor_exact);
-title('Psi tor/Psi tor exact');
 
 err_vec = Psi-Psi_exact;
 
@@ -189,4 +149,4 @@ linferrs(ii) = max(abs(err_vec))
 close all;
 end
 
-save('analytic_sol_sph_tor.mat',"averrs","l2errs","Tn_plane","Tn_nearest","Nvals","linferrs");
+save('analytic_sol_sph_1.mat',"averrs","l2errs","Tn_plane","Tn_nearest","Nvals","linferrs");
