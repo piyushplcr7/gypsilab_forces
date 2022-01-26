@@ -8,17 +8,31 @@ global W;
 load('X3','X');
 load('W3','W');
 
+rng(10);
+A = rand(3,3);
+[Q,R] = qr(A);
+
 plotting = false;
 
 % Initializing parameters for the problem
+
+Nvals = 100:50:1700;
+sz = size(Nvals,2);
+
+l2errs = zeros(sz,1);
+averrs = zeros(sz,1);
+linferrs = zeros(sz,1);
+Tn_nearest = zeros(sz,1);
+Tn_plane = zeros(sz,1);
 
 % Torus radii
 r1 = 10;
 r2 = 3;
 
 N = 60;
-for N = 20:100:1500
-N
+for ii = 1:sz
+N = Nvals(ii)
+
 % distance between the centers
 dist = 40;
 
@@ -32,9 +46,6 @@ trans = ones(N_vtcs,1) * [dist 0 0];
 mesh_out.vtx = mesh_out.vtx + trans;
 
 % Rotate the inner torus
-rng(10);
-A = rand(3,3);
-[Q,R] = qr(A);
 mesh_in.vtx = mesh_in.vtx * Q;
 
 % Join to create the final mesh
@@ -175,18 +186,18 @@ kernelz = @(x,y,z) sum(z.*(Nuz(x) - Nuz(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
 
 %t2matx = panel_oriented_assembly(mesh,kernelx,S0_Gamma,S0_Gamma);
 %t2fopx = panel_oriented_assembly(mesh,karnalx,S0_Gamma,S0_Gamma);
-t2maty = panel_oriented_assembly(mesh,kernely,S0_Gamma,S0_Gamma);
+%t2maty = panel_oriented_assembly(mesh,kernely,S0_Gamma,S0_Gamma);
 %t2matz = panel_oriented_assembly(mesh,kernelz,S0_Gamma,S0_Gamma);
 
 %sum(sum(t2matx))
 
 %torquex = dot(Psi,t2matx * Rho)
 %forcex = dot(Psi,t2fopx * Rho)
-torquey = dot(Psi,t2maty * Rho)
+%torquey = dot(Psi,t2maty * Rho)
 %torquez = dot(Psi,t2matz * Rho)
 
-str1 = "Torus_Torus_";
-fname = append(str1,int2str(N));
+%str1 = "Torus_Torus_";
+%fname = append(str1,int2str(N));
 %save(fname);
 %exit;
 
