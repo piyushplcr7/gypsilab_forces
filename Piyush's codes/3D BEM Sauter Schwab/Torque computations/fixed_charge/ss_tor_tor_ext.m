@@ -12,14 +12,12 @@ A = rand(3,3);
 
 % Initializing parameters for the problem
 
-Nvals = 100:50:1700;
+Nvals = 100:100:1700;
 sz = size(Nvals,2);
 
 torque_mst = zeros(sz,3);
 force_mst = zeros(sz,3);
-linferrs = zeros(sz,1);
-Tn_nearest = zeros(sz,1);
-Tn_plane = zeros(sz,1);
+torque_bem = zeros(sz,3);
 
 % Torus radii
 r1 = 10;
@@ -121,7 +119,7 @@ force_mst(ii,:) = 0.5 * sum( mesh_in.ndv .* Psi_in.^2 .* normals ,1)
 % Velocity fields for the near sphere
 % Cutoff radius
 R = 15;
-Nux = @(X) (sum(X.*X,2)<R*R).* cross([X(:,1)==X(:,1), 0*X(:,1), 0*X(:,1)],X-Xcg);
+Nux = @(X) (sum(X.*X,2)<R*R).* cross(X(:,1)*[1 0 0],X-Xcg);
 Nuy = @(X) (sum(X.*X,2)<R*R).* cross([0*X(:,1), X(:,1)==X(:,1), 0*X(:,1)],X-Xcg);
 Nuz = @(X) (sum(X.*X,2)<R*R).* cross([0*X(:,1), 0*X(:,1), X(:,1)==X(:,1)],X-Xcg);
 
@@ -129,18 +127,23 @@ Nuz = @(X) (sum(X.*X,2)<R*R).* cross([0*X(:,1), 0*X(:,1), X(:,1)==X(:,1)],X-Xcg)
 kernelx = @(x,y,z) sum(z.*(Nux(x) - Nux(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
 kernely = @(x,y,z) sum(z.*(Nuy(x) - Nuy(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
 kernelz = @(x,y,z) sum(z.*(Nuz(x) - Nuz(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
-% kernels = cell(3,1);
-% kernels = {kernelx,kernely,kernelz};
-% torques = cell(3,1);
-% t2mats = cell(3,1);
+kernels = cell(3,1);
+kernels = {kernelx,kernely,kernelz};
+torques = cell(3,1);
+t2mats = cell(3,1);
 % 
-% parfor i = 1:3
-%     t2mats(i) = panel_oriented_assembly(mesh,kernels(i),S0_Gamma,S0_Gamma);
-%     torques(i) = dot(Psi,t2mats(i)*Psi);
-% end
+parfor i = 1:3
+    disp(i)
+    t2mats{i} = panel_oriented_assembly(mesh,kernels{i},S0_Gamma,S0_Gamma);
+    torques{i} = dot(Psi,t2mats{i}*Psi);
+end
 
 % t2matx = panel_oriented_assembly(mesh,kernelx,S0_Gamma,S0_Gamma);
 % torquex = 0.5 * dot(Psi,t2matx*Psi);
+% t2maty = panel_oriented_assembly(mesh,kernely,S0_Gamma,S0_Gamma);
+% torquey = 0.5 * dot(Psi,t2maty*Psi);
+% t2matz = panel_oriented_assembly(mesh,kernelz,S0_Gamma,S0_Gamma);
+% torquez = 0.5 * dot(Psi,t2matz*Psi);
 
 
 % Visualizing the velocity fields
@@ -153,4 +156,4 @@ quiver3(vtcs(:,1),vtcs(:,2),vtcs(:,3),vels(:,1),vels(:,2),vels(:,3));
 title('Perturbation field');
 
 end
-save('fp_tor_tor.mat',"torque_mst","force_mst","Tn_plane","Tn_nearest","Nvals","linferrs");
+save('fp_tor_tor.mat',"torque_mst","force_mst","torque_bem","Nvals");
