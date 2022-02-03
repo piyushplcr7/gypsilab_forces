@@ -12,7 +12,7 @@ A = rand(3,3);
 
 % Initializing parameters for the problem
 
-Nvals = 100:50:1700;
+Nvals = 100:200:5000;
 sz = size(Nvals,2);
 
 l2errs = zeros(sz,1);

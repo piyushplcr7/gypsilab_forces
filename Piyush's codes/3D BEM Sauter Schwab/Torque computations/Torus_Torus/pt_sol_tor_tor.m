@@ -8,7 +8,7 @@ load('W3','W');
 
 rng(10);
 A = rand(3,3);
-[Q,R] = qr(A);
+[Qrot,R] = qr(A);
 
 % Initializing parameters for the problem
 
@@ -36,25 +36,26 @@ dist = 40;
 mesh_in = mshTorus(N,r1,r2);
 mesh_out = mesh_in;
 
-% Rotate the outer torus
-mesh_out.vtx = mesh_out.vtx * Q;
-
 % Translate the outer torus
 N_vtcs = size(mesh_out.vtx,1);
 trans = ones(N_vtcs,1) * [dist 0 0];
 mesh_out.vtx = mesh_out.vtx + trans;
 
+% Rotate the inner torus
+mesh_in.vtx = mesh_in.vtx * Qrot;
+
 % Join to create the final mesh
 mesh = union(mesh_in,mesh_out);
 
 figure;
-plot(mesh);
-title('Mesh and normals');
+plot(mesh); 
+title('Mesh');
 hold on;
 % Checking the normal direction for the mesh
 ctrs = mesh.ctr;
 nrms = mesh.nrm;
 quiver3(ctrs(:,1),ctrs(:,2),ctrs(:,3),nrms(:,1),nrms(:,2),nrms(:,3));
+scatter3(r1+r2,0,0);
 
 %%
 
@@ -93,8 +94,8 @@ M = integral(Gamma,S0_Gamma,S0_Gamma);
 %R = 1; 
 R = dist/2;
 %assert(R < Rad + s);
-Vin = 10;
-Vout = 20;
+Vin = -0.007487063249394;
+Vout = 0;
 g = @(X) (sqrt(sum(X.^2,2)) > R)* Vout + (sqrt(sum(X.^2,2)) <= R) * Vin;
 
 % Checking the boundary condition
@@ -144,6 +145,7 @@ distances = vecnorm((dofs - ones(Ndofs,1) * testpt),2,2);
 Tn_nearest(ii) = Psi(min_ind)
 min_d
 dofs(min_ind,:)
+charge_in = sum( mesh_in.ndv .* Psi_in, 1)
 
 %% Using the plane method
 elts = mesh.elt;
