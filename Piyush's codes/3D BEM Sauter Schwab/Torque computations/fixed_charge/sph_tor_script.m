@@ -18,11 +18,11 @@ hvals = zeros(sz,1);
 for i = 1:sz
     disp(Nvals(i));
     % Get the mesh
-    [mesh,mesh_in,mesh_out] = tor_tor_mesh(10,3,Nvals(i),10);
+    [mesh,mesh_in,mesh_out] = sph_tor_mesh(10,3,5,Nvals(i),10);
     hvals(i) = mean(mesh.ndv,1);
-
+    
     % Solve the floating potential problem on mesh
-    [Psi,c] = solve_float_pt_ext(mesh,mesh_in,1,3,'gypsi');
+    [Psi,c] = solve_float_pt_ext(mesh,mesh_in,1e5,3,'gypsi');
     
     S0_Gamma = fem(mesh,'P0');
     Op_in = restriction(S0_Gamma,mesh_in);
