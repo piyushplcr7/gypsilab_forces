@@ -7,16 +7,15 @@ global W;
 load('X3','X');
 load('W3','W');
 
-fname = "abc.txt";
-out 
-fprintf("i    hval    force(bem)    force(MST)    torque(BEM)    torque (MST)")
-
 Nvals = 50:30:1000;
 sz = size(Nvals,2);
 torques_mst = zeros(sz,3); 
 torques_bem = zeros(sz,3);
 forces_mst = zeros(sz,3);
 forces_bem = zeros(sz,3);
+forces_bemx = zeros(sz,1);
+forces_bemy = zeros(sz,1);
+forces_bemz = zeros(sz,1);
 hvals = zeros(sz,1);
 
 for i = 1:sz
@@ -37,16 +36,33 @@ for i = 1:sz
     torques_mst(i,:) = torque_mst;
     forces_mst(i,:) = force_mst;
     
-%     % Computing the torques using BEM formula
-%     torque_bem = compute_bem_torques(mesh,18,[0,0,0],Psi);
-%     torques_bem(i,:) = torque_bem;
-%     
-%     % Computing the forces using BEM formula
-%     force_bem = compute_bem_forces(mesh,18,Psi);
-%     forces_bem(i,:) = force_bem;
+    % Computing the torques using BEM formula
+    force_bemx = compute_bem_forcex(mesh,18,Psi);
+    forces_bemx(i) = force_bemx;
 
+    fts = zeros(6,1);
 
+    parfor it = 1:6
+        switch it
+            case 1
+                force_bemx = compute_bem_forcex(mesh,18,Psi);
+                fts(it) = force_bemx;
+            case 2
+                force_bemy = compute_bem_forcex(mesh,18,Psi);
+                fts(it) = force_bemx;
+
+            case 3
+
+            case 4
+
+            case 5
+
+            case 6
+
+        end
+
+    end
     
 end
 
-save('new_script_data.mat','Nvals','forces_mst','torques_bem','torques_mst','forces_bem','hvals');
+%save('tor_tor_data.mat','Nvals','forces_mst','torques_bem','torques_mst','forces_bem','hvals');
