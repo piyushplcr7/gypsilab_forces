@@ -33,14 +33,16 @@ for i = 1:sz
     torques_mst(i,:) = torque_mst;
     forces_mst(i,:) = force_mst;
     
-%     % Computing the torques using BEM formula
-%     torque_bem = compute_bem_torques(mesh,18,[0,0,0],Psi);
-%     torques_bem(i,:) = torque_bem;
-%     
-%     % Computing the forces using BEM formula
-%     force_bem = compute_bem_forces(mesh,18,Psi);
-%     forces_bem(i,:) = force_bem;
+    % Computing the torques using BEM formula
+    torque_bem = compute_bem_torques(mesh,18,[0,0,0],Psi);
+    torques_bem(i,:) = torque_bem;
+    
+    % Computing the forces using BEM formula
+    force_bem = compute_bem_forces(mesh,18,Psi);
+    forces_bem(i,:) = force_bem;
+
+    save('sph_tor_data.mat','Nvals','forces_mst','torques_bem','torques_mst','forces_bem','hvals');
     
 end
 
-save('new_script_data.mat','Nvals','forces_mst','torques_bem','torques_mst','forces_bem','hvals');
+
