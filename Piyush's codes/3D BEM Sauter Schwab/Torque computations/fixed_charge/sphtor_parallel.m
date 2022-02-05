@@ -2,10 +2,6 @@ addpath(genpath("../../../../"));
 clear; 
 clc;
 format long;
-global X;
-global W;
-load('X3','X');
-load('W3','W');
 
 Nvals = 50:30:1000;
 sz = size(Nvals,2);
@@ -18,11 +14,11 @@ hvals = zeros(sz,1);
 for i = 1:sz
     disp(Nvals(i));
     % Get the mesh
-    [mesh,mesh_in,mesh_out] = tor_tor_mesh(10,3,Nvals(i),10);
+    [mesh,mesh_in,mesh_out] = sph_tor_mesh(10,3,5,Nvals(i),10);
     hvals(i) = mean(mesh.ndv,1);
-
+    
     % Solve the floating potential problem on mesh
-    [Psi,c] = solve_float_pt_ext(mesh,mesh_in,1,3,'gypsi');
+    [Psi,c] = solve_float_pt_ext(mesh,mesh_in,1e2,3,'gypsi');
     
     S0_Gamma = fem(mesh,'P0');
     Op_in = restriction(S0_Gamma,mesh_in);
@@ -37,5 +33,9 @@ for i = 1:sz
     [force_bem,torque_bem] = compute_bem_ft_par(mesh,18,[0,0,0],Psi);
     torques_bem(i,:) = torque_bem;
     forces_bem(i,:) = force_bem;
-    save('tor_tor_data_par.mat','Nvals','forces_mst','torques_bem','torques_mst','forces_bem','hvals');
+
+    save('sph_tor_data_par.mat','Nvals','forces_mst','torques_bem','torques_mst','forces_bem','hvals');
+    
 end
+
+
