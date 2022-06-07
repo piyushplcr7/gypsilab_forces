@@ -17,5 +17,5 @@ function out = compute_bem_forces_gypsi(mesh,Psi,nu)
 
     % Right vectors for forces
     Psi_nu = Psi.* dot(nu(dofs),normals,2);
-    out = 2*dot(Psi_nu,K*Psi);
+    out = dot(Psi_nu,K*Psi);
 end

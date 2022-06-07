@@ -3,7 +3,7 @@ clear;
 clc;
 format long;
 
-Nvals = 50:30:1000;
+Nvals = 100:100:4000;
 sz = size(Nvals,2);
 torques_mst = zeros(sz,3); 
 torques_bem = zeros(sz,3);
@@ -15,7 +15,7 @@ Nux = @(X) (vecnorm(X,2,2)<18).*[X(:,1)==X(:,1), 0 * X(:,1) , 0 * X(:,1)];
 Nuy = @(X) (vecnorm(X,2,2)<18).*[0 *  X(:,1), 1 * (X(:,1)==X(:,1)), 0 * X(:,1)];
 
 for i = 1:sz
-    disp(Nvals(i));
+    %disp(Nvals(i));
     % Get the mesh
     [mesh,mesh_in,mesh_out] = sph_tor_mesh(10,3,5,Nvals(i),10);
     hvals(i) = mean(mesh.ndv,1);
@@ -28,7 +28,7 @@ for i = 1:sz
     Psi_in = Op_in * Psi;
     
     % Computing the torques and forces using MST
-    [torque_mst,force_mst] = compute_mst_forces(mesh_in,[0,0,0],Psi_in)
+    [torque_mst,force_mst] = compute_mst_forces(mesh_in,[0,0,0],Psi_in);
     torques_mst(i,:) = torque_mst;
     forces_mst(i,:) = force_mst;
     
