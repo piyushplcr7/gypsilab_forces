@@ -25,15 +25,16 @@ for i = 1:sz
     
     S0_Gamma = fem(mesh,'P0');
     Op_in = restriction(S0_Gamma,mesh_in);
-    Psi_in = Op_in * Psi;
+    %Psi_in = Op_in * Psi;
+    Psi_in = Psi(1:mesh_in.nelt);
     
     % Computing the torques and forces using MST
-    [torque_mst,force_mst] = compute_mst_forces(mesh_in,[0,0,0],Psi_in)
+    [torque_mst,force_mst] = compute_mst_forces(mesh_in,[0,0,0],Psi_in);
     torques_mst(i,:) = torque_mst;
     forces_mst(i,:) = force_mst;
     
     % Computing the torques using BEM formula and parallelization
-    force_bem_gypsi = compute_bem_forces_gypsi(mesh,Psi,Nuy)
+    force_bem_gypsi = compute_bem_forces_gypsi(mesh,Psi,Nux)
     
     
 end
