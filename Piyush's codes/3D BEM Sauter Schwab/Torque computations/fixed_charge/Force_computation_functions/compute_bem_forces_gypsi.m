@@ -37,11 +37,11 @@ function out = compute_bem_forces_gypsi(mesh,Psi,nu)
         for j=1:N
             uqi = uqmat(:,i);
             uqj = uqmat(:,j);
-            if normest(uqi-uqj)==0
-                rhsmat(i,j) = sum(W.*uqi.*uqj.*nudotn);
-            end
+            %if normest(uqi-uqj)==0
+            rhsmat(i,j) = sum(W.*uqi.*uqj.*nudotn);
+            %end
         end
     end
     Psi_nu = M\(rhsmat * Psi);
-    out = dot(Psi_nu,K*Psi);
+    out = dot(Psi,K*Psi_nu);
 end
