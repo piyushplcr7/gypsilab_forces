@@ -38,18 +38,18 @@ for i = 1:sz
     Psi_in = Op_in * Psi;
     
     % Computing the torques using BEM formula and parallelization
-    force_bem_gypsix = compute_bem_forces_gypsi(mesh,Psi,Nux);
-    force_bem_gypsiy = compute_bem_forces_gypsi(mesh,Psi,Nuy);
-    force_bem_gypsiz = compute_bem_forces_gypsi(mesh,Psi,Nuz);
+    force_bem_gypsix = compute_bem_forces_gypsi(mesh_in,Psi_in,Nux);
+    force_bem_gypsiy = compute_bem_forces_gypsi(mesh_in,Psi_in,Nuy);
+    force_bem_gypsiz = compute_bem_forces_gypsi(mesh_in,Psi_in,Nuz);
     
-    torque_bem_gypsix = compute_bem_forces_gypsi(mesh,Psi,Nuxr);
-    torque_bem_gypsiy = compute_bem_forces_gypsi(mesh,Psi,Nuyr);
-    torque_bem_gypsiz = compute_bem_forces_gypsi(mesh,Psi,Nuzr);
+    torque_bem_gypsix = compute_bem_forces_gypsi(mesh_in,Psi_in,Nuxr);
+    torque_bem_gypsiy = compute_bem_forces_gypsi(mesh_in,Psi_in,Nuyr);
+    torque_bem_gypsiz = compute_bem_forces_gypsi(mesh_in,Psi_in,Nuzr);
 
     forces_bem(i,:) = [force_bem_gypsix,force_bem_gypsiy,force_bem_gypsiz];
     torques_bem(i,:) = [torque_bem_gypsix,torque_bem_gypsiy,torque_bem_gypsiz];
     
-    save('sph_tor_data_gypsi.mat','Nvals','forces_mst','torques_bem','torques_mst','forces_bem','hvals');
+    save('sph_tor_data_gypsi.mat','Nvals','torques_bem','forces_bem','hvals');
 end
 
 
