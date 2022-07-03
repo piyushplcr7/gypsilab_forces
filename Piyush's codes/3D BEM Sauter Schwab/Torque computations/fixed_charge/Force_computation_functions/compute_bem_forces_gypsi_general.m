@@ -1,6 +1,6 @@
 % Function to compute BEM  forces using Gypsi implementation of Double Layer Galerkin matrix. 
 %function out = compute_bem_forces_gypsi(mesh,Psi,psispace,nu,nuspace)
-function out = compute_bem_forces_gypsi(mesh,Psi,psispace,nuchar)
+function out = compute_bem_forces_gypsi_general(mesh,Psi,psispace,nu)
 
     % Force computation using the double layer. One arg is Psi, other is
     % Psi \nu \cdot n
@@ -14,7 +14,7 @@ function out = compute_bem_forces_gypsi(mesh,Psi,psispace,nuchar)
 %     nudotn = dot(nu(X),qudnrms,2);
     
     %psispace = fem(mesh,'P1');
-    nuspace = fem(mesh,nuchar);
+    nuspace = fem(mesh,'P1');
 
     GradG = cell(3,1);
     GradG{1} = @(X,Y)femGreenKernel(X,Y,'grady[1/r]1',0);
@@ -43,7 +43,7 @@ function out = compute_bem_forces_gypsi(mesh,Psi,psispace,nuchar)
     %Npsi = nuspace.ndof;
 
     %  The right sparse matrix type for rhs.
-    testmat = integral(Gamma,nuspace,ntimes(psispace));
+    testmat = integral(Gamma,nuspace,nu,ntimes(psispace));
 
 %     N = S0_Gamma.ndof;
 %     rhsmat = spalloc(N,N,3*N);
@@ -58,14 +58,10 @@ function out = compute_bem_forces_gypsi(mesh,Psi,psispace,nuchar)
 %         end
 %     end
 
-    psi_nu_1 = M\(testmat{1} * Psi);
-    psi_nu_2 = M\(testmat{2} * Psi);
-    psi_nu_3 = M\(testmat{3} * Psi);
+    psi_nu = M\(testmat{1} * Psi);
 
     %Psi_nu = M\(rhsmat * Psi);
-    F1 = dot(Psi,K*psi_nu_1);
-    F2 = dot(Psi,K*psi_nu_2);
-    F3 = dot(Psi,K*psi_nu_3);
+    F = dot(Psi,K*psi_nu);
     
-    out = [F1,F2,F3];
+    out = F;
 end
