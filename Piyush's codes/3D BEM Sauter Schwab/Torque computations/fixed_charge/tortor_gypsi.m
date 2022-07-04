@@ -31,8 +31,8 @@ for i = 1:sz
     psi_in_space0 = fem(mesh_in,'P0');
     
     % Computing the forces usinng double layer formula, P0 for solution
-    forces_gypsi00(i,:) = compute_bem_forces_gypsi(mesh_in,Psi_in0,psi_in_space0,'P0');
-    forces_gypsi01(i,:) = compute_bem_forces_gypsi(mesh_in,Psi_in0,psi_in_space0,'P1');
+    forces_gypsi00(i,:) = compute_bem_forces_gypsi(mesh,mesh_in,Psi0,S0_Gamma,'P0')
+    forces_gypsi01(i,:) = compute_bem_forces_gypsi(mesh,mesh_in,Psi0,S0_Gamma,'P1')
 
     [torque_mst,force_mst] = compute_mst_forces(mesh_in,[0,0,0],Psi_in0);
     forces_mst0(i,:) = force_mst;
@@ -43,7 +43,7 @@ for i = 1:sz
     psi_in_space1 = fem(mesh_in,'P1');
     
     % Computing the forces usinng double layer formula, P1 for solution
-    forces_gypsi11(i,:) = compute_bem_forces_gypsi(mesh_in,Psi_in1,psi_in_space1,'P1');
+    forces_gypsi11(i,:) = compute_bem_forces_gypsi(mesh,mesh_in,Psi1,S1_Gamma,'P1')
 
     Gamma = dom(mesh,3);
 
