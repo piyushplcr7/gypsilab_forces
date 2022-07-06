@@ -18,7 +18,7 @@ l2norm1 = cvals;
 for i = 1:sz
     disp(Nvals(i));
     % Get the mesh
-    [mesh,mesh_in,mesh_out] = sph_tor_mesh(10,3,5,Nvals(i),10);
+    [mesh,mesh_in,mesh_out] = tor_tor_mesh(10,3,Nvals(i),10);
     hvals(i) = mean(mesh.ndv,1);
     
     % Solve the floating potential problem on mesh
@@ -53,7 +53,9 @@ for i = 1:sz
     l2norm0(i) = dot(Psi0,M00*Psi0);
     l2norm1(i) = dot(Psi1,M11*Psi1);
     
-    save('sph_tor_data_gypsi.mat','Nvals','forces_mst0','forces_gypsi00','forces_gypsi01','forces_gypsi11','cvals','l2norm0','l2norm1','hvals');
+    save('tor_tor_data_gypsi.mat','Nvals','forces_mst0','forces_gypsi00','forces_gypsi01','forces_gypsi11','cvals','l2norm0','l2norm1','hvals');
 end
+
+
 
 
