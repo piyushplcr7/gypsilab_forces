@@ -1,3 +1,4 @@
+addpath(genpath("../../../"));
 % Testing of the implemented Sauter Schwab quadrature method.
 clear; clc;
 

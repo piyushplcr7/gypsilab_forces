@@ -31,7 +31,66 @@ function I = domIntegral6(data)
 %+========================================================================+
 
 %%% H-MATRIX BOUNDARY ELEMENT OPERATOR  --> \int_{mesh(x)} \int_{mesh(y)} psi(x)' f(x,y) psi(y) dxdy
-if isa(data{1},'dom') && isa(data{2},'dom')
+if isa(data{1},'dom') && isa(data{2},'dom') && issparse(data{6})
+    % Domain with quadrature
+    Xdom   = data{1};
+    [X,Wx] = Xdom.qud;
+    Nx     = size(X,1);
+    Wx     = spdiags(Wx,0,Nx,Nx);
+    
+    % Domain with quadrature
+    Ydom   = data{2};
+    [Y,Wy] = Ydom.qud;
+    Ny     = size(Y,1);
+    Wy     = spdiags(Wy,0,Ny,Ny);
+    
+    % Finite element matrix with integration
+    u  = data{3};
+    Mu = u.uqm(Xdom);
+    if iscell(Mu)
+        Mu{1} = Mu{1}' * Wx;
+        Mu{2} = Mu{2}' * Wx;
+        Mu{3} = Mu{3}' * Wx;
+    else
+        Mu = Mu' * Wx;
+    end  
+    
+    % Function applied to quadrature
+    F = data{4};
+    if iscell(F)
+        Fxy = {zeros(Nx,Ny),zeros(Nx,Ny),zeros(Nx,Ny)};
+        for i = 1:3
+            for j = 1:Ny
+                Fxy{i}(:,j) = F{i}(X,Y(j,:));
+            end
+        end
+    else
+        Fxy = zeros(Nx,Ny);
+        for j = 1:Ny
+            Fxy(:,j) = F(X,Y(j,:));
+        end
+    end
+    
+    % Correction for Singular Integrals
+    corr      = data{6};
+    Fxy(corr) = 0;
+    
+    
+    % Finite element matrix with integration
+    v  = data{5};
+    Mv = v.uqm(Ydom);
+    if iscell(Mv)
+        Mv{1} = Wy * Mv{1};
+        Mv{2} = Wy * Mv{2};
+        Mv{3} = Wy * Mv{3};
+    else
+        Mv = Wy * Mv;
+    end
+    
+    % Integration
+    I = femMultiplyCell(Mu,Fxy,Mv);
+
+elseif isa(data{1},'dom') && isa(data{2},'dom') && isnumeric(data{6})
     % Domain with quadrature
     Xdom   = data{1};
     [X,Wx] = Xdom.qud;

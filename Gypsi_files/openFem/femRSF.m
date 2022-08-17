@@ -15,7 +15,7 @@ function rsfs = femRSF(fe)
         switch typ
             case 'P0'
                 rsfs = cell(1,1);
-                rsfs{1} = @(X) 1;
+                rsfs{1} = @(X) ones(size(X,1),1);
             case 'P1'
                 rsfs = cell(2,1);
                 rsfs{1} = @(X) 0.5 * (1+X); % support at 1
@@ -28,15 +28,15 @@ function rsfs = femRSF(fe)
        switch typ
             case 'P0'
                 rsfs = cell(1,1);
-                rsfs{1} = @(X) 1;
+                rsfs{1} = @(X) ones(size(X,1),1);
             case 'P1'
                 rsfs = cell(3,1);
                 %rsfs{1} = @(X) 1 - X(1) - X(2);
                 %rsfs{2} = @(X) X(1);
                 %rsfs{3} = @(X) X(2);
-                rsfs{1} = @(X) 1 - X(1); % support at 0,0 or A
-                rsfs{2} = @(X) X(1) - X(2); % support at 1,0 or B
-                rsfs{3} = @(X) X(2); % support at 1,1 or C
+                rsfs{1} = @(X) 1 - X(:,1); % support at 0,0 or A
+                rsfs{2} = @(X) X(:,1) - X(:,2); % support at 1,0 or B
+                rsfs{3} = @(X) X(:,2); % support at 1,1 or C
        end
     end
 end
