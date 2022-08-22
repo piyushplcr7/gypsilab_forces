@@ -3,7 +3,7 @@ clear;
 clc;
 format long;
 
-Nvals = 11:14;
+Nvals = 12:13;
 Nvals = 2.^Nvals;
 sz = size(Nvals,2);
 sd_full = zeros(sz,1); 
@@ -83,6 +83,7 @@ for i = 1:sz
     
         % Evaluating far field with Gypsi
         A0 = integral(Gamma, Gamma, S0_Gamma, Gxy, S0_Gamma, corr);
+        %A0 = integral(Gamma, Gamma, S0_Gamma, Gxy, S0_Gamma, 1e-6, corr);
         
         t2mat = panel_assembly(mesh,kernel,S0_Gamma,S0_Gamma,Ix,Jx);
         t2mat = t2mat + A0;
