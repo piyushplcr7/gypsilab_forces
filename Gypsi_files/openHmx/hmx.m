@@ -87,6 +87,18 @@ methods
             acc   = varargin{8};
             Mh    = hmxBuilderFem(Xunk,Yunk,Mx,X,green,Y,My,acc);
             
+        elseif (nargin == 9)
+            Xunk  = varargin{1};
+            Yunk  = varargin{2};
+            Mx    = varargin{3};
+            X     = varargin{4};
+            green = varargin{5};
+            Y     = varargin{6};
+            My    = varargin{7};
+            acc   = varargin{8};
+            corr  = varargin{9};
+            Mh    = hmxBuilderFem(Xunk,Yunk,Mx,X,green,Y,My,acc,corr);
+            
         else
             error('hmx.m : undefined constructor case')
         end
