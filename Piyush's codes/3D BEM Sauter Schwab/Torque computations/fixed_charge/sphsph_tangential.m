@@ -3,7 +3,9 @@ clear;
 clc;
 format long;
 
-Nvals = 100:100:4000;
+Nvals = 3:12;
+Nvals = 2.^Nvals;
+
 sz = size(Nvals,2);
 sd_full = zeros(sz,1); 
 sd_approx = zeros(sz,1);
@@ -13,8 +15,8 @@ Xcgin = [0 0 0];
 Xcgout = [5 0 0];
 
 % Rotational fields
- %Nuin = @(X) (vecnorm(X,2,2)<R).* cross(ones(size(X,1),1)*[1 0 0],X-Xcgin);
- %Nuout = @(X) (vecnorm(X,2,2)>=R).* cross(ones(size(X,1),1)*[0 1 0],X-Xcgout);
+%Nuin = @(X) (vecnorm(X,2,2)<R).* cross(ones(size(X,1),1)*[1 0 0],X-Xcgin);
+%Nuout = @(X) (vecnorm(X,2,2)>=R).* cross(ones(size(X,1),1)*[0 1 0],X-Xcgout);
 
 Nuin = @(X) (vecnorm(X,2,2)<R).* cross(ones(size(X,1),1)*[1 0 0].* X,X-Xcgin);
 Nuout = @(X) (vecnorm(X,2,2)>=R).* cross(ones(size(X,1),1)*[0 1 0].*X,X-Xcgout);
@@ -41,11 +43,11 @@ for i = 1:sz
     Psi_in = Psi(1:mesh_in.nelt);
 
     % Plotting the velocity field
-    dofs = S0_Gamma.dof;
-    vels = Nu(dofs);
-    plot(mesh);
-    hold on;
-    quiver3(dofs(:,1),dofs(:,2),dofs(:,3), vels(:,1),vels(:,2),vels(:,3));
+%     dofs = S0_Gamma.dof;
+%     vels = Nu(dofs);
+%     plot(mesh);
+%     hold on;
+%     quiver3(dofs(:,1),dofs(:,2),dofs(:,3), vels(:,1),vels(:,2),vels(:,3));
     
     % Evluating near field with Gypsi
     Gamma = dom(mesh,7);
@@ -68,7 +70,7 @@ for i = 1:sz
     % Evaluating the shape derivative formula for tangential fields
     kernel = @(x,y,z) sum(z.*(Nu(x) - Nu(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
 
-    Gxy = @(x,y) sum((x-y).*(Nu(x) - Nu(y)), 2)./(vecnorm((x-y),2,2).^3)/ (4*pi);
+    Gxy = @(x,y) sum((y-x).*(Nu(x) - Nu(y)), 2)./(vecnorm((x-y),2,2).^3)/ (4*pi);
 
     % Evaluating far field with Gypsi
     A0 = integral(Gamma, Gamma, S0_Gamma, Gxy, S0_Gamma, corr);
