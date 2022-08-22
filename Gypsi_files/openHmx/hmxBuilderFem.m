@@ -1,4 +1,4 @@
-function Mh = hmxBuilderFem(Xunk,Yunk,Mx,X,green,Y,My,tol)
+function Mh = hmxBuilderFem(Xunk,Yunk,Mx,X,green,Y,My,tol,corr)
 %+========================================================================+
 %|                                                                        |
 %|         OPENHMX - LIBRARY FOR H-MATRIX COMPRESSION AND ALGEBRA         |
@@ -28,6 +28,11 @@ function Mh = hmxBuilderFem(Xunk,Yunk,Mx,X,green,Y,My,tol)
 %| ( === ) |   SYNOPSIS   : Finite element builder with low-rank          |
 %|  `---'  |                approximation for handle function             |
 %+========================================================================+
+
+if (nargin == 8)
+    corr = [];
+end
+
 
 % Initialisation
 Mh = hmx(Xunk,Yunk,tol);
@@ -110,11 +115,12 @@ elseif (min(size(Mh)) < 100)
         Gxy{3} = reshape(green{3}(X(I,:),Y(J,:)),Nx,Ny);
     else
         Gxy = reshape(green(X(I,:),Y(J,:)),Nx,Ny);
+        Gxy(corr) = 0;
     end
     
     % Matrix integration
-    Mh.dat = femMultiplyCell(Mx,Gxy,My);
-    
+    Mh.dat = femMultiplyCell(Mx,Gxy,My); 
+    % Ignacio: Here we multiply the block, full/sparse matrix obtained
 
 %%% H-Matrix (recursion)
 else
@@ -138,10 +144,19 @@ else
         % Fem matrix subdivision and quadratures points indices
         [Mxchd,Ix] = femSubdivideCell(Mx,Ir,'left');
         [Mychd,Iy] = femSubdivideCell(My,Ic,'right');
-
+        if size(corr) > 0
+        
+        % Recursion
+        Mh.chd{i} = hmxBuilderFem(Xunk(Ir,:),Yunk(Ic,:),...
+            Mxchd,X(Ix,:),green,Y(Iy,:),Mychd,tol, corr(Ix, Iy));
+        
+        else
+            
         % Recursion
         Mh.chd{i} = hmxBuilderFem(Xunk(Ir,:),Yunk(Ic,:),...
             Mxchd,X(Ix,:),green,Y(Iy,:),Mychd,tol);
+        end
+
     end
     
     % Fusion

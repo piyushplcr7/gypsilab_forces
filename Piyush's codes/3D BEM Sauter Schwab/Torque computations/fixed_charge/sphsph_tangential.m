@@ -3,12 +3,15 @@ clear;
 clc;
 format long;
 
-Nvals = 3:12;
-Nvals = 2.^Nvals;
+%Nvals = 12:13;
+%Nvals = 2.^Nvals;
+Nvals = 5000;
 
 sz = size(Nvals,2);
 sd_full = zeros(sz,1); 
 sd_approx = zeros(sz,1);
+
+balool = true;
 
 R = 2;
 Xcgin = [0 0 0];
@@ -49,39 +52,51 @@ for i = 1:sz
 %     hold on;
 %     quiver3(dofs(:,1),dofs(:,2),dofs(:,3), vels(:,1),vels(:,2),vels(:,3));
     
-    % Evluating near field with Gypsi
-    Gamma = dom(mesh,7);
-    elt2dof = Gamma.msh.elt;
     
-    Ndof = size(Gamma.msh.vtx, 1);
-    Nelt = size(elt2dof, 1);
-
-    Adj = sparse((1:Nelt)', elt2dof(:, 1), 1, Nelt, Ndof) + ...
-    sparse((1:Nelt)', elt2dof(:, 2), 1, Nelt, Ndof) + ...
-    sparse((1:Nelt)', elt2dof(:, 3), 1, Nelt, Ndof);
-
-
-    [I, J, Case] = find(Adj * Adj');
-
-    corr = ~~(Adj * Adj');
-
-    corr = ~~kron(corr, ones(Gamma.gss));
-
-    % Evaluating the shape derivative formula for tangential fields
-    kernel = @(x,y,z) sum(z.*(Nu(x) - Nu(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
-
-    Gxy = @(x,y) sum((y-x).*(Nu(x) - Nu(y)), 2)./(vecnorm((x-y),2,2).^3)/ (4*pi);
-
-    % Evaluating far field with Gypsi
-    A0 = integral(Gamma, Gamma, S0_Gamma, Gxy, S0_Gamma, corr);
+         % Evluating near field with Gypsi
+        Gamma = dom(mesh,7);
+        elt2dof = Gamma.msh.elt;
+        
+        Ndof = size(Gamma.msh.vtx, 1);
+        Nelt = size(elt2dof, 1);
     
-    t2mat = panel_assembly(mesh,kernel,S0_Gamma,S0_Gamma,I,J);
-    t2mat = t2mat + A0;
-    sd_approx(i) = 0.5 * dot(Psi,t2mat*Psi)
+        Adj = sparse((1:Nelt)', elt2dof(:, 1), 1, Nelt, Ndof) + ...
+        sparse((1:Nelt)', elt2dof(:, 2), 1, Nelt, Ndof) + ...
+        sparse((1:Nelt)', elt2dof(:, 3), 1, Nelt, Ndof);
 
-    t2matfull = panel_oriented_assembly(mesh,kernel,S0_Gamma,S0_Gamma);
+        Aux = Adj * Adj';
+
+        [Ix,Jx,~] = find(Aux);
+
+        corr = sparse(Ix,Jx,1,size(Aux,1),size(Aux,2));
+
+        corr = kron(corr,ones(Gamma.gss));
+
+        [Ic,Jc,~] = find(corr);
+        Ones = ones(size(Ic));
+        corr = sparse(Ic,Jc,~~Ones,size(corr,1),size(corr,2));
     
-    sd_full(i) = 0.5 * dot(Psi,t2matfull*Psi)
+        %corr = ~~(Adj * Adj');
+    
+        %corr = ~~kron(corr, ones(Gamma.gss));
+    
+        % Evaluating the shape derivative formula for tangential fields
+        Gxy = @(x,y) sum((x-y).*(Nu(x) - Nu(y)), 2)./(vecnorm((x-y),2,2).^3)/ (4*pi);
+    
+        % Evaluating far field with Gypsi
+        %A0 = integral(Gamma, Gamma, S0_Gamma, Gxy, S0_Gamma, corr);
+        A0 = integral(Gamma, Gamma, S0_Gamma, Gxy, S0_Gamma, 1e-6, corr);
+        kernel = @(x,y,z) sum(z.*(Nu(x) - Nu(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
+        t2mat = panel_assembly(mesh,kernel,S0_Gamma,S0_Gamma,Ix,Jx);
+        t2mat = t2mat + A0;
+        sd_approx(i) = 0.5 * dot(Psi,t2mat*Psi)
+    
+    
+    
+
+    %t2matfull = panel_oriented_assembly(mesh,kernel,S0_Gamma,S0_Gamma);
+    
+    %sd_full(i) = 0.5 * dot(Psi,t2matfull*Psi)
 
     save('sph_sph_tangential.mat','Nvals','sd_full','sd_approx','hvals');
     
