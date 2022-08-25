@@ -3,9 +3,9 @@ clear;
 clc;
 format long;
 
-%Nvals = 12:13;
-%Nvals = 2.^Nvals;
-Nvals = 5000;
+Nvals = 3:12;
+Nvals = 2.^Nvals;
+%Nvals = 5000;
 
 sz = size(Nvals,2);
 sd_full = zeros(sz,1); 
@@ -37,8 +37,8 @@ for i = 1:sz
     [Psilol,c] = solve_float_pt_ext(mesh,mesh_in,1e2,3,'gypsi','P0');
 
     N = size(Psilol,1);
-    %Psi = rand(N,1);
-    Psi = Psilol;
+    Psi = rand(N,1);
+    %Psi = Psilol;
     
     S0_Gamma = fem(mesh,'P0');
     Op_in = restriction(S0_Gamma,mesh_in);
@@ -81,7 +81,7 @@ for i = 1:sz
         %corr = ~~kron(corr, ones(Gamma.gss));
     
         % Evaluating the shape derivative formula for tangential fields
-        Gxy = @(x,y) sum((x-y).*(Nu(x) - Nu(y)), 2)./(vecnorm((x-y),2,2).^3)/ (4*pi);
+        Gxy = @(x,y) sum((y-x).*(Nu(x) - Nu(y)), 2)./(vecnorm((x-y),2,2).^3)/ (4*pi);
     
         % Evaluating far field with Gypsi
         %A0 = integral(Gamma, Gamma, S0_Gamma, Gxy, S0_Gamma, corr);
