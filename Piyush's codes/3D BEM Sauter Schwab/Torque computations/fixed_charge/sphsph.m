@@ -18,7 +18,7 @@ d= 3;
 R = (r1+r2+d)/2;
 Qin = 13.5;
 
-analytical_formula = sphsph_analytic_force(Qin,r1,r2,d);
+analytical_formula = sphsph_analytic_force(Qin,r1,r2,d)
 
 for i = 1:sz
     disp(Nvals(i));
@@ -41,14 +41,14 @@ for i = 1:sz
     % Computing the torques and forces using MST
     [torque_mst,force_mst] = compute_mst_forces(mesh_in,[0,0,0],Psi_in);
     %torques_mst(i,:) = torque_mst;
-    forces_mst(i,:) = force_mst;
+    forces_mst(i,:) = force_mst
     
     % Computing the torques using BEM formula and parallelization
     Nux = @(X) (vecnorm(X,2,2)<R).* ones(size(X,1),1)*[1 0 0];
     kernelx = @(x,y,z) sum(z.*(Nux(x) - Nux(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
     t2mat = panel_oriented_assembly(mesh,kernelx,S0_Gamma,S0_Gamma);
 
-    forces_bem(i) = 0.5 * dot(Psi,t2mat*Psi);
+    forces_bem(i) = 0.5 * dot(Psi,t2mat*Psi)
 
     %coulomb_force = 1/(4*pi) * Qin*Qout/(2*R)^2
 
