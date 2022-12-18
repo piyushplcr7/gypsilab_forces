@@ -224,6 +224,17 @@ for el = 1:Nelt
                     V{1}(:,j) = NxNUj(1)/hj .* Rm1;
                     V{2}(:,j) = NxNUj(2)/hj .* Rm1;
                     V{3}(:,j) = NxNUj(3)/hj .* Rm1;  
+
+                % Regularization for nxgrad and gradG
+                elseif strcmp(green,'grady[1/r]') && strcmp(v.opr,'nxgrad[psi]')
+                    % Contains the nxgrad of the jth basis function
+                    NxNUj     = cross(Nel,NUel(j,:));
+
+                    % Computing cross product with gradRm1 (corresponding
+                    % to grad G)
+                    V{1}(:,j) = NxNUj(2)/hj * gradRm1(:,3) - NxNUj(3)/hj * gradRm1(:,2);
+                    V{2}(:,j) = NxNUj(3)/hj * gradRm1(:,1) - NxNUj(1)/hj * gradRm1(:,3);
+                    V{3}(:,j) = NxNUj(1)/hj * gradRm1(:,2) - NxNUj(2)/hj * gradRm1(:,1);
                     
                 elseif strcmp(green,'grady[1/r]') && strcmp(v.opr,'n*[psi]')
                     V(:,j) = tmp .* (gradRm1 * Nel');

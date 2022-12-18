@@ -36,6 +36,7 @@ switch mesh.type
             set(H,'Marker','.','MarkerFaceColor','k','EdgeColor','k','FaceColor',colorData)
         else
             set(H,'FaceVertexCData',colorData,'FaceColor','flat');
+            %set(H,'FaceVertexCData',colorData,'FaceColor','flat','FaceAlpha',0.2);
             set(H,'Marker','.');
         end
         
