@@ -3,7 +3,7 @@
 addpath(genpath("../../"));
 clear; clc; close all;
 
-ivals = 6:6;
+ivals = 6:10;
 Nivals = size(ivals,2);
 
 hvals = ivals*0;
@@ -26,10 +26,10 @@ for i = 1:Nivals
     T = [5 5 3];
     
     % Solution domain
-    bndmesh = bndmeshCubeTranslated(N,L,T);
+    %bndmesh = bndmeshCubeTranslated(N,L,T);
     % Spherical mesh
-    %bndmesh = mshSphere(N,1);
-    %bndmesh = bndmesh.translate(T);
+    bndmesh = mshSphere(N,1);
+    bndmesh = bndmesh.translate(T);
 
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
 
@@ -43,16 +43,16 @@ for i = 1:Nivals
     DIV0 = nxgrad(P1); % div conforming, div0 -> Neumann trace
     DIV = fem(bndmesh,'RWG');
 
-    W = hypersingular_laplace(Gamma,P1,P1);
-    %Amat = single_layer(Gamma,DIV0,DIV0);
-    Cmat = double_layer(Gamma,DIV0,NED);
+    % For operator A
+    Amat = single_layer(Gamma,DIV0,DIV0);
+    % For operator C
+    Cmat = double_layer_magnetostatics(Gamma,DIV0,DIV);
     Mmat = mass_matrix(Gamma,DIV0,NED);
     
     % Regularize by removing constants
     % Vector to enforce zero mean for functions
     B = integral(Gamma,P1);
-    %Amod = [Amat B; B' 0];
-    Amod = [W B; B' 0];
+    Amod = [Amat B; B' 0];
 
     %% Generating synthetic traces from a source
     N_src = N;
@@ -71,7 +71,8 @@ for i = 1:Nivals
     % Taking traces of the fields
     normals = Gamma.qudNrm;
     TDA = A - dot(A,normals,2).*normals;
-    TNA = cross(normals,curlA,2);
+%     TNA = cross(normals,curlA,2);
+    TNA = cross(curlA,normals,2);
 
     % Projecting the Dirichlet trace to NED space
     TDA_NED_coeffs = proj(TDA,Gamma,NED);
@@ -104,11 +105,12 @@ for i = 1:Nivals
     TNA_sol_DIV_coeffs = proj(TNA_sol,Gamma,DIV);
 
     MDD = mass_matrix(Gamma,DIV,DIV);
-    err_DIV_coeffs = TNA_DIV_coeffs-TNA_sol_DIV_coeffs;
-    err_DIV0_coeffs = TNA_DIV0_coeffs - TNA_sol_DIV0_coeffs;
+%     err_DIV_coeffs = TNA_DIV_coeffs-TNA_sol_DIV_coeffs;
+    err_DIV_coeffs = TNA_DIV_coeffs+TNA_sol_DIV_coeffs;
+    %err_DIV0_coeffs = TNA_DIV0_coeffs - TNA_sol_DIV0_coeffs;
     L2err = err_DIV_coeffs'*MDD*err_DIV_coeffs
     Hdiverr = err_DIV_coeffs'*single_layer(Gamma,DIV,DIV)*err_DIV_coeffs
-    Hdiv0err = err_DIV0_coeffs'*W*err_DIV0_coeffs
+    %Hdiv0err = err_DIV0_coeffs'*Amat*err_DIV0_coeffs
 
     L2errs(i) = L2err;
     Hdiverrs(i) = Hdiverr;
@@ -119,7 +121,7 @@ for i = 1:Nivals
     if true
         quiver3wrapper(X,TNA,'blue');
         hold on;
-        quiver3wrapper(X,TNA_sol,'red');
+        quiver3wrapper(X,-TNA_sol,'red');
     end
 end
 figure;

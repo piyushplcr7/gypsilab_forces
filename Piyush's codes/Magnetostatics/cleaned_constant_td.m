@@ -25,9 +25,9 @@ for i = 1:Nivals
     T = [0 0 0];
     
     % Solution domain
-    %bndmesh = bndmeshCubeTranslated(N,L,T);
+    bndmesh = bndmeshCubeTranslated(N,L,T);
     % Spherical mesh
-    bndmesh = mshSphere(N,1);
+    %bndmesh = mshSphere(N,1);
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
 
     Gamma = dom(bndmesh,7);
@@ -40,14 +40,16 @@ for i = 1:Nivals
     DIV = fem(bndmesh,'RWG');
     
 
-    W = hypersingular_laplace(Gamma,P1,P1);
-    Cmat = double_layer(Gamma,DIV0,NED);
+    % For operator A
+    Amat = single_layer(Gamma,DIV0,DIV0);
+    % For operator C
+    Cmat = double_layer_magnetostatics(Gamma,DIV0,DIV);
     Mmat = mass_matrix(Gamma,DIV0,NED);
     
     % Regularize by removing constants
     % Vector to enforce zero mean for functions
     B = integral(Gamma,P1);
-    Amod = [W B; B' 0];
+    Amod = [Amat B; B' 0];
 
     %% Generating synthetic traces 
     % Evaluation points on Gamma
@@ -83,7 +85,7 @@ for i = 1:Nivals
     err_DIV_coeffs = TNA_sol_DIV_coeffs;
     L2err = err_DIV_coeffs'*MDD*err_DIV_coeffs
     Hdiverr = err_DIV_coeffs'*single_layer(Gamma,DIV,DIV)*err_DIV_coeffs
-    Hdiv0err = TNA_sol_DIV0_coeffs'*W*TNA_sol_DIV0_coeffs
+    Hdiv0err = TNA_sol_DIV0_coeffs'*Amat*TNA_sol_DIV0_coeffs
     L2errs(i) = L2err;
     Hdiverrs(i) = Hdiv0err;
 
