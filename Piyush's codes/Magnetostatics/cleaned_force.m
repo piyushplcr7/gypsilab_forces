@@ -3,7 +3,7 @@
 addpath(genpath("../../"));
 clear; clc; close all;
 
-ivals = 6:6;
+ivals = 6:11;
 Nivals = size(ivals,2);
 
 hvals = ivals*0;
@@ -11,6 +11,7 @@ hvals = ivals*0;
 % Projection errors
 TD_proj_errs = zeros(Nivals,1);
 TN_proj_errs = TD_proj_errs;
+Forces = zeros(Nivals,3);
 
 % Solution errors
 L2errs = TD_proj_errs;
@@ -71,23 +72,14 @@ for i = 1:Nivals
     % Taking traces of the fields
     normals = Gamma.qudNrm;
     TDA = A - dot(A,normals,2).*normals;
-%     TNA = cross(normals,curlA,2);
-    TNA = cross(curlA,normals,2);
+    %TNA = cross(curlA,normals,2);
 
     % Projecting the Dirichlet trace to NED space
     TDA_NED_coeffs = proj(TDA,Gamma,NED);
-    %TDA_NED_recon = reconstruct(TDA_NED_coeffs,Gamma,NED);
-    %L2err_TDA_proj = sum(W.*(vecnorm(TDA-TDA_NED_recon,2,2).^2),1)
-
-    %TD_proj_errs(i) = L2err_TDA_proj;
 
     % Projecting the Neumann trace to DIV space
-    TNA_DIV_coeffs = proj(TNA,Gamma,DIV);
-    TNA_DIV0_coeffs = proj(TNA,Gamma,DIV0);
-    %TNA_DIV_recon = reconstruct(TNA_DIV_coeffs,Gamma,DIV);
-    %L2err_TNA_proj = sum(W.*(vecnorm(TNA-TNA_DIV_recon,2,2).^2),1)
-
-    %TN_proj_errs(i) = L2err_TNA_proj;
+%     TNA_DIV_coeffs = proj(TNA,Gamma,DIV);
+%     TNA_DIV0_coeffs = proj(TNA,Gamma,DIV0);
 
     %% Solving for the Neumann Trace
     % Creating the rhs vector
@@ -100,33 +92,12 @@ for i = 1:Nivals
     %% Computing the errors
     
     % Need to project computed Neumann trace to DIV space
-    TNA_sol = reconstruct(TNA_sol_DIV0_coeffs,Gamma,DIV0);
+    TNA_sol = -reconstruct(TNA_sol_DIV0_coeffs,Gamma,DIV0);
 
     TNA_sol_DIV_coeffs = proj(TNA_sol,Gamma,DIV);
 
-    MDD = mass_matrix(Gamma,DIV,DIV);
-%     err_DIV_coeffs = TNA_DIV_coeffs-TNA_sol_DIV_coeffs;
-    err_DIV_coeffs = TNA_DIV_coeffs+TNA_sol_DIV_coeffs;
-    %err_DIV0_coeffs = TNA_DIV0_coeffs - TNA_sol_DIV0_coeffs;
-    L2err = err_DIV_coeffs'*MDD*err_DIV_coeffs
-    Hdiverr = err_DIV_coeffs'*single_layer(Gamma,DIV,DIV)*err_DIV_coeffs
-    %Hdiv0err = err_DIV0_coeffs'*Amat*err_DIV0_coeffs
+    %% Computing the force
+    F = magnetostatics_forces(bndmesh,TDA_NED_coeffs,TNA_sol_DIV_coeffs,1);
+    Forces(i,:) = F'
 
-    L2errs(i) = L2err;
-    Hdiverrs(i) = Hdiverr;
-    %loglog(hvals(1:i),Hdiverrs(1:i),'-s','Col','red');
-    %hold on;
-    %loglog(hvals(1:i),L2errs(1:i),'-*','Col','blue');
-
-    if true
-        quiver3wrapper(X,TNA,'blue');
-        hold on;
-        quiver3wrapper(X,-TNA_sol,'red');
-    end
 end
-figure;
-loglog(hvals,Hdiverrs,'-s');
-hold on;
-loglog(hvals,L2errs,'-*')
-
-save('cleaned.mat','L2errs','Hdiverrs','hvals');

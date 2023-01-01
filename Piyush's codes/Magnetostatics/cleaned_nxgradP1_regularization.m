@@ -47,6 +47,8 @@ for i = 1:Nivals
     Amat = single_layer(Gamma,DIV0,DIV0);
     % For operator C
     Cmat = double_layer_magnetostatics(Gamma,DIV0,DIV);
+    %Cmat = double_layer_magnetostatics(Gamma,DIV,DIV0);
+    %Cmat = Cmat';
     Mmat = mass_matrix(Gamma,DIV0,NED);
     
     % Regularize by removing constants
