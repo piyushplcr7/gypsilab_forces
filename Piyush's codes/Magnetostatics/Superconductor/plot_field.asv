@@ -1,0 +1,29 @@
+% Post processing the Neumann Data obtained from solve_superconductor which
+% lies in RWG space
+
+function out = plot_field(bndmesh,omega_src,TnA)
+    plot(bndmesh);
+    hold on;
+
+    maxGamma = max(bndmesh.vtx);
+    minGamma = min(bndmesh.vtx);
+    meanGamma = 0.5*(maxGamma+minGamma);
+    newMinGamma = 2 * minGamma - meanGamma;
+    newMaxGamma = 2 * maxGamma - meanGamma;
+
+    N = 10;
+    x = linspace(newMinGamma(1),newMaxGamma(1),10);
+    y = linspace(newMinGamma(2),newMaxGamma(2),10);
+
+    [X,Y] = meshgrid(x,y);
+    X = reshape(X,[N])
+
+
+
+
+    maxSrc = max(omega_src.msh.vtx);
+    minSrc = min(omega_src.msh.vtx);
+    meanSrc = 0.5(maxSrc+minSrc);
+
+    
+end

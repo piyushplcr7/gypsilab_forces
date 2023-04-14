@@ -5,7 +5,7 @@ clear; clc; close all;
 
 mui = 1;
 mue = 1;
-N = 50;
+for N = 50:200:1000
 
 %% SOLUTION DOMAIN
 % Cube size and position
@@ -43,30 +43,23 @@ DIV = fem(bndmesh,'RWG');
 
 % Galerkin matrices
 % For operator A
-Amat = single_layer(Gamma,DIV0,DIV0);
+Amat = single_layer(Gamma,DIV,DIV);
 % For operator C
-Cmat = double_layer_magnetostatics(Gamma,DIV0,DIV);
+Cmat = double_layer_magnetostatics(Gamma,DIV,DIV);
 % For operator B, we can simply use C'
 Bmat = Cmat';
 % For operator N
 Nmat = -single_layer(Gamma,DIV.div,DIV.div);
-% Vector to enforce zero mean for P1 functions
-B = integral(Gamma,P1);
-% Matrix to enforce the orthogonal complement constraint
-ortho = single_layer(Gamma,NED,Ker_curl); % Uses my implementation.
-%Careful!
-%ortho = single_layer(Gamma,Ker_curl,DIV.nx);
-%ortho = -ortho';
+% Mass matrix
+M_div_ned = mass_matrix(Gamma,DIV,NED);
+
 
 Ndiv0 = size(Amat,1); % Equal to NP1
 Nned = size(Nmat,1);
 
-% Block matrix (Need to subtract constants! matrix is singular)
-blockmat = [(mue/mui+1)*Amat -2*Cmat zeros(Ndiv0,Ndiv0) zeros(Ndiv0,1)  B;...
-            2*Bmat -(1+mui/mue)*Nmat ortho zeros(Nned,1) zeros(Nned,1);...
-            zeros(Ndiv0,Ndiv0) ortho' zeros(Ndiv0,Ndiv0) B zeros(Ndiv0,1);...
-            zeros(1,Ndiv0) zeros(1,Nned) B' 0 0;...
-            B' zeros(1,Nned) zeros(1,Ndiv0) 0 0];
+% Building the interior weak calderon projector
+Calderon = [Amat -0.5*M_div_ned-Cmat;
+            Cmat'-0.5*M_div_ned' -Nmat];
 
 %% Constructing RHS from a current source
 N_src = N;
@@ -92,32 +85,15 @@ TDA_NED_coeffs = proj(TDA,Gamma,NED);
 
 % Projecting the Neumann trace to DIV space
 TNA_DIV_coeffs = proj(TNA,Gamma,DIV);
-TNA_DIV0_coeffs = proj(TNA,Gamma,DIV0);
 
-M_div0_ned = mass_matrix(Gamma,DIV0,NED);
-rhs1 =  mue*(M_div0_ned * TDA_NED_coeffs);
-rhs2 = mui * (M_div0_ned' * TNA_DIV0_coeffs);
+%% Testing the Calderon projector
 
-rhs = [rhs1;rhs2;zeros(Ndiv0,1);0;0];
+MDD = mass_matrix(Gamma,DIV,DIV);
+MNN = mass_matrix(Gamma,NED,NED);
 
-%% Solving the system
+traces = [TNA_DIV_coeffs; TDA_NED_coeffs];
 
-sol = blockmat\rhs;
+disp(N)
+norm(Calderon * traces)
 
-% Extracting the two traces
-TN_sol_coeffs = sol(1:Ndiv0);
-TD_sol_coeffs = sol(Ndiv0+1:Ndiv0+Nned);
-
-%% Checking with the known traces (which are available for mue/mui=1
-
-TN_sol = reconstruct(TN_sol_coeffs,Gamma,DIV0);
-TD_sol = reconstruct(TD_sol_coeffs,Gamma,NED);
-
-quiver3wrapper(X,TNA,'blue');
-hold on;
-quiver3wrapper(X,TN_sol,'red');
-
-figure;
-quiver3wrapper(X,TDA,'blue');
-hold on;
-quiver3wrapper(X,TD_sol,'red');
+end

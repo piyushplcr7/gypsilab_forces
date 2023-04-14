@@ -1,7 +1,7 @@
 function [mesh,mesh_in,mesh_out] = sph_tor_mesh(r1,r2,R,N,seed)
     rng(seed);
     A = rand(3,3);
-    [Qrot,~] = qr(A);
+    [Qrot,~] = qr(A)
     
     % distance between the centers
     dist = 3*(r1+r2+R);

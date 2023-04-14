@@ -1,7 +1,7 @@
 % This function is used to solve for the Neumann Trace using the Direct 
 % First Kind BIE. Inputs: boundary mesh, function for boundary data g 
 
-function psi = Dirichlet_DFK(mesh,g)
+function psi = Dirichlet_DFK_Laplace_2D(mesh,g)
 % Setting up the discrete system
 
 % Quadrature order

@@ -1,0 +1,43 @@
+% Solver for superconducting domain. Zero Dirichlet boundary conditions 
+% Imposed
+
+% Inputs
+% bndmesh : Boundary mesh for the superconducting domain
+% J : Function object that takes in vectorized inputs (x,y,z) and returns
+%     the source current in NX3 format
+% mesh_src : Mesh for the current source
+
+% Output
+% TnA : Neumann trace 
+
+function TnA = solve_superconductor(bndmesh, J, mesh_src)
+    % BEM Space
+    P1 = fem(bndmesh,'P1');
+    % Div conforming with div0 constraint -> Neumann trace
+    DIV0 = nxgrad(P1); 
+
+    % Dom objects for integration
+    Gamma = dom(bndmesh,3);
+    Omega_src = dom(mesh_src,3);
+
+    % Galerkin matrix for A
+    Amat = single_layer(Gamma,DIV0,DIV0);
+
+    %% Computing the RHS
+
+    % Evaluation points for the Dirichlet Trace
+    [X,Wt,elt2qud] = Gamma.qud;
+
+    % Computing the Newton Potential on the points X
+    Asrc = compute_vecpot(J,omega_src,X);
+    % Taking traces of the fields at the points X
+    normals = Gamma.qudNrm;
+    TDAsrc = Asrc - dot(Asrc,normals,2).*normals;
+
+    % Projecting the Dirichlet trace to NED space
+    TDAsrc_NED_coeffs = proj(TDAsrc,Gamma,NED);
+
+    % RHS
+    rhs = integral(Gamma,)
+end
+
