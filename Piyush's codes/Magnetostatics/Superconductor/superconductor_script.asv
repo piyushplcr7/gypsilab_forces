@@ -5,10 +5,8 @@ clear; clc; close all;
 
 mui = 1;
 mue = 1;
-%N = 50;
+N = 50;
 
-%for N=50:100:2000
-for N=50
 %% SOLUTION DOMAIN
 % Cube size and position
 % L = 2*[1 1 1];
@@ -44,11 +42,5 @@ omega_src = dom(mesh_src,3);
 plot_field(TnA,bndmesh,J,omega_src);
 
 %% Computing forces
-% Dom object
-Gamma = dom(bndmesh,3);
 
-% Coefficients for zero Dirichlet Trace
-TdA = TnA * 0;
-
-force_mst = MstForceFromA(TdA,TnA,Gamma)
-end
+DirichletTrace = @(x,y,z)
