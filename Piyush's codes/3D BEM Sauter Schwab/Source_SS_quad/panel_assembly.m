@@ -96,14 +96,21 @@ function M = panel_assembly(mesh,kernel,trial_space,test_space, I, J)
                   perm_i = 1:3;
                   perm_j = 1:3;
                   
-                  E = [Bj-Aj Cj-Aj]; EtE = E' * E; Dxy = inv(EtE);
+                  % E is the Jacobian Matrix of the mapping for panel j
+                  E = [Bj-Aj Cj-Aj]; 
+                  % Gram matrix
+                  EtE = E' * E; 
+                  Dxy = inv(EtE);
                   
                   DCVx = Dxy(1, 1) * E(:, 1) + Dxy(1, 2) * E(:, 2);
                   DCVy = Dxy(2, 1) * E(:, 1) + Dxy(2, 2) * E(:, 2);
                   
                   DCV = [DCVx DCVy];
-                  
-                  Ei = [Bi-Ai Ci-Ai]; EitEi = Ei' * Ei; Dxy = inv(EitEi);
+
+                  % Ei is the Jacobian Matrix of the Mapping for panel i
+                  Ei = [Bi-Ai Ci-Ai]; 
+                  % Gram Matrix
+                  EitEi = Ei' * Ei; Dxy = inv(EitEi);
                   
                   DCVx = Dxy(1, 1) * Ei(:, 1) + Dxy(1, 2) * Ei(:, 2);
                   DCVy = Dxy(2, 1) * Ei(:, 1) + Dxy(2, 2) * Ei(:, 2);

@@ -2,6 +2,30 @@
 
 % IMPORTANT: The triangular reference element is different than the one
 % used in Gypsilab.
+%
+%           Reference Triangle in Sauter and Schwab Quadrature
+%
+%                       /| C(0,1)
+%                      / |
+%                     /  |
+%                    /   |
+%                   /    |
+%                  /     |
+%          A(0,0) /______| B(1,0)      
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                 
+%           Reference Triangle in Gypsilab
+%
+%
+%                  (0,1)|\
+%                       | \
+%                       |  \
+%                       |   \
+%                       |    \
+%                       |     \
+%                 (0,0) |______\ (1,0)
+%
 
 %-------------------------------------------------------------------------%
 % Ignacio:
@@ -39,17 +63,15 @@ function rsfs = femRSF(fe)
 
                 
             case 'P1'
-                
+               
                 switch opr
                    
                     case '[psi]'
+                        % Gypsi reference triangle
                         rsfs = cell(3,1);
                         rsfs{1} = @(X) 1 - X(:,1) - X(:,2);
                         rsfs{2} = @(X) X(:,1);
                         rsfs{3} = @(X) X(:,2);
-%                         rsfs{1} = @(X) 1 - X(:,1); % support at 0,0 or A
-%                         rsfs{2} = @(X) X(:,1) - X(:,2); % support at 1,0 or B
-%                         rsfs{3} = @(X) X(:,2); % support at 1,1 or C
                         
                     case 'n*[psi]'
                         rsfs = cell(3,1);
@@ -159,7 +181,7 @@ function rsfs = femRSF(fe)
                end
        end
     
-    % Tetrahedron
+    %% Tetrahedron
     elseif elt_type == 4
         switch typ
             case 'P0'
