@@ -1,9 +1,9 @@
 % Superconductor shape derivative for Neumann Trace input lying in RWG
 % Space
 
-function val = SuperConductorShapeDerivative(bndmesh,TnA,Vel,DVel)
+function val = SuperConductorShapeDerivative(bndmesh,TnA,Vel,DVel,omega_src,J)
     
-    RWG = fem(mesh,'RWG');
+    RWG = fem(bndmesh,'RWG');
 
     % Kernel, z:= y-x
     kernel = @(x,y,z) sum(z.*(Vel(x) - Vel(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
@@ -24,11 +24,15 @@ function val = SuperConductorShapeDerivative(bndmesh,TnA,Vel,DVel)
     DVelRWG = RWG;
     DVelRWG.opr = 'Dvel[psi]';
 
-    t2mat = panel_assembly_shape_derivative(bndmesh,KV,DVelRWG,RWG,ii(:),jj(:),DVel);
+    t2mat = panel_assembly_shape_derivative(bndmesh,KV,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
     val = val + dot(TnA,t2mat*TnA);
 
     % 3rd term
+    t3 = SuperConductorShapeDerivativeT3(bndmesh,TnA,Vel,omega_src,J);
 
-end
+    % 4th term
+    t4 = SuperConductorShapeDerivativeT4(bndmesh,TnA,DVel,omega_src,J);
 
+
+    val = val - t3-t4;
 end

@@ -1,0 +1,32 @@
+% Computing net force using the MST formula and vector potential traces
+%
+% Inputs
+%
+% TdA : Dirichlet Trace in the NED Space
+% TnA : Neumann Trace in the RWG Space
+% Gamma : Integration domain
+
+function torque = MstTorqueFromA(TdA,TnA,Gamma,Xcg)
+    % Constructing the BEM Spaces
+    NED = fem(Gamma.msh,'NED');
+    RWG = fem(Gamma.msh,'RWG');
+    curlNED = NED.curl;
+    
+
+    % Quadrature weights and points for integration
+    [X,W] = Gamma.qud;
+    normals = Gamma.qudNrm;
+
+    % Expects Xcg to be 1 X 3
+    rvec = X - Xcg;
+
+    % Computing the surface curl of g at the quadrature points
+    curlg = reconstruct(TdA,Gamma,curlNED);
+    % Computing the Neumann Trace at the quadrature points
+    psi = reconstruct(TnA,Gamma,RWG);
+
+    force_n = sum(W.*(0.5 * (curlg .* curlg - dot(psi,psi,2)) .* cross(rvec,normals,2)),1);
+    force_t = sum(W.* curlg .* cross(rvec,cross(normals,psi,2),2),1);
+
+    torque = force_n' + force_t';
+end

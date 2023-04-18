@@ -2,11 +2,14 @@
 
 addpath(genpath("../../../"));
 clear; clc; close all;
-
+format long;
 mui = 1;
 mue = 1;
-N = 50;
+%N = 50;
 
+for N=50:100:2000
+disp(N)
+%for N=50
 %% SOLUTION DOMAIN
 % Cube size and position
 % L = 2*[1 1 1];
@@ -39,8 +42,27 @@ omega_src = dom(mesh_src,3);
 
 %% Plotting the computed B field
 
-plot_field(TnA,bndmesh,J,omega_src);
+%plot_field(TnA,bndmesh,J,omega_src);
 
 %% Computing forces
+% Dom object
+Gamma = dom(bndmesh,3);
 
-DirichletTrace = @(x,y,z)
+% Coefficients for zero Dirichlet Trace
+TdA = TnA * 0;
+
+torque_mst = MstTorqueFromA(TdA,TnA,Gamma,T)
+
+% Shape Derivative computation of torque
+% Getting Rotational Vels and DVels
+[Velxr,DVelxr] = getRotVelDVel([1 0 0],T);
+[Velyr,DVelyr] = getRotVelDVel([0 1 0],T);
+[Velzr,DVelzr] = getRotVelDVel([0 0 1],T);
+
+sd_e1 = SuperConductorShapeDerivative(bndmesh,TnA,Velxr,DVelxr,omega_src,J);
+sd_e2 = SuperConductorShapeDerivative(bndmesh,TnA,Velyr,DVelyr,omega_src,J);
+sd_e3 = SuperConductorShapeDerivative(bndmesh,TnA,Velzr,DVelzr,omega_src,J);
+
+torque_sd = [sd_e1 sd_e2 sd_e3]
+
+end

@@ -519,7 +519,7 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                                 djP = g_t * (E * djP)' / (2 * volsj);
 
                                 % Evaluating DVel at the quadrature points
-                                Yh_panel = chi_t(Yh); % Size 3 X N
+                                Yh_panel = chi_t(Yh'); % Size 3 X N
                                 % DVi gives a matrix of size N X 3
                                 % evaluating the ith row of DVel at the N
                                 % quadrature points
