@@ -421,6 +421,7 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
           %%%%%%%%%%%%%%%%%%%%%%%%%% RWG FINITE ELEMENTS BASIS FUNCTIONS   %%%%%%%%%%%%%%%%%%%%%%%%%%%
           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
               case 'RWG'
+                  %disp('Case RWG');
                   
                   
                 switch tr_opr
@@ -481,7 +482,8 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                         eltj  = mesh.elt(j, :);
     
                         for ii = 1:Qts % Looping over test functions
-    
+                            % RSF for function associated to vertex at
+                            % position perm_i(ii) in elti
                             ip1 = mod(perm_i(ii),3)+1;
                             ip2 = mod(ip1,3)+1;
                             

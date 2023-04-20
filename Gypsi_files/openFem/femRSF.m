@@ -5,7 +5,7 @@
 %
 %           Reference Triangle in Sauter and Schwab Quadrature
 %
-%                       /| C(0,1)
+%                       /| C(1,1)
 %                      / |
 %                     /  |
 %                    /   |

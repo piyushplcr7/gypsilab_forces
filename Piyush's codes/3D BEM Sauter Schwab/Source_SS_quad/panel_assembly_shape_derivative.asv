@@ -421,6 +421,7 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
           %%%%%%%%%%%%%%%%%%%%%%%%%% RWG FINITE ELEMENTS BASIS FUNCTIONS   %%%%%%%%%%%%%%%%%%%%%%%%%%%
           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
               case 'RWG'
+                  disp('Case RWG');
                   
                   
                 switch tr_opr
@@ -481,7 +482,7 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                         eltj  = mesh.elt(j, :);
     
                         for ii = 1:Qts % Looping over test functions
-    
+                            % RSF for function associated to perm_i(ii)
                             ip1 = mod(perm_i(ii),3)+1;
                             ip2 = mod(ip1,3)+1;
                             
@@ -515,17 +516,21 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                                 
                                 djP  = fluxj * [dPsi1j dPsi2j]'; % RT0 reference element
                                 
+                                % N X 3 matrix
                                 djP = g_t * (E * djP)' / (2 * volsj);
 
                                 % Evaluating DVel at the quadrature points
-                                Yh_panel = chi_t(Yh); % Size 3 X N
+                                Yh_panel = chi_t(Yh'); % Size 3 X N
                                 % DVi gives a matrix of size N X 3
                                 % evaluating the ith row of DVel at the N
                                 % quadrature points
                                 DV1 = DVel{1}(Yh_panel');
                                 DV2 = DVel{2}(Yh_panel');
                                 DV3 = DVel{3}(Yh_panel');
-                                
+                            
+                                % Manually writing the matrix vector
+                                % product
+                                djP = [dot(DV1,djP,2) dot(DV2,djP,2) dot(DV3,djP,2)];
                                 
                                 local_matrix(ii,jj) = dot(Wh,diP(:, 1) .* Ker .* djP(:, 1) + diP(:, 2) .* Ker .* djP(:, 2) + diP(:, 3) .* Ker .* djP(:, 3));
                             
