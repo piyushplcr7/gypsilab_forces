@@ -372,7 +372,9 @@ function M = panel_assembly(mesh,kernel,trial_space,test_space, I, J)
                               
                               case '[psi]'  % Trial: ntimes(P1), Test: P0
                                   
-                                  dKer = Ker{1} * nrm(1) + Ker{2} * nrm(2) + Ker{3} * nrm(3);
+                                  %dKer = Ker{1} * nrm(1) + Ker{2} * nrm(2)
+                                  %+ Ker{3} * nrm(3); PP edit
+                                  dKer = Ker(:,1) * nrm(1) + Ker(:,2) * nrm(2) + Ker(:,3) * nrm(3);
                                   for ii = 1:Qts
                                       Psix = rsf_ts{ii}(Xh) .* g_tau;
 

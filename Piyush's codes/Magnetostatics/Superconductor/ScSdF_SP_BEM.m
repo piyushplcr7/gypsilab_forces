@@ -1,5 +1,6 @@
-% Compute the shape derivative obtained from the volume based scalar
-% potential formulation of the superconductor
+% Compute the shape derivative obtained from the BEM based scalar
+% potential formulation of the superconductor. Simplified for constant
+% Fields which are used for computing forces
 
 % Super conductor Shape derivative_ Scalar Potential
 function sd = ScSdF_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel)

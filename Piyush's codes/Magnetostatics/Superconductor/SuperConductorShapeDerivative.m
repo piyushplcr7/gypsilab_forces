@@ -33,6 +33,5 @@ function val = SuperConductorShapeDerivative(bndmesh,TnA,Vel,DVel,omega_src,J)
     % 4th term
     t4 = SuperConductorShapeDerivativeT4(bndmesh,TnA,DVel,omega_src,J);
 
-
     val = val - t3-t4;
 end

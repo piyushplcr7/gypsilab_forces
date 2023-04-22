@@ -319,7 +319,8 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                       end
                       M(ABC_elti, ABC_eltj) = M(ABC_elti, ABC_eltj) + local_matrix;
                       
-                      
+                      % Hijacking the whole case for shape derivative
+                      % computation (Dvel curlTg) for trial function
                       case 'nxgrad[psi]'  % Trial: nxgrad(P1), Test: nxgrad(P1)
 
                           for ii = 1:Qts
@@ -350,14 +351,31 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                                 Psiy1 = dxP(1) .* g_t;
                                 Psiy2 = dxP(2) .* g_t;
                                 Psiy3 = dxP(3) .* g_t;
-
+                                
+                                % Components for nx grad b, grad b is
+                                % constant
                                 PY1 = nrm(2) * Psiy3 - nrm(3) * Psiy2;
                                 PY2 = nrm(3) * Psiy1 - nrm(1) * Psiy3;
                                 PY3 = nrm(1) * Psiy2 - nrm(2) * Psiy1;
 
-                                local_matrix(ii,jj) = dot(Wh,PX1 .* Ker .* PY1) ...
-                                                    + dot(Wh,PX2 .* Ker .* PY2) ...
-                                                    + dot(Wh,PX3 .* Ker .* PY3);
+                                % Evaluating DVel at the quadrature points
+                                Yh_panel = chi_t(Yh'); % Size 3 X N
+                                % DVi gives a matrix of size N X 3
+                                % evaluating the ith row of DVel at the N
+                                % quadrature points
+                                DV1 = DVel{1}(Yh_panel');
+                                DV2 = DVel{2}(Yh_panel');
+                                DV3 = DVel{3}(Yh_panel');
+                            
+                                % Manually writing the matrix vector
+                                % product for DVel curlTg
+                                DVelcurlTg1 = sum(DV1 .* [PY1 PY2 PY3],2);
+                                DVelcurlTg2 = sum(DV2 .* [PY1 PY2 PY3],2);
+                                DVelcurlTg3 = sum(DV3 .* [PY1 PY2 PY3],2);
+
+                                local_matrix(ii,jj) = dot(Wh,PX1 .* Ker .* DVelcurlTg1) ...
+                                                    + dot(Wh,PX2 .* Ker .* DVelcurlTg2) ...
+                                                    + dot(Wh,PX3 .* Ker .* DVelcurlTg3);
                               end
 
                           end
