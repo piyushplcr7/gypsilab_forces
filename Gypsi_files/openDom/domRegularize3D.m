@@ -224,6 +224,25 @@ for el = 1:Nelt
                     V{1}(:,j) = NxNUj(1)/hj .* Rm1;
                     V{2}(:,j) = NxNUj(2)/hj .* Rm1;
                     V{3}(:,j) = NxNUj(3)/hj .* Rm1;  
+
+                % Regularization for 1/r and grad psi
+                elseif strcmp(green,'[1/r]') && strcmp(v.opr,'grad[psi]')
+                    NxNUj     = NUel(j,:);
+                    V{1}(:,j) = NxNUj(1)/hj * Rm1;
+                    V{2}(:,j) = NxNUj(2)/hj * Rm1;
+                    V{3}(:,j) = NxNUj(3)/hj * Rm1; 
+                    %disp('my case');
+
+                % Regularization for nxgrad and gradG
+                elseif strcmp(green,'grady[1/r]') && strcmp(v.opr,'nxgrad[psi]')
+                    % Contains the nxgrad of the jth basis function
+                    NxNUj     = cross(Nel,NUel(j,:));
+
+                    % Computing cross product with gradRm1 (corresponding
+                    % to grad G)
+                    V{1}(:,j) = -NxNUj(2)/hj * gradRm1(:,3) + NxNUj(3)/hj * gradRm1(:,2);
+                    V{2}(:,j) = -NxNUj(3)/hj * gradRm1(:,1) + NxNUj(1)/hj * gradRm1(:,3);
+                    V{3}(:,j) = -NxNUj(1)/hj * gradRm1(:,2) + NxNUj(2)/hj * gradRm1(:,1);
                     
                 elseif strcmp(green,'grady[1/r]') && strcmp(v.opr,'n*[psi]')
                     V(:,j) = tmp .* (gradRm1 * Nel');
@@ -231,6 +250,12 @@ for el = 1:Nelt
                 elseif strcmp(green(1:end-1),'grady[1/r]') && strcmp(v.opr,'[psi]')
                     ii     = str2double(green(end));
                     V(:,j) = tmp .* gradRm1(:,ii);
+                
+                % My implementation
+                elseif strcmp(green,'grady[1/r]') && strcmp(v.opr,'[psi]')
+                    V{1}(:,j) = tmp .* gradRm1(:,1);
+                    V{2}(:,j) = tmp .* gradRm1(:,2);
+                    V{3}(:,j) = tmp .* gradRm1(:,3);
                     
                 elseif strcmp(green(1:end-2),'[ij/r+rirj/r^3]') && strcmp(v.opr,'[psi]')
                     ii     = str2double(green(end-1));
@@ -260,6 +285,16 @@ for el = 1:Nelt
                     V{1}(:,j) = sgnS .* (XmS(:,1).*Rm1 + rRm1(:,1));
                     V{2}(:,j) = sgnS .* (XmS(:,2).*Rm1 + rRm1(:,2));
                     V{3}(:,j) = sgnS .* (XmS(:,3).*Rm1 + rRm1(:,3));
+                
+                % My implementation
+                elseif strcmp(green,'[1/r]') && strcmp(v.opr,'nx[psi]')
+                    VV = [];
+                    VV{1}(:,j) = sgnS .* (XmS(:,1).*Rm1 + rRm1(:,1));
+                    VV{2}(:,j) = sgnS .* (XmS(:,2).*Rm1 + rRm1(:,2));
+                    VV{3}(:,j) = sgnS .* (XmS(:,3).*Rm1 + rRm1(:,3));
+                    V{1}(:,j) = Nel(2) * VV{3}(:,j) - Nel(3) * VV{2}(:,j);
+                    V{2}(:,j) = Nel(3) * VV{1}(:,j) - Nel(1) * VV{3}(:,j);
+                    V{3}(:,j) = Nel(1) * VV{2}(:,j) - Nel(2) * VV{3}(:,j);
                     
                 elseif strcmp(green,'[1/r]') && strcmp(v.opr,'div[psi]')
                     V(:,j) = 2*sgnS .* Rm1;

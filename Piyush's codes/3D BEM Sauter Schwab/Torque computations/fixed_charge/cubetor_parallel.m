@@ -18,7 +18,7 @@ for i = 1:sz
     hvals(i) = mean(mesh.ndv,1);
 
     % Solve the floating potential problem on mesh
-    [Psi,c] = solve_float_pt_ext(mesh,mesh_in,1e2,3,'gypsi');
+    [Psi,c] = solve_float_pt_ext(mesh,mesh_in,1e2,3,'gypsi','P0');
     
     S0_Gamma = fem(mesh,'P0');
     Op_in = restriction(S0_Gamma,mesh_in);

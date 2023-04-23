@@ -37,8 +37,8 @@ for i = 1:sz
     [Psilol,c] = solve_float_pt_ext(mesh,mesh_in,1e2,3,'gypsi','P0');
 
     N = size(Psilol,1);
-    %Psi = rand(N,1);
-    Psi = Psilol;
+    Psi = rand(N,1);
+    %Psi = Psilol;
     
     S0_Gamma = fem(mesh,'P0');
     Op_in = restriction(S0_Gamma,mesh_in);
