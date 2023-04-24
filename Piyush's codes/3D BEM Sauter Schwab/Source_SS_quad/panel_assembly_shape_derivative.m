@@ -551,8 +551,13 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                                 % product
                                 djP = [dot(DV1,djP,2) dot(DV2,djP,2) dot(DV3,djP,2)];
                                 
-                                local_matrix(ii,jj) = dot(Wh,diP(:, 1) .* Ker .* djP(:, 1) + diP(:, 2) .* Ker .* djP(:, 2) + diP(:, 3) .* Ker .* djP(:, 3));
-                            
+                                if size(Ker,2) == 1
+                                    local_matrix(ii,jj) = dot(Wh,diP(:, 1) .* Ker .* djP(:, 1) + diP(:, 2) .* Ker .* djP(:, 2) + diP(:, 3) .* Ker .* djP(:, 3));
+                                elseif size(Ker,2) ==3
+                                    % Need to perform {kernel x trial}.test
+                                    kerxtrial = cross(Ker,djP,2);
+                                    local_matrix(ii,jj) = dot(Wh,dot(kerxtrial,diP,2));
+                                end
                             end
                         
                         end

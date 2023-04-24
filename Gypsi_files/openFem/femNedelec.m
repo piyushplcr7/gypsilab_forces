@@ -115,7 +115,9 @@ if size(fe.msh.elt,2)==3 % Triangular elements
             
             % For each integration point
             for j = 1:Ngss
-                val(:,i,j) = flux;
+                % Fixed by PP on 24/4/23, curlNED = -divRWG = -flux
+                %val(:,i,j) = flux;
+                val(:,i,j) = -flux;
             end
         end
         

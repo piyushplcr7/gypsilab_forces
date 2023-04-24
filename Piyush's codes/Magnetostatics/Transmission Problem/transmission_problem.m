@@ -4,13 +4,15 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 
 % (mui+mue)/(mui-mue)
-mu = 3;
+mu = 4;
 mu0 = 2;
 vals = 50:100:1000;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
 forces_bem_1 = forces_mst;
+torques_mst = forces_mst;
+torques_bem = forces_mst;
 
 for i = 1:Nvals
     N = vals(i);
@@ -72,6 +74,8 @@ for i = 1:Nvals
     forces_mst(i,:) = ForceMstTP(Gamma,Bn,Ht,mu0,mu)
 
     % Torque computation
+    Xcg = [4 0 0];
+    torques_mst(i,:) = TorqueMstTP(Gamma,Bn,Ht,mu0,mu,Xcg)
 
     %% Computing forces and torques using BEM shape derivative
 

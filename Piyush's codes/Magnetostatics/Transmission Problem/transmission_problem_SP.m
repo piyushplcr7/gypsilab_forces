@@ -4,13 +4,14 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 
 % (mui+mue)/(mui-mue)
-mu = 3;
+mu = 4;
 mu0 = 2;
 vals = 50:100:1000;
 Nvals = size(vals,2);
 forces_vol = zeros(Nvals,3);
 forces_bem = forces_vol;
 forces_bem_1 = forces_vol;
+torques_vol = forces_vol;
 
 for i = 1:Nvals
     N = vals(i);
@@ -60,6 +61,17 @@ for i = 1:Nvals
     f3 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Psi,g,J,omega_src,Vel3,DVel3);
 
     forces_vol(i,:) = [f1 f2 f3]
+
+    Xcg = [4 0 0];
+    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
+    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
+    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+
+    t1 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Psi,g,J,omega_src,Velr1,DVelr1);
+    t2 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Psi,g,J,omega_src,Velr2,DVelr2);
+    t3 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Psi,g,J,omega_src,Velr3,DVelr3);
+
+    torques_vol(i,:) = [t1 t2 t3]
 
 
 end
