@@ -197,6 +197,22 @@ function rsfs = femRSF(fe)
                         rsfs{3}{2} = @(X) X(:, 2) - 1;
                        
                    case 'div[psi]'
+                       rsfs = cell(3,1);
+                        
+                        rsfs{1} = cell(2, 1);
+                        rsfs{2} = cell(2, 1);
+                        rsfs{3} = cell(2, 1);
+                        
+                        rsfs{1}{1} = @(X) X(:, 1);
+                        rsfs{1}{2} = @(X) X(:, 2);
+                        
+                        
+                        rsfs{2}{1} = @(X) X(:, 1) - 1;
+                        rsfs{2}{2} = @(X) X(:, 2);
+                        
+                        
+                        rsfs{3}{1} = @(X) X(:, 1);
+                        rsfs{3}{2} = @(X) X(:, 2) - 1;
                    
                end
        end

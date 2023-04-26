@@ -1,8 +1,8 @@
-% New transmission problem script
+% Full BEM shape derivative Transmission Problem Vect
 
 addpath(genpath("../../../"));
 clear; clc; close all;
-format long;
+
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
@@ -10,7 +10,7 @@ vals = 50:100:1000;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
-forces_bem_1 = forces_mst;
+forces_bem_simplified = forces_mst;
 torques_mst = forces_mst;
 torques_bem = forces_mst;
 
@@ -54,61 +54,34 @@ for i = 1:Nvals
     % Interior traces
     Psi_in = mu/mu0 * Psi;
     g_in = g;
-    
-    %% Computing the MST based force and torque
-    
-    % Force computation
+
+    %% Comparing forces from full Shape Derivative and simplified Shape Derivative
     NED = fem(bndmesh,'NED'); 
     P1 = fem(bndmesh,'P1');
     % Div conforming with div0 constraint -> Neumann trace
     DIV0 = nxgrad(P1); 
     RWG = fem(bndmesh,'RWG');
     
-    % Bn = curlA.n = curlTg
-    Bn = reconstruct(g,Gamma,NED.curl);
-    % Ht = nx(Hxn) = mu_e^-1 nxPsi
-    Psivals = reconstruct(Psi,Gamma,DIV0);
-    Ht = mu0^(-1) * cross(normals,Psivals,2);
-    Ht = vecnorm(Ht,2,2);
-    
-    forces_mst(i,:) = ForceMstTP(Gamma,Bn,Ht,mu0,mu)
-
-    % Torque computation
-    Xcg = [4 0 0];
-    torques_mst(i,:) = TorqueMstTP(Gamma,Bn,Ht,mu0,mu,Xcg)
-
-    %% Computing forces and torques using BEM shape derivative
-
     % Projecting Psi to RWG
+    Psivals = reconstruct(Psi,Gamma,DIV0);
     Psi_RWG = proj(Psivals,Gamma,RWG);
 
     [Vel1,DVel1] = getTransVelDVel([1 0 0]);
     [Vel2,DVel2] = getTransVelDVel([0 1 0]);
     [Vel3,DVel3] = getTransVelDVel([0 0 1]);
 
-%     f1 = -1/mue * SuperConductorShapeDerivativeT3(bndmesh,Psi_RWG,Vel1,omega_src,J)...
-%         + 1/mue * ShapeDerivativel2BEMTP(bndmesh,g,Vel1,omega_src,J);
-%     f2 = -1/mue * SuperConductorShapeDerivativeT3(bndmesh,Psi_RWG,Vel2,omega_src,J)...
-%         + 1/mue * ShapeDerivativel2BEMTP(bndmesh,g,Vel2,omega_src,J);
-%     f3 = -1/mue * SuperConductorShapeDerivativeT3(bndmesh,Psi_RWG,Vel3,omega_src,J)...
-%         + 1/mue * ShapeDerivativel2BEMTP(bndmesh,g,Vel3,omega_src,J);
-% 
-%     forces_bem(i,:) = [f1 f2 f3]
-
     nf1 = ForceSdBemTP(bndmesh,Psi,g,J,omega_src,Vel1);
     nf2 = ForceSdBemTP(bndmesh,Psi,g,J,omega_src,Vel2);
     nf3 = ForceSdBemTP(bndmesh,Psi,g,J,omega_src,Vel3);
 
-    forces_bem_1(i,:) = [nf1 nf2 nf3]
+    forces_bem_simplified(i,:) = [nf1 nf2 nf3]
 
-    % Torque computation
-    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
-    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
-    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+    sd1 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Vel1,DVel1,mu0,mu);
+    sd2 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Vel2,DVel2,mu0,mu);
+    sd3 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Vel3,DVel3,mu0,mu);
 
-    tbem1 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Velr1,DVelr1,mu0,mu);
-    tbem2 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Velr2,DVelr2,mu0,mu);
-    tbem3 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Velr3,DVelr3,mu0,mu);
+    forces_bem(i,:) = [sd1 sd2 sd3]
 
-    torques_bem(i,:) = [tbem1 tbem2 tbem3]
+
 end
+or Potential test

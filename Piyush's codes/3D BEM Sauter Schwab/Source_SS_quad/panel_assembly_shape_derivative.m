@@ -492,6 +492,44 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                     M(dofs_i(perm_i), dofs_j(perm_j)) = M(dofs_i(perm_i), dofs_j(perm_j)) + ...
                                       local_matrix;
 
+                    case 'div[psi]' % div[psi] for both test and trial
+                        %disp('div[psi] case for RWG')
+                        volsi = vols(i);
+                        volsj = vols(j);
+                        
+                        elti  = mesh.elt(i, :);
+                        eltj  = mesh.elt(j, :);
+    
+                        for ii = 1:Qts % Looping over test functions
+    
+                            ip1 = mod(perm_i(ii),3)+1;
+                            ip2 = mod(ip1,3)+1;
+                            
+                            % Flux through the face
+                            flux = (2*(elti(ip1) < elti(ip2))-1);
+                            
+                            diP = g_tau * flux/ volsi;
+                            
+                            
+                            for jj = 1:Qtr % Looping over trial functions
+                            
+                                jp1 = mod(perm_j(jj),3)+1;
+                                jp2 = mod(jp1,3)+1;
+                                
+                                % Flux through the face
+                                fluxj = (2*(eltj(jp1) < eltj(jp2))-1);
+                                
+                                djP = g_t * fluxj / volsj;
+                                
+                                local_matrix(ii,jj) = dot(Wh,diP * Ker * djP);
+                            
+                            end
+                        
+                        end
+                        % Check local2global map
+                        M(dofs_i(perm_i), dofs_j(perm_j)) = M(dofs_i(perm_i), dofs_j(perm_j)) + ...
+                                          local_matrix;
+
                     case 'Dvel[psi]'
                         volsi = vols(i);
                         volsj = vols(j);

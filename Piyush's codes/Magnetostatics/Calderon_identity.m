@@ -26,13 +26,13 @@ T = [5 5 3];
 %bndmesh = bndmeshCubeTranslated(N,L,T);
 
 % Spherical domain
-bndmesh = mshSphere(N,1);
-bndmesh = bndmesh.translate(T);
+%bndmesh = mshSphere(N,1);
+%bndmesh = bndmesh.translate(T);
 
-%mesh = mshCube(N,L);
-%mesh = mesh.translate(T);
+mesh = mshCube(N,L);
+mesh = mesh.translate(T);
 %mesh = mesh.sub(1);
-%bndmesh = mesh.bnd;
+bndmesh = mesh.bnd;
 
 % Mesh size
 hvals(i) = sqrt(mean(bndmesh.ndv,1));
