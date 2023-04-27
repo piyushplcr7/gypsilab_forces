@@ -10,7 +10,6 @@ vals = 50:100:1000;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
-forces_bem_1 = forces_mst;
 torques_mst = forces_mst;
 torques_bem = forces_mst;
 
@@ -86,22 +85,13 @@ for i = 1:Nvals
     [Vel2,DVel2] = getTransVelDVel([0 1 0]);
     [Vel3,DVel3] = getTransVelDVel([0 0 1]);
 
-%     f1 = -1/mue * SuperConductorShapeDerivativeT3(bndmesh,Psi_RWG,Vel1,omega_src,J)...
-%         + 1/mue * ShapeDerivativel2BEMTP(bndmesh,g,Vel1,omega_src,J);
-%     f2 = -1/mue * SuperConductorShapeDerivativeT3(bndmesh,Psi_RWG,Vel2,omega_src,J)...
-%         + 1/mue * ShapeDerivativel2BEMTP(bndmesh,g,Vel2,omega_src,J);
-%     f3 = -1/mue * SuperConductorShapeDerivativeT3(bndmesh,Psi_RWG,Vel3,omega_src,J)...
-%         + 1/mue * ShapeDerivativel2BEMTP(bndmesh,g,Vel3,omega_src,J);
-% 
-%     forces_bem(i,:) = [f1 f2 f3]
-
     nf1 = ForceSdBemTP(bndmesh,Psi,g,J,omega_src,Vel1);
     nf2 = ForceSdBemTP(bndmesh,Psi,g,J,omega_src,Vel2);
     nf3 = ForceSdBemTP(bndmesh,Psi,g,J,omega_src,Vel3);
 
-    forces_bem_1(i,:) = [nf1 nf2 nf3]
+    forces_bem(i,:) = [nf1 nf2 nf3]
 
-    % Torque computation
+%     % Torque computation
     [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
     [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
     [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);

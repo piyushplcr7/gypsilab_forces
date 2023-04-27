@@ -25,17 +25,25 @@ function [Psi,g] = solveTransmissionProblem(bndmesh,J,omega_src,mu_i,mu_e)
     % For operator N
     Nmat = -single_layer(Gamma,DIV.div,DIV.div);
 
-    Ndiv0 = size(Amat,1); % Equal to NP1
+    NP1 = size(Amat,1); % Equal to NP1
     Nned = size(Nmat,1);
 
     % vector to enforce zero mean for P1 functions
     vec = integral(Gamma,P1);
 
+    ortho = single_layer(Gamma,NED,Ker_curl); % Uses my implementation.
+
     %% Modified Linear System
     % LHS Matrix
-    blockopr = [(1+mu_i/mu_e)*Amat -2*Cmat vec;
-                2*Bmat -(1+mu_e/mu_i)*Nmat zeros(Nned,1);
-                vec' zeros(1,Nned) 0];
+%     blockopr = [(1+mu_i/mu_e)*Amat -2*Cmat vec;
+%                 2*Bmat -(1+mu_e/mu_i)*Nmat zeros(Nned,1);
+%                 vec' zeros(1,Nned) 0];
+
+    blockopr = [(1+mu_i/mu_e)*Amat -2*Cmat zeros(NP1,NP1) vec zeros(NP1,1);
+                2*Bmat -(1+mu_e/mu_i)*Nmat ortho zeros(Nned,1) zeros(Nned,1);
+                zeros(NP1,NP1) ortho' zeros(NP1,NP1) zeros(NP1,1) vec;
+                vec' zeros(1,Nned) zeros(1,NP1) 0 0;
+                zeros(1,NP1) zeros(1,Nned) ];
 
     % Computing the RHS
     % Computing the fields on the points X
@@ -64,7 +72,7 @@ function [Psi,g] = solveTransmissionProblem(bndmesh,J,omega_src,mu_i,mu_e)
     rhs = [rhs1; rhs2;0];
     sol = blockopr\rhs;
 
-    Psi = sol(1:Ndiv0);
-    g = sol(Ndiv0+1:Ndiv0+Nned);
+    Psi = sol(1:NP1);
+    g = sol(NP1+1:NP1+Nned);
 
 end

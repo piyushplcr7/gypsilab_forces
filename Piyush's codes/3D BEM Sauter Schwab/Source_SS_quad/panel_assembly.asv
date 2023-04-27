@@ -17,9 +17,9 @@ function M = panel_assembly(mesh,kernel,trial_space,test_space, I, J)
     % Number of elements in the mesh
     N = size(mesh.elt,1);
     
-    M = zeros(test_space.ndof,trial_space.ndof);
+%    M = zeros(test_space.ndof,trial_space.ndof);
     
-     %M = sparse(test_space.ndof, trial_space.ndof);
+     M = sparse(test_space.ndof, trial_space.ndof);
     
     % Vector storing volume of the mesh elements
     vols = mesh.ndv;
@@ -325,7 +325,10 @@ function M = panel_assembly(mesh,kernel,trial_space,test_space, I, J)
                           assert(strcmp(ts_opr,'nx[psi]'));
 
                           volsi = vols(i);
+                          volsj = vols(j);
+                        
                           elti  = mesh.elt(i, :);
+                          eltj  = mesh.elt(j, :);
 
                           for ii = 1:Qts
                                 ip1 = mod(perm_i(ii),3)+1;
@@ -341,14 +344,13 @@ function M = panel_assembly(mesh,kernel,trial_space,test_space, I, J)
                                 diP  = flux * [dPsi1i dPsi2i]'; % RT0 reference element 2X1
 
                                 % Psi (basis function at quadrature points,
-                                % size N X 3). Adding the scaling with
-                                % g_tau and 1/(2 * volsi)
-                                Psi = g_tau * (Ei * diP)' /(2 * volsi);
-
-                                % Manually evaluating nxPsi
-                                nxPsi1 = nrmx(2) * Psi(:,3) - nrmx(3) * Psi(:,2);
-                                nxPsi2 = nrmx(3) * Psi(:,1) - nrmx(1) * Psi(:,3);
-                                nxPsi3 = nrmx(1) * Psi(:,2) - nrmx(2) * Psi(:,1);
+                                % size N X 3)
+                                Psi = (Ei * diP)';
+                                % jacobian times nxRWGbasis
+                                PX1 = nrmx(2) * Psix3 - nrmx(3) * Psix2;
+                                PX2 = nrmx(3) * Psix1 - nrmx(1) * Psix3;
+                                PX3 = nrmx(1) * Psix2 - nrmx(2) * Psix1;
+                                diP = g_tau * cross(nrmx,(Ei * diP)',2) / (2 * volsi);
 
                               for jj = 1:Qtr % Loop over trial basis fns
 
@@ -364,11 +366,13 @@ function M = panel_assembly(mesh,kernel,trial_space,test_space, I, J)
                                 PY2 = dxP(2) .* g_t;
                                 PY3 = dxP(3) .* g_t;
 
-                                local_matrix(ii,jj) = dot(Wh,Ker.*(nxPsi1 * PY1 + nxPsi2 * PY2 + nxPsi3 * PY3));
+                                local_matrix(ii,jj) = dot(Wh,diP(1) .* Ker .* PY1) ...
+                                                    + dot(Wh,diP(2) .* Ker .* PY2) ...
+                                                    + dot(Wh,diP(3) .* Ker .* PY3);
                               end
 
                           end
-                          M(dofs_i(perm_i), ABC_eltj) = M(dofs_i(perm_i), ABC_eltj) + local_matrix;
+                      
                       
                       case 'nxgrad[psi]'  % Trial: nxgrad(P1), Test: nxgrad(P1)
 
