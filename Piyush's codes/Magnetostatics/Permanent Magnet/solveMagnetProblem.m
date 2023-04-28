@@ -1,6 +1,6 @@
-% Solve Transmission Problem. Returns the exterior traces 
+% BIE solver for a permanent magnet
 
-function [Psi,g] = solveTransmissionProblem(bndmesh,J,omega_src,mu_i,mu_e)
+function [TnA,TdA] = solveMagnetProblem(bndmesh,J,omega_src,mu,mu0,curlM,Mxn)
     %% BEM Spaces
     Gamma = dom(bndmesh,3);
     [X,~] = Gamma.qud;
@@ -34,16 +34,12 @@ function [Psi,g] = solveTransmissionProblem(bndmesh,J,omega_src,mu_i,mu_e)
     ortho = single_layer(Gamma,NED,Ker_curl); % Uses my implementation.
 
     %% Modified Linear System
-    % LHS Matrix
-%     blockopr = [(1+mu_i/mu_e)*Amat -2*Cmat vec;
-%                 2*Bmat -(1+mu_e/mu_i)*Nmat zeros(Nned,1);
-%                 vec' zeros(1,Nned) 0];
 
     blockopr = [(1+mu_i/mu_e)*Amat -2*Cmat zeros(NP1,NP1) vec zeros(NP1,1);
                 2*Bmat -(1+mu_e/mu_i)*Nmat ortho zeros(Nned,1) zeros(Nned,1);
                 zeros(NP1,NP1) ortho' zeros(NP1,NP1) zeros(NP1,1) vec;
                 vec' zeros(1,Nned) zeros(1,NP1) 0 0;
-                zeros(1,NP1) zeros(1,Nned) ];
+                zeros(1,NP1) zeros(1,Nned) vec' 0 0];
 
     % Computing the RHS
     % Computing the fields on the points X
@@ -69,10 +65,9 @@ function [Psi,g] = solveTransmissionProblem(bndmesh,J,omega_src,mu_i,mu_e)
     % mu_e <Tn^+ N(J), u >
     rhs2 = mu_e * M_div0_ned' * TNAJ_DIV0_coeffs;
 
-    rhs = [rhs1; rhs2;0];
+    rhs = [rhs1; rhs2; zeros(NP1,1); 0 ;0];
     sol = blockopr\rhs;
 
     Psi = sol(1:NP1);
     g = sol(NP1+1:NP1+Nned);
-
 end
