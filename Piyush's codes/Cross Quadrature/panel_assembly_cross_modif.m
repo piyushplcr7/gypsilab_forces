@@ -8,6 +8,9 @@
 
 % trace = 0 (no trace); 1 (E x n); 2 (n x (E x n))
 
+% mesh_test - bdry mesh
+% mesh - vol mesh
+
 function M = panel_assembly_cross_modif(mesh_test, mesh, kernel,trial_space,test_space, I, J, mult)
 
     if nargin < 8
