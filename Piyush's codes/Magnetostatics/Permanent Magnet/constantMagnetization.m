@@ -6,7 +6,7 @@ format long;
 
 mu = 1;
 mu0 = 1;
-vals = 250;
+vals = 50:100:1000;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
@@ -53,19 +53,54 @@ for i = 1:Nvals
     % Constant Magnetization function
     M = @(X) ones(size(X,1),1) * [1 0 0];
     % Modifying J source
-    %J = @(x,y,z) 0 * J_orig(x,y,z);
+    J = @(x,y,z) 1 * J_orig(x,y,z);
 
     % These are traces from the exterior
     % Psi lies in the space nxgradP1 and g lies in the space NED
-    [TnA,TdA] = solveMagnetProblemSimplified(Gamma,J,omega_src,mu,mu0,M);
+    [TnAJ,TdAJ,TnAM,TdAM] = solveMagnetProblemSimplified(Gamma,J,omega_src,mu,mu0,M);
 
-    % Projecting TnA from nxgradP1 to RWG
+    % Projecting TnAM from nxgradP1 to RWG
     P1 = fem(bndmesh,'P1');
     RWG = fem(bndmesh,'RWG');
-    Psivals = reconstruct(TnA,Gamma,nxgrad(P1));
+    PsivalsM = reconstruct(TnAM,Gamma,nxgrad(P1));
+    TnAM_RWG = proj(PsivalsM,Gamma,RWG);
 
-    TnA_RWG = proj(Psivals,Gamma,RWG);
+    PsivalsJ = reconstruct(TnAJ,Gamma,nxgrad(P1));
+    TnAJ_RWG = proj(PsivalsJ,Gamma,RWG);
 
     %% Computing the B field for verification
-    plot_field_magnet(TdA,TnA_RWG,bndmesh,J,omega_src,mu0,interior);
+%     plot_field_magnet(TdAM,TnAM_RWG,bndmesh,J,omega_src,mu0,interior);
+%     figure;
+%     plot_field_magnet(TdAJ,TnAJ_RWG,bndmesh,J,omega_src,mu0,interior);
+
+    %% Computing forces and torques from MST
+
+    % Force computation
+    NED = fem(bndmesh,'NED'); 
+    P1 = fem(bndmesh,'P1');
+    % Div conforming with div0 constraint -> Neumann trace
+    DIV0 = nxgrad(P1); 
+    RWG = fem(bndmesh,'RWG');
+    
+    % BJn = curlAJ.n = curlTgJ
+    BJn = reconstruct(TdAJ,Gamma,NED.curl);
+    % HJt = nx(HJxn) = mu0^-1 nxPsiJ
+    PsiJvals = reconstruct(TnAJ,Gamma,DIV0);
+    HJt = mu0^(-1) * cross(normals,PsiJvals,2);
+    HJt = vecnorm(HJt,2,2);
+
+    % Traces for the magnetic part
+    BMn = reconstruct(TdAM,Gamma,NED.curl);
+    % curlAM x n = BM x n = mu0 HM x n from outside
+    PsiMvals = reconstruct(TnAM,Gamma,DIV0);
+    % Tangential component of HM
+    HMt = 1/mu0 * cross(normals,PsiMvals,2);
+    %HMt = vecnorm(HMt,2,2);
+    
+    forces_mst(i,:) = -ForceMstMagnet(Gamma,BMn,HMt,mu0,mu,M)+ForceMstTP(Gamma,BJn,HJt,mu0,mu)
+
+    % Torque computation
+    Xcg = [4 0 0];
+    torques_mst(i,:) = -TorqueMstMagnet(Gamma,BMn,HMt,mu0,mu,M,Xcg)+TorqueMstTP(Gamma,BJn,HJt,mu0,mu,Xcg)
+
 end

@@ -5,7 +5,7 @@ function out = plot_field_magnet(TdA,TnA,bndmesh,J,omega_src,mu0,interior)
     Gamma = dom(bndmesh,3);
     plot(bndmesh);
     hold on;
-    %plot(omega_src.msh);
+    plot(omega_src.msh);
 
     maxGamma = max(bndmesh.vtx);
     minGamma = min(bndmesh.vtx);

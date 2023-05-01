@@ -1,6 +1,7 @@
-% BIE solver for a permanent magnet
+% BIE solver for a permanent magnet. Returns the solution split into two
+% parts
 
-function [TnA,TdA] = solveMagnetProblemSimplified(Gamma,J,omega_src,mu,mu0,M)
+function [TnAJ,TdAJ,TnAM,TdAM] = solveMagnetProblemSimplified(Gamma,J,omega_src,mu,mu0,M)
     %% BEM Spaces
     bndmesh = Gamma.msh;
     [X,~] = Gamma.qud;
@@ -67,15 +68,25 @@ function [TnA,TdA] = solveMagnetProblemSimplified(Gamma,J,omega_src,mu,mu0,M)
     Mxn_coeffs = proj(Mxn,Gamma,DIV0);
 
     % mu_e <Td^+ N(J), zeta>
-    rhs1 = mu0 * M_div0_ned * TDAJ_NED_coeffs - mu * Amat * Mxn_coeffs;
+    rhsJ1 = mu0 * M_div0_ned * TDAJ_NED_coeffs;
     % mu_e <Tn^+ N(J), u >
-    rhs2 = mu0 * M_div0_ned' * TNAJ_DIV0_coeffs...
-            + mu0/2 * M_div0_ned' * Mxn_coeffs...
+    rhsJ2 = mu0 * M_div0_ned' * TNAJ_DIV0_coeffs;
+
+    % Magnetic RHS
+    rhsM1 = - mu * Amat * Mxn_coeffs;
+    % Magnetic RHS
+    rhsM2 = mu0/2 * M_div0_ned' * Mxn_coeffs...
             - mu0 * Bmat * Mxn_coeffs;
 
-    rhs = [rhs1; rhs2; zeros(NP1,1); 0 ;0];
-    sol = blockopr\rhs;
+    rhsJ = [rhsJ1; rhsJ2; zeros(NP1,1); 0 ;0];
+    rhsM = [rhsM1; rhsM2; zeros(NP1,1); 0 ;0];
 
-    TnA = sol(1:NP1);
-    TdA = sol(NP1+1:NP1+Nned);
+    solJ = blockopr\rhsJ;
+    solM = blockopr\rhsM;
+
+    TnAJ = solJ(1:NP1);
+    TdAJ = solJ(NP1+1:NP1+Nned);
+
+    TnAM = solM(1:NP1);
+    TdAM = solM(NP1+1:NP1+Nned);
 end
