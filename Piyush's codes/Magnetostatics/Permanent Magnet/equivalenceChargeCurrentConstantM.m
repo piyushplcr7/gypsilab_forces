@@ -4,8 +4,7 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 
-mu = 4;
-mu0 = 1;
+mu = 1;
 vals = 50:100:1000;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
@@ -40,7 +39,7 @@ for i = 1:Nvals
     normals = Gamma.qudNrm;
 
     % Function to determine the interior of the magnet
-    interior = @(X) (vecnorm(X-T,2,2) < 1.05);
+    interior = @(X) (vecnorm(X-T,2,2) < 1);
     
     %% Source
     N_src = N;
@@ -53,11 +52,11 @@ for i = 1:Nvals
     % Constant Magnetization function
     M = @(X) ones(size(X,1),1) * [1 0 0];
     % Modifying J source
-    J = @(x,y,z) 1 * J_orig(x,y,z);
+    J = @(x,y,z) 0 * J_orig(x,y,z);
 
     % These are traces from the exterior
     % Psi lies in the space nxgradP1 and g lies in the space NED
-    [TnAJ,TdAJ,TnAM,TdAM] = solveMagnetProblemSimplified(Gamma,J,omega_src,mu,mu0,M);
+    [TnAJ,TdAJ,TnAM,TdAM] = solveMagnetProblemSimplified(Gamma,J,omega_src,mu,mu,M);
 
     % Projecting TnAM from nxgradP1 to RWG
     P1 = fem(bndmesh,'P1');
@@ -73,34 +72,38 @@ for i = 1:Nvals
 %     figure;
 %     plot_field_magnet(TdAJ,TnAJ_RWG,bndmesh,J,omega_src,mu0,interior);
 
-    %% Computing forces and torques from MST
+    %% Computing forces and torques from Equivalent charge and equivalent current models
 
     % Force computation
     NED = fem(bndmesh,'NED'); 
     P1 = fem(bndmesh,'P1');
+    P0 = fem(bndmesh,'P0');
     % Div conforming with div0 constraint -> Neumann trace
     DIV0 = nxgrad(P1); 
     RWG = fem(bndmesh,'RWG');
     
-    % BJn = curlAJ.n = curlTgJ
-    BJn = reconstruct(TdAJ,Gamma,NED.curl);
-    % HJt = nx(HJxn) = mu0^-1 nxPsiJ
-    PsiJvals = reconstruct(TnAJ,Gamma,DIV0);
-    HJt = mu0^(-1) * cross(normals,PsiJvals,2);
-    HJt = vecnorm(HJt,2,2);
+    [X,W] = Gamma.qud;
 
-    % Traces for the magnetic part
-    BMn = reconstruct(TdAM,Gamma,NED.curl);
-    % curlAM x n = BM x n = mu0 HM x n from outside
-    PsiMvals = reconstruct(TnAM,Gamma,DIV0);
-    % Tangential component of HM
-    HMt = 1/mu0 * cross(normals,PsiMvals,2);
-    %HMt = vecnorm(HMt,2,2);
+    Mvals = M(X);
+    Mxn = cross(Mvals,normals,2);
+    Mxn_coeffs = proj(Mxn,Gamma,DIV0);
+
+    Mdotn = dot(Mvals,normals,2);
+    Mdotn_coeffs = proj(Mdotn,Gamma,P0);
+
+    % Obtaining average B and H values on the magnet boundary
+
+    % {B} = B.n + {Btan}
+    Bn = reconstruct(TdAM+TdAJ,Gamma,curl(NED)).*normals;
+    % nx curlAxn from the outside
+    Btano = cross(normals,reconstruct(TnAJ+TnAM,Gamma,DIV0),2);
+    Btani = Btano + Mxn;
+    avgB = Bn + 0.5*(Btano + Btani);
+
+    % {H} = {H.n} + Htan
+    %Htan = 
     
-    forces_mst(i,:) = -ForceMstMagnet(Gamma,BMn,HMt,mu0,mu,M)+ForceMstTP(Gamma,BJn,HJt,mu0,mu)
-
-    % Torque computation
-    Xcg = [4 0 0];
-    torques_mst(i,:) = -TorqueMstMagnet(Gamma,BMn,HMt,mu0,mu,M,Xcg)+TorqueMstTP(Gamma,BJn,HJt,mu0,mu,Xcg)
+    % Computing the integral of (Mxn)x{B}
+    val = sum(W.* cross(Mxn,avgB,2),1)
 
 end
