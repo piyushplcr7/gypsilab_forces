@@ -23,10 +23,10 @@ function M = panel_assembly_cross_modif(mesh_test, mesh, kernel,trial_space,test
 
     [Xss, Wss] = quad5D(5);
     
-%     M = zeros(test_space.ndof,trial_space.ndof);
+     M = zeros(test_space.ndof,trial_space.ndof);
 %     M = sparse(test_space.ndof, trial_space.ndof);
-     M = spalloc(test_space.ndof, trial_space.ndof, ...
-                 floor(test_space.ndof * trial_space.ndof / 4));
+%      M = spalloc(test_space.ndof, trial_space.ndof, ...
+%                  floor(test_space.ndof * trial_space.ndof / 4));
    
     % Vector storing volume of the mesh elements
     vols = mesh.ndv;
@@ -349,6 +349,42 @@ function M = panel_assembly_cross_modif(mesh_test, mesh, kernel,trial_space,test
           %---------------------------------------------------------------%
           %---------------------------------------------------------------%
           switch tr_typ
+              case 'P0'
+                  switch ts_typ
+                      case 'P0'
+                          assert(strcmp(ts_opr,'n*[psi]')); % Vectorial kernel is hard coded in this case
+                          Kerdotn = sum(normals_i .* Ker,2);
+                          for ii = 1:Qts
+                              Psix = rsf_ts{ii}(Xh) .* g_tau;
+
+                              for jj = 1:Qtr
+                                Psiy = rsf_tr{jj}(Yh) .* g_t;
+                                
+                                local_matrix(ii,jj) = dot(Wh, Psix .* Kerdotn .* Psiy);
+                              end
+
+                          end
+                          M(ABC_elti, ABCD_eltj) = M(ABC_elti, ABCD_eltj) + local_matrix;
+                          % Alternative
+                          %M(i, j) = M(i, j) + local_matrix;
+
+                      case 'P1'
+                          assert(strcmp(ts_opr,'[psi]')); 
+                          for ii = 1:Qts
+                              Psix = rsf_ts{ii}(Xh) .* g_tau;
+
+                              for jj = 1:Qtr
+                                Psiy = rsf_tr{jj}(Yh) .* g_t;
+                                
+                                local_matrix(ii,jj) = dot(Wh, Psix .* Kerdotn .* Psiy);
+                              end
+
+                          end
+                          M(ABC_elti, ABCD_eltj) = M(ABC_elti, ABCD_eltj) + local_matrix;
+                          % Alternative
+                          M(ABC_elti, j) = M(ABC_elti, j) + local_matrix;
+                  end
+
               case 'P1'
               
           %---------------------------------------------------------------%
@@ -465,8 +501,9 @@ function M = panel_assembly_cross_modif(mesh_test, mesh, kernel,trial_space,test
           end
           
               case 'RWG'
-                  
-                  for ii = 1:Qts
+                  switch tr_opr
+                      case '[psi]'
+                          for ii = 1:Qts
                 ip1 = mod(ii,4)+1;
                 ip2 = mod(ip1,4)+1;
                 ip3 = mod(ip2,4)+1;
@@ -536,6 +573,60 @@ function M = panel_assembly_cross_modif(mesh_test, mesh, kernel,trial_space,test
                   
                   M(dofs_i(perm_i), dofs_j(perm_j)) = M(dofs_i(perm_i), dofs_j(perm_j)) + ...
                                                       local_matrix;
+
+                      case 'div[psi]'
+
+                          for ii = 1:Qts
+                              Psix = rsf_ts{ii}(Xh) .* g_tau;
+
+                              for jj = 1:Qtr
+                                  jp1 = mod(jj,4)+1;
+                                  jp2 = mod(jp1,4)+1;
+                                  jp3 = mod(jp2,4)+1;
+
+                                  % Flux through the face
+                                  fluxj = (2*(mesh.elt(j,perm_j(jp1)) < mesh.elt(j,perm_j(jp2)))-1) ...
+                                        .*(2*(mesh.elt(j,perm_j(jp2)) < mesh.elt(j,perm_j(jp3)))-1) ...
+                                        .*(2*(mesh.elt(j,perm_j(jp1)) < mesh.elt(j,perm_j(jp3)))-1) ...
+                                        ./0.5;
+%               
+
+                                    if mod(jj,2)==0
+                                        fluxj = - fluxj;
+                                    end
+%                                     dPsi1j = rsf_tr{jj}{1}(Yh);
+%                                     dPsi2j = rsf_tr{jj}{2}(Yh);
+%                                     dPsi3j = rsf_tr{jj}{3}(Yh);
+%             
+%                                     djP  = fluxj * [dPsi1j dPsi2j dPsi3j]'; % RT0 reference element
+
+                                    div_djP0 = fluxj * 3; % div RT0 reference element
+
+                                    %djP = (Piolaj * djP)';
+
+                                    % Transforming to the non reference
+                                    % system
+                                    div_djP = div_djP0/det(E);
+            
+                                    div_djP = div_djP .* g_t;
+
+                                    if size(Ker,2) == 3 % Vectorial kernel, test space ntimes(P1) used
+                                        Kerdotn = normals_i(1) * Ker(:,1) + normals_i(2) * Ker(:,2) + normals_i(3) * Ker(:,3); 
+                                        local_matrix(ii,jj) = dot(Wh,div_djP * Kerdotn .*Psix);
+                                    else % test space P0 assumed
+                                        local_matrix(ii,jj) = dot(Wh,div_djP * Ker .*Psix);
+                                    end
+                              end
+                          end
+                          if size(Ker,2) == 3 % Vectorial kernel, test space ntimes(P1) used
+                                M(ABC_elti,dofs_j(perm_j)) = M(ABC_elti,dofs_j(perm_j)) + local_matrix;
+                          else % test space P0 assumed
+                                M(i,dofs_j(perm_j)) = M(i,dofs_j(perm_j)) + local_matrix;
+                          end
+
+                  end
+                  
+                  
           
                                                   
                                                   

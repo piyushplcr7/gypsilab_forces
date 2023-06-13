@@ -52,7 +52,7 @@ for i = 1:Nvals
     % Constant Magnetization function
     M = @(X) ones(size(X,1),1) * [1 0 0];
     % Modifying J source
-    J = @(x,y,z) 0 * J_orig(x,y,z);
+    J = @(x,y,z) 1 * J_orig(x,y,z);
 
     % These are traces from the exterior
     % Psi lies in the space nxgradP1 and g lies in the space NED
@@ -72,7 +72,7 @@ for i = 1:Nvals
 %     figure;
 %     plot_field_magnet(TdAJ,TnAJ_RWG,bndmesh,J,omega_src,mu0,interior);
 
-    %% Computing forces and torques from Equivalent charge and equivalent current models
+    %% Computing forces and torques from Equivalent current model
 
     % Force computation
     NED = fem(bndmesh,'NED'); 
@@ -99,11 +99,12 @@ for i = 1:Nvals
     Btano = cross(normals,reconstruct(TnAJ+TnAM,Gamma,DIV0),2);
     Btani = Btano + Mxn;
     avgB = Bn + 0.5*(Btano + Btani);
-
-    % {H} = {H.n} + Htan
-    %Htan = 
     
     % Computing the integral of (Mxn)x{B}
-    val = sum(W.* cross(Mxn,avgB,2),1)
+    force = sum(W.* cross(Mxn,avgB,2),1)
+
+    Xcg = [4 0 0];
+    r = X-Xcg;
+    torque = sum(W.* cross(r,cross(Mxn,avgB,2),2),1)
 
 end

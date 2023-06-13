@@ -6,15 +6,16 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 50:100:1000;
+vals = 5:12;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
 torques_mst = forces_mst;
 torques_bem = forces_mst;
+hvals = 0*vals;
 
 for i = 1:Nvals
-    N = vals(i);
+    N = 2^vals(i);
     disp(N);
     %% SOLUTION DOMAIN
     % Cube size and position
@@ -25,16 +26,16 @@ for i = 1:Nvals
     %bndmesh = bndmeshCubeTranslated(N,L,T);
     
     % Spherical domain
-%     bndmesh = mshSphere(N,1);
-%     bndmesh = bndmesh.translate(T);
+    bndmesh = mshSphere(N,1);
+    bndmesh = bndmesh.translate(T);
     
-    mesh = mshCube(N,L);
-    mesh = mesh.translate(T);
-    %mesh = mesh.sub(1);
-    bndmesh = mesh.bnd;
+%     mesh = mshCube(N,L);
+%     mesh = mesh.translate(T);
+%     %mesh = mesh.sub(1);
+%     bndmesh = mesh.bnd;
     
     % Mesh size
-    %hvals(i) = sqrt(mean(bndmesh.ndv,1));
+    hvals(i) = sqrt(mean(bndmesh.ndv,1));
     
     Gamma = dom(bndmesh,3);
     normals = Gamma.qudNrm;
@@ -92,13 +93,15 @@ for i = 1:Nvals
     forces_bem(i,:) = [nf1 nf2 nf3]
 
 %     % Torque computation
-    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
-    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
-    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+%     [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
+%     [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
+%     [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+% 
+%     tbem1 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Velr1,DVelr1,mu0,mu);
+%     tbem2 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Velr2,DVelr2,mu0,mu);
+%     tbem3 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Velr3,DVelr3,mu0,mu);
+% 
+%     torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
-    tbem1 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Velr1,DVelr1,mu0,mu);
-    tbem2 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Velr2,DVelr2,mu0,mu);
-    tbem3 = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Velr3,DVelr3,mu0,mu);
-
-    torques_bem(i,:) = [tbem1 tbem2 tbem3]
+    save('TP_VP.mat',"forces_mst","torques_mst","forces_bem","torques_bem","hvals");
 end

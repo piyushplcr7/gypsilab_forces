@@ -57,7 +57,8 @@ function [TnAJ,TdAJ,TnAM,TdAM] = solveMagnetProblemSimplified(Gamma,J,omega_src,
 
     % Projecting the Neumann trace to DIV space
     %TNA_DIV_coeffs = proj(TNA,Gamma,DIV);
-    TNAJ_DIV0_coeffs = proj(TNAJ,Gamma,DIV0);
+    %TNAJ_DIV0_coeffs = proj(TNAJ,Gamma,DIV0);
+    TNAJ_DIV0_coeffs = projSpecial(TNAJ,Gamma,DIV0);
 
     M_div0_ned = mass_matrix(Gamma,DIV0,NED);
 
@@ -65,7 +66,8 @@ function [TnAJ,TdAJ,TnAM,TdAM] = solveMagnetProblemSimplified(Gamma,J,omega_src,
     % Projecting Mxn to RWG
     Mvals = M(X);
     Mxn = cross(Mvals,normals,2);
-    Mxn_coeffs = proj(Mxn,Gamma,DIV0);
+%     Mxn_coeffs = proj(Mxn,Gamma,DIV0);
+    Mxn_coeffs = projSpecial(Mxn,Gamma,DIV0);
 
     % mu_e <Td^+ N(J), zeta>
     rhsJ1 = mu0 * M_div0_ned * TDAJ_NED_coeffs;

@@ -18,20 +18,20 @@ for i = 1:Nvals
     %for N=50
     %% SOLUTION DOMAIN
     % Cube size and position
-    % L = 2*[1 1 1];
+    L = 2*[1 1 1];
     T = [5 5 3];
     
     % Cube domain
     % bndmesh = bndmeshCubeTranslated(N,L,T);
     
     % Spherical domain
-    bndmesh = mshSphere(N,1);
-    bndmesh = bndmesh.translate(T);
+%     bndmesh = mshSphere(N,1);
+%     bndmesh = bndmesh.translate(T);
     
-    %mesh = mshCube(N,L);
-    %mesh = mesh.translate(T);
+    mesh = mshCube(N,L);
+    mesh = mesh.translate(T);
     %mesh = mesh.sub(1);
-    %bndmesh = mesh.bnd;
+    bndmesh = mesh.bnd;
     
     % Mesh size
     %hvals(i) = sqrt(mean(bndmesh.ndv,1));
@@ -64,11 +64,11 @@ for i = 1:Nvals
     Nuy = @(X) ones(size(X,1),1)*[0 1 0];
     Nuz = @(X) ones(size(X,1),1)*[0 0 1];
     
-%     sd_e1 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nux,omega_src,J);
-%     sd_e2 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nuy,omega_src,J);
-%     sd_e3 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nuz,omega_src,J);
-% 
-%     forces_sd(i,:) = [sd_e1 sd_e2 sd_e3]
+    sd_e1 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nux,omega_src,J);
+    sd_e2 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nuy,omega_src,J);
+    sd_e3 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nuz,omega_src,J);
+
+    forces_sd(i,:) = [sd_e1 sd_e2 sd_e3]
     
     %% Computing torques
 %     torques_mst(i,:) = MstTorqueFromA(TdA,TnA,Gamma,T)';

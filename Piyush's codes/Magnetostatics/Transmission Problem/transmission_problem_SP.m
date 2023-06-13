@@ -6,14 +6,16 @@ clear; clc; close all;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 50:100:1000;
+vals = 5:12;
 Nvals = size(vals,2);
 forces_vol = zeros(Nvals,3);
 forces_bem = forces_vol;
 torques_vol = forces_vol;
+torques_bem = torques_vol;
+hvals = vals;
 
 for i = 1:Nvals
-    N = vals(i);
+    N = 2^vals(i);
     disp(N);
     %% SOLUTION DOMAIN
     % Cube size and position
@@ -84,6 +86,8 @@ for i = 1:Nvals
 %     tbem3 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr3,DVelr3,mu0,mu);
 % 
 %     torques_bem(i,:) = [tbem1 tbem2 tbem3]
+
+    save('TP_SP.mat',"forces_vol","torques_vol","forces_bem","torques_bem","hvals");
 
 
 end

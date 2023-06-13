@@ -59,15 +59,17 @@ function [Psi,g] = solveTransmissionProblem(bndmesh,J,omega_src,mu_i,mu_e)
     TDAJ_NED_coeffs = proj(TDAJ,Gamma,NED);
 
     % Projecting the Neumann trace to DIV space
-    %TNA_DIV_coeffs = proj(TNA,Gamma,DIV);
-    TNAJ_DIV0_coeffs = proj(TNAJ,Gamma,DIV0);
+    TNAJ_DIV_coeffs = proj(TNAJ,Gamma,DIV);
+%     TNAJ_DIV0_coeffs = proj(TNAJ,Gamma,DIV0);
 
     M_div0_ned = mass_matrix(Gamma,DIV0,NED);
+    M_div_ned = mass_matrix(Gamma,DIV,NED);
 
     % mu_e <Td^+ N(J), zeta>
     rhs1 = mu_e * M_div0_ned * TDAJ_NED_coeffs;
     % mu_e <Tn^+ N(J), u >
-    rhs2 = mu_e * M_div0_ned' * TNAJ_DIV0_coeffs;
+%     rhs2 = mu_e * M_div0_ned' * TNAJ_DIV0_coeffs;
+    rhs2 = mu_e * M_div_ned' * TNAJ_DIV_coeffs;
 
     rhs = [rhs1; rhs2; zeros(NP1,1); 0 ;0];
     sol = blockopr\rhs;

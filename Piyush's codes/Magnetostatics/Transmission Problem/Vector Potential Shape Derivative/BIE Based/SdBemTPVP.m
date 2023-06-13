@@ -19,7 +19,7 @@ function sd = SdBemTPVP(bndmesh,TnA,TdA,J,omega_src,Vel,DVel,mu0,mu)
     A1mat = panel_assembly(bndmesh,kernelA1,RWG,RWG,ii(:),jj(:));
     A1 = TnA' * A1mat * TnA;
     kernelA2 = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
-    %
+    %g
     DVelRWG = RWG;
     DVelRWG.opr = 'Dvel[psi]';
     A2mat = panel_assembly_shape_derivative(bndmesh,kernelA2,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
