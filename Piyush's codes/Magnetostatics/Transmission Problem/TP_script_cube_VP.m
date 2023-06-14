@@ -26,13 +26,13 @@ for i = 1:Nvals
     %bndmesh = bndmeshCubeTranslated(N,L,T);
     
     % Spherical domain
-    bndmesh = mshSphere(N,1);
-    bndmesh = bndmesh.translate(T);
+%     bndmesh = mshSphere(N,1);
+%     bndmesh = bndmesh.translate(T);
     
-%     mesh = mshCube(N,L);
-%     mesh = mesh.translate(T);
+    mesh = mshCube(N,L);
+    mesh = mesh.translate(T);
 %     %mesh = mesh.sub(1);
-%     bndmesh = mesh.bnd;
+    bndmesh = mesh.bnd;
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
@@ -103,5 +103,5 @@ for i = 1:Nvals
 
     torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
-    save('TP_VP.mat',"forces_mst","torques_mst","forces_bem","torques_bem","hvals");
+    save('TP_VP_cube.mat',"forces_mst","torques_mst","forces_bem","torques_bem","hvals");
 end

@@ -11,6 +11,7 @@ forces_volume = zeros(Nvals,3);
 torques_volume = forces_volume;
 forces_bem = forces_volume;
 torques_bem = forces_volume; 
+hvals = 0*vals;
 
 for i = 1:Nvals
     N = 2^vals(i);
@@ -36,7 +37,7 @@ for i = 1:Nvals
     %bndmesh = mesh.bnd;
     
     % Mesh size
-    %hvals(i) = sqrt(mean(bndmesh.ndv,1));
+    hvals(i) = sqrt(mean(bndmesh.ndv,1));
 
     % Dom object
     Gamma = dom(bndmesh,3);
@@ -97,5 +98,5 @@ for i = 1:Nvals
     
     torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
-    save("SC_SP.mat","forces_volume","torques_volume","forces_bem","torques_bem");
+    save("SC_SP_Sph.mat","forces_volume","torques_volume","forces_bem","torques_bem","hvals");
 end

@@ -75,4 +75,6 @@ torque_mst = MstTorqueFromA(TdA,TnA,Gamma,Xcg)
 % 
 % torque_sd = [sd_e1 sd_e2 sd_e3]
 
+save("SC_VP_Torques.mat","forces_mst","forces_sd","torques_mst","torques_bem","hvals");
+
 end

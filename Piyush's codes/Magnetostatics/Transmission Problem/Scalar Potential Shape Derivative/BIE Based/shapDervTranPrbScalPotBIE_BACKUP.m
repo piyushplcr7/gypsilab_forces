@@ -1,6 +1,6 @@
 % Full shape Derivative
 
-function sd = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel,mu0,mu)
+function sd = shapDervTranPrbScalPotBIE_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel,mu0,mu)
     % BEM Spaces
     P0 = fem(bndmesh,'P0');
     P1 = fem(bndmesh,'P1');
@@ -32,16 +32,6 @@ function sd = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel,mu0
 
     jumpMu = mu0-mu;
     %% Full shape derivative
-
-    %% Non SS computations
-
-    % partial derivative of bk(g,psi)
-    divVelg = divVel.*g;
-    divVelg_coeffs = proj(divVelg,Gamma,P1);
-    Kmat = double_layer_laplace(Gamma,P0,P1);
-
-    %% SS Computations
-
     Nelt = bndmesh.nelt;
 
     [ii,jj] = meshgrid(1:Nelt,1:Nelt);
@@ -49,39 +39,29 @@ function sd = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel,mu0
     % Kernel gradxG.vel(x) + gradyG.vel(y), z:= y-x
     kernelold = @(x,y,z) dot(z,Vel(x) - Vel(y), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
 
+    kerneloldmat_P0_P0 = panel_assembly(bndmesh,kernelold,P0,P0,ii(:),jj(:));
+    kerneloldmat_nxgradP1_nxgradP1 = panel_assembly(bndmesh,kernelold,nxgradP1,nxgradP1,ii(:),jj(:));
+
+    % Partial derivative of bv(psi,psi)
+    dbv_ds = Tnu' * kerneloldmat_P0_P0 * Tnu;
+
+    % partial derivative of bk(g,psi)
+    divVelg = divVel.*g;
+    divVelg_coeffs = proj(divVelg,Gamma,P1);
+    Kmat = double_layer_laplace(Gamma,P0,P1);
+
     kernelintegrable = @(x,y,z) 3/(4*pi)* dot(z,Vel(y) - Vel(x),2) .*z ./vecnorm(z,2,2).^5;
+    kernelintegrablemat = panel_assembly(bndmesh,kernelintegrable,ntimes(P1),P0,ii(:),jj(:));
 
+    % Combination kernel that cancels singularity
     combkernel = @(x,y,z) 1/(4*pi) * ( -[ dot(DVel{1}(y),z,2) dot(DVel{2}(y),z,2) dot(DVel{3}(y),z,2) ] + Vel(y) - Vel(x) )./vecnorm(z,2,2).^3;
-    
-    KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
-
-    parpool(5);
-
-    spmd
-        if spmdIndex==1
-            kerneloldmat_P0_P0 = panel_assembly(bndmesh,kernelold,P0,P0,ii(:),jj(:));
-            % Partial derivative of bv(psi,psi)
-            dbv_ds = Tnu' * kerneloldmat_P0_P0 * Tnu;
-
-        elseif spmdIndex==2
-            kerneloldmat_nxgradP1_nxgradP1 = panel_assembly(bndmesh,kernelold,nxgradP1,nxgradP1,ii(:),jj(:));
-
-        elseif spmdIndex==3
-            kernelintegrablemat = panel_assembly(bndmesh,kernelintegrable,ntimes(P1),P0,ii(:),jj(:));
-
-        elseif spmdIndex==4
-            % Combination kernel that cancels singularity
-            combkernelmat = panel_assembly(bndmesh,combkernel,ntimes(P1),P0,ii(:),jj(:));
-
-        elseif spmdIndex==5
-             % Partial derivative of bw(g,g)
-            SL_Dvelnxgrad_nxgrad = panel_assembly_shape_derivative(bndmesh,KV,nxgradP1,nxgradP1,ii(:),jj(:),Vel,DVel);
-        end
-    end
+    combkernelmat = panel_assembly(bndmesh,combkernel,ntimes(P1),P0,ii(:),jj(:));
 
     dbk_ds = Tnu' * Kmat * divVelg_coeffs + Tnu' * (kernelintegrablemat -combkernelmat) * Tdu;
 
-   
+    % Partial derivative of bw(g,g)
+    KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
+    SL_Dvelnxgrad_nxgrad = panel_assembly_shape_derivative(bndmesh,KV,nxgradP1,nxgradP1,ii(:),jj(:),Vel,DVel);
     dbw_ds = Tdu' * ( kerneloldmat_nxgradP1_nxgradP1 + 2 * SL_Dvelnxgrad_nxgrad) * Tdu;
 
     % Projecting the complex integrand to P0 space

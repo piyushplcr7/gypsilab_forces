@@ -35,7 +35,7 @@ for i = 1:Nvals
     %bndmesh = mesh.bnd;
     
     % Mesh size
-    %hvals(i) = sqrt(mean(bndmesh.ndv,1));
+    hvals(i) = sqrt(mean(bndmesh.ndv,1));
     
     Gamma = dom(bndmesh,3);
     normals = Gamma.qudNrm;
@@ -87,7 +87,7 @@ for i = 1:Nvals
 
     torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
-    save('TP_SP.mat',"forces_vol","torques_vol","forces_bem","torques_bem","hvals");
+    save('TP_SP_Sph.mat',"forces_vol","torques_vol","forces_bem","torques_bem","hvals");
 
 
 end

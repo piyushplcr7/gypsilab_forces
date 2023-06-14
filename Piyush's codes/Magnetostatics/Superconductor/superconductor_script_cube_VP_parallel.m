@@ -82,12 +82,23 @@ for i = 1:Nvals
     [Velyr,DVelyr] = getRotVelDVel([0 1 0],Xcg);
     [Velzr,DVelzr] = getRotVelDVel([0 0 1],Xcg);
 
-    sdt_e1 = SuperConductorShapeDerivative(bndmesh,TnA,Velxr,DVelxr,omega_src,J)
-    sdt_e2 = SuperConductorShapeDerivative(bndmesh,TnA,Velyr,DVelyr,omega_src,J)
-    sdt_e3 = SuperConductorShapeDerivative(bndmesh,TnA,Velzr,DVelzr,omega_src,J)
+    rvels = cell(3,1);
+    Drvels = cell(3,1);
+    rvels{1} = Velxr; rvels{2} = Velyr; rvels{3} = Velzr;
+    Drvels{1} = DVelxr; Drvels{2} = DVelyr; Drvels{3} = DVelzr;
+    ptorque = zeros(3,1);
 
-    torques_bem(i,:) = [sdt_e1 sdt_e2 sdt_e3]
+    parfor i = 1:3
+        ptorque(i) = SuperConductorShapeDerivative(bndmesh,TnA,rvels{i},Drvels{i},omega_src,J)
+    end
 
-    save("SC_VP.mat","forces_mst","forces_sd","torques_mst","torques_bem","hvals");
+%     sdt_e1 = SuperConductorShapeDerivative(bndmesh,TnA,Velxr,DVelxr,omega_src,J)
+%     sdt_e2 = SuperConductorShapeDerivative(bndmesh,TnA,Velyr,DVelyr,omega_src,J)
+%     sdt_e3 = SuperConductorShapeDerivative(bndmesh,TnA,Velzr,DVelzr,omega_src,J)
+
+%     torques_bem(i,:) = [sdt_e1 sdt_e2 sdt_e3]
+     torques_bem(i,:) = ptorque'
+
+    save("SC_VP_Cube.mat","forces_mst","forces_sd","torques_mst","torques_bem","hvals");
 
 end

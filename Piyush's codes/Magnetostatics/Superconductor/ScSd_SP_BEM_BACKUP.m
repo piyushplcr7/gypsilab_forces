@@ -2,7 +2,7 @@
 % potential formulation of the superconductor
 
 % Super conductor Shape derivative_ Scalar Potential
-function sd = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel)
+function sd = ScSd_SP_BEM_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel)
     % BEM Spaces
     P0 = fem(bndmesh,'P0');
     P1 = fem(bndmesh,'P1');
@@ -52,7 +52,19 @@ function sd = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel)
     %% Full shape derivative
     Nelt = bndmesh.nelt;
 
-    %% Non panel assembly computations
+    [ii,jj] = meshgrid(1:Nelt,1:Nelt);
+
+    % t1
+    % Kernel for t1, z:= y-x
+    kernelt1 = @(x,y,z) sum(z.*(Vel(x) - Vel(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
+    t1mat = panel_assembly(bndmesh,kernelt1,nxgradP1,nxgradP1,ii(:),jj(:));
+    t1 = 0.5 * Tdu' * t1mat * Tdu;
+
+    % t2
+    KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
+    t2mat = panel_assembly_shape_derivative(bndmesh,KV,nxgradP1,nxgradP1,ii(:),jj(:),Vel,DVel);
+    t2 = Tdu' * t2mat * Tdu;
+
     % t3
     % Evaluating the velocity field at quadrature points
     Vels = Vel(X);
@@ -79,6 +91,10 @@ function sd = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel)
     Vmat = single_layer(Gamma,P0,P0);
     t8 = -HJn_coeffs' * Vmat * compl_integrand_coeffs;
 
+    % t7
+    t7mat = panel_assembly(bndmesh,kernelt1,P0,P0,ii(:),jj(:));
+    t7 = -0.5 * HJn_coeffs' * t7mat * HJn_coeffs;
+
     % t9
     Vn = dot(Vels,normals,2);
     t9 = -0.5 * sum(W.* dot(HJ,HJ,2) .* Vn,1);
@@ -88,44 +104,14 @@ function sd = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel)
     divVelg = divVel.*g;
     divVelg_coeffs = proj(divVelg,Gamma,P1);
     t5dl = -HJn_coeffs' *Kmat * divVelg_coeffs;
-
-    %% Panel assembly computations
-    % Kernel for t1, z:= y-x
-    [ii,jj] = meshgrid(1:Nelt,1:Nelt);
-    kernelt1 = @(x,y,z) sum(z.*(Vel(x) - Vel(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
-    KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
+    % integrable kernel in t6
     kernelt6 = @(x,y,z) 3/(4*pi)* dot(z,Vel(y) - Vel(x),2) .*z ./vecnorm(z,2,2).^5;
+    kernelt6mat = panel_assembly(bndmesh,kernelt6,ntimes(P1),P0,ii(:),jj(:));
+    t6 = -HJn_coeffs' * kernelt6mat * Tdu;
+    % Combination kernel of t5 and t6 that cancels singularity
     combkernel = @(x,y,z) 1/(4*pi) * ( -[ dot(DVel{1}(y),z,2) dot(DVel{2}(y),z,2) dot(DVel{3}(y),z,2) ] + Vel(y) - Vel(x) )./vecnorm(z,2,2).^3;
-    parpool(5);
-    spmd
-        if spmdIndex==1
-            % t1
-            t1mat = panel_assembly(bndmesh,kernelt1,nxgradP1,nxgradP1,ii(:),jj(:));
-            t1 = 0.5 * Tdu' * t1mat * Tdu;
-
-        elseif spmdIndex==2
-            % t2
-            t2mat = panel_assembly_shape_derivative(bndmesh,KV,nxgradP1,nxgradP1,ii(:),jj(:),Vel,DVel);
-            t2 = Tdu' * t2mat * Tdu;
-
-        elseif spmdIndex==3
-            % t7
-            % Kernel for t1, z:= y-x
-            t7mat = panel_assembly(bndmesh,kernelt1,P0,P0,ii(:),jj(:));
-            t7 = -0.5 * HJn_coeffs' * t7mat * HJn_coeffs;
-
-        elseif spmdIndex==4
-            % integrable kernel in t6
-            kernelt6mat = panel_assembly(bndmesh,kernelt6,ntimes(P1),P0,ii(:),jj(:));
-            t6 = -HJn_coeffs' * kernelt6mat * Tdu;
-
-        elseif spmdIndex==5
-            % Combination kernel of t5 and t6 that cancels singularity
-            combkernelmat = panel_assembly(bndmesh,combkernel,ntimes(P1),P0,ii(:),jj(:));
-            t56 = HJn_coeffs' * combkernelmat * Tdu;
-        end
-
-    end
+    combkernelmat = panel_assembly(bndmesh,combkernel,ntimes(P1),P0,ii(:),jj(:));
+    t56 = HJn_coeffs' * combkernelmat * Tdu;
 
     sd = t1+t2+t3+t4+t5dl+t56+t6+t7+t8+t9;
 
