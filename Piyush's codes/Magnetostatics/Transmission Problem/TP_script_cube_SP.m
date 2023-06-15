@@ -2,7 +2,7 @@
 
 addpath(genpath("../../../"));
 clear; clc; close all;
-
+format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
