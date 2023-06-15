@@ -55,7 +55,11 @@ function sd = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel,mu0
     
     KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
 
-    parpool(5);
+    euler = parcluster('local');
+    euler.NumWorkers = 5;
+    saveProfile(euler);
+
+    pool = euler.parpool(5);
 
     spmd
         if spmdIndex==1
@@ -79,10 +83,10 @@ function sd = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel,mu0
         end
     end
 
-    dbk_ds = Tnu' * Kmat * divVelg_coeffs + Tnu' * (kernelintegrablemat -combkernelmat) * Tdu;
+    dbk_ds = Tnu' * Kmat * divVelg_coeffs + Tnu' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu;
 
    
-    dbw_ds = Tdu' * ( kerneloldmat_nxgradP1_nxgradP1 + 2 * SL_Dvelnxgrad_nxgrad) * Tdu;
+    dbw_ds = Tdu' * ( kerneloldmat_nxgradP1_nxgradP1{2} + 2 * SL_Dvelnxgrad_nxgrad{5}) * Tdu;
 
     % Projecting the complex integrand to P0 space
     DHJV = [dot(DHJ{1},Vels,2) dot(DHJ{2},Vels,2) dot(DHJ{3},Vels,2)];
@@ -94,28 +98,36 @@ function sd = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel,mu0
     slmat = single_layer(Gamma,P0,P0);
 
     % partial derivative of l1(psi)
-    dl1_ds = Tnu' * (kerneloldmat_P0_P0 * HJn_coeffs + slmat * compl_integrand_coeffs);
+    dl1_ds = Tnu' * (kerneloldmat_P0_P0{1} * HJn_coeffs + slmat * compl_integrand_coeffs);
 
     % partial derivative of l2(g)
     dl2_ds = sum(W.*compl_integrand.*g,1);
 
     % partial derivative of l3(g)
-    dl3_ds = HJn_coeffs' * Kmat * divVelg_coeffs + HJn_coeffs' * (kernelintegrablemat -combkernelmat) * Tdu...
+    dl3_ds = HJn_coeffs' * Kmat * divVelg_coeffs + HJn_coeffs' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu...
             + compl_integrand_coeffs' * Kmat * Tdu;
     
     % Remaining terms
     Vn = dot(Vels,normals,2);
     remterm1 = -0.5 * jumpMu * sum(W.* dot(HJ,HJ,2) .* Vn,1);
-    remterms = -jumpMu^2/2/mu *HJn_coeffs' * (kerneloldmat_P0_P0 * HJn_coeffs + 2* slmat * compl_integrand_coeffs);
+    remterms = -jumpMu^2/2/mu *HJn_coeffs' * (kerneloldmat_P0_P0{1} * HJn_coeffs + 2* slmat * compl_integrand_coeffs);
 
-    sd = mu0/2 * ( - (1+mu0/mu) * dbv_ds ...
+    sd = mu0/2 * ( - (1+mu0/mu) * dbv_ds{1} ...
                    + 4 * dbk_ds...
                    + (1+mu/mu0) * dbw_ds)...
          -mu0 * ( jumpMu/mu * dl1_ds ...
                   + jumpMu/2/mu0 * dl2_ds ...
                   -jumpMu/mu0 * dl3_ds)...
                   +remterm1 + remterms;
+    
+    % sd = mu0/2 * ( - (1+mu0/mu) * dbv_ds ...
+    %                + 4 * dbk_ds...
+    %                + (1+mu/mu0) * dbw_ds)...
+    %      -mu0 * ( jumpMu/mu * dl1_ds ...
+    %               + jumpMu/2/mu0 * dl2_ds ...
+    %               -jumpMu/mu0 * dl3_ds)...
+    %               +remterm1 + remterms;
 
-
+    pool.delete();
 
 end

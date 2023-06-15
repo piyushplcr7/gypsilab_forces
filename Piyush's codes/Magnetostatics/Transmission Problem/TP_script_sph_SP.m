@@ -6,7 +6,7 @@ clear; clc; close all;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 5:12;
+vals = 8:12;
 Nvals = size(vals,2);
 forces_vol = zeros(Nvals,3);
 forces_bem = forces_vol;
@@ -86,6 +86,18 @@ for i = 1:Nvals
     tbem3 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr3,DVelr3,mu0,mu);
 
     torques_bem(i,:) = [tbem1 tbem2 tbem3]
+
+    % fbem1 = shapDervTranPrbScalPotBIE_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Vel1,DVel1,mu0,mu);
+    % fbem2 = shapDervTranPrbScalPotBIE_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Vel2,DVel2,mu0,mu);
+    % fbem3 = shapDervTranPrbScalPotBIE_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Vel3,DVel3,mu0,mu);
+    % 
+    % forces_bem(i,:) = [fbem1 fbem2 fbem3]
+    % 
+    % tbem1 = shapDervTranPrbScalPotBIE_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Velr1,DVelr1,mu0,mu);
+    % tbem2 = shapDervTranPrbScalPotBIE_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Velr2,DVelr2,mu0,mu);
+    % tbem3 = shapDervTranPrbScalPotBIE_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Velr3,DVelr3,mu0,mu);
+    % 
+    % torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
     save('TP_SP_Sph.mat',"forces_vol","torques_vol","forces_bem","torques_bem","hvals");
 

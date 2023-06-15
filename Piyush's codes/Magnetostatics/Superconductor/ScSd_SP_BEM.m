@@ -96,7 +96,13 @@ function sd = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel)
     KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
     kernelt6 = @(x,y,z) 3/(4*pi)* dot(z,Vel(y) - Vel(x),2) .*z ./vecnorm(z,2,2).^5;
     combkernel = @(x,y,z) 1/(4*pi) * ( -[ dot(DVel{1}(y),z,2) dot(DVel{2}(y),z,2) dot(DVel{3}(y),z,2) ] + Vel(y) - Vel(x) )./vecnorm(z,2,2).^3;
-    parpool(5);
+    
+    euler = parcluster('local');
+    euler.NumWorkers = 5;
+    saveProfile(euler);
+
+    pool = euler.parpool(5);
+
     spmd
         if spmdIndex==1
             % t1
@@ -127,6 +133,8 @@ function sd = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel)
 
     end
 
-    sd = t1+t2+t3+t4+t5dl+t56+t6+t7+t8+t9;
+    sd = t1{1}+t2{2}+t3+t4+t5dl+t56{5}+t6{4}+t7{3}+t8+t9;
+
+    pool.delete();
 
 end

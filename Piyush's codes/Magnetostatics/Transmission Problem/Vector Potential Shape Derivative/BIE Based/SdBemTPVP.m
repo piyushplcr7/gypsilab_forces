@@ -62,8 +62,12 @@ function sd = SdBemTPVP(bndmesh,TnA,TdA,J,omega_src,Vel,DVel,mu0,mu)
 
     Nelt = bndmesh.nelt;
     [ii,jj] = meshgrid(1:Nelt,1:Nelt);
+    
+    euler = parcluster('local');
+    euler.NumWorkers = 5;
+    saveProfile(euler);
 
-    parpool(5);
+    pool = euler.parpool(5);
 
     spmd
         if spmdIndex==1
@@ -98,11 +102,16 @@ function sd = SdBemTPVP(bndmesh,TnA,TdA,J,omega_src,Vel,DVel,mu0,mu)
 
         end
     end
-
-
-    sd = 1/(2*mu0) * ( (1+mu/mu0) * (A1+A2)...
-                        -4 * (C1+C2+C3)...
-                        +(1+mu0/mu) * (N) )...
+    
+    sd = 1/(2*mu0) * ( (1+mu/mu0) * (A1{1}+A2{2})...
+                        -4 * (C1{3}+C2{3}+C3{4})...
+                        +(1+mu0/mu) * (N{5}) )...
                         -l1 + (l21+l22);
+
+    % sd = 1/(2*mu0) * ( (1+mu/mu0) * (A1+A2)...
+    %                     -4 * (C1+C2+C3)...
+    %                     +(1+mu0/mu) * (N) )...
+    %                     -l1 + (l21+l22);
+    pool.delete();
 
 end

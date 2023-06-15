@@ -98,5 +98,5 @@ for i = 1:Nvals
     
     torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
-    save("SC_SP_Sph.mat","forces_volume","torques_volume","forces_bem","torques_bem","hvals");
+    save("SC_SP_Cube.mat","forces_volume","torques_volume","forces_bem","torques_bem","hvals");
 end
