@@ -87,13 +87,13 @@ function sd = SdBemTPVP(bndmesh,TnA,TdA,J,omega_src,Vel,DVel,mu0,mu)
             DVelRWG.opr = 'Dvel[psi]';
             % Partial derivative of b_C
             C1mat = panel_assembly_shape_derivative(bndmesh,kernelC1,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
-            C1 = TnA' * C1mat * TdA;
-            C2 = TdA' * C1mat * TnA; % = C1?
+            C1 = TnA' * C1mat * TdA
+            C2 = TdA' * C1mat * TnA % = C1?
 
         elseif spmdIndex==4
             % C3 (Is this way of evaluation okay?), z:= y-x
             C3mat = panel_assembly(bndmesh,kernelC3,RWG,RWG,ii(:),jj(:));
-            C3 = TnA' * C3mat * TdA;
+            C3 = TnA' * C3mat * TdA
 
         elseif spmdIndex==5
             % Partial derivative of b_N
