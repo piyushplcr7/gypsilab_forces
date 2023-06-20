@@ -6,7 +6,7 @@
 % TdA       : Coefficients for the exterior Dirichlet trace, in NED space
 % TnA       : Coefficients for the exterior Neumann trace, in RWG
 
-function sd = PermanentMagnetShapeDerivativeBIEVP(Gamma,TnA,TdA,J,omega_src,mu,mu0,M,Vel,DVel)
+function sd = PermanentMagnetShapeDerivativeBIEVP_BACKUP(Gamma,TnA,TdA,J,omega_src,mu,mu0,M,Vel,DVel)
     %% BEM Spaces
     % Source mesh
     % Magnet boundary mesh
@@ -26,62 +26,48 @@ function sd = PermanentMagnetShapeDerivativeBIEVP(Gamma,TnA,TdA,J,omega_src,mu,m
     Mvals = M(X);
     Mxn = cross(Mvals,normals,2);
     Mxn_coeffs = proj(Mxn,Gamma,RWG);
-    
-    kernelA1 = @(x,y,z) dot(z,Vel(x) - Vel(y), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
-    kernelA2 = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
-    kernelC1 = @(x,y,z) 1/(4*pi) * z./vecnorm(z,2,2).^3;
-    kernelC3 = @(x,y,z) -3/(4*pi) * z .* dot(z,Vel(y)-Vel(x),2)./vecnorm(z,2,2).^5 + 1/(4*pi)*(Vel(y)-Vel(x))./vecnorm(z,2,2).^3;
-    kernelN = kernelA1;
 
+    % Red term in implementation.xopp, pg 67
+    % z := y-x, grad_x G = z/norm(z)^3
+    kernelA1 = @(x,y,z) dot(z,Vel(x) - Vel(y), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
+    A1mat = panel_assembly(bndmesh,kernelA1,RWG,RWG,ii(:),jj(:));
+    red_remaining = mu/2 * Mxn_coeffs' * A1mat * Mxn_coeffs;
+    red_l_M = mu * TnA' * A1mat * Mxn_coeffs;
+
+    % Blue terms in implementation.xopp, pg 67
+    kernelA2 = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
     DVelRWG = RWG;
     DVelRWG.opr = 'Dvel[psi]';
+    A2mat = panel_assembly_shape_derivative(bndmesh,kernelA2,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
+    blue_remaining = mu * Mxn_coeffs' * A2mat * Mxn_coeffs;
+    blue_l_M = mu * (Mxn_coeffs' * A2mat * TnA + TnA' * A2mat * Mxn_coeffs);
 
-    euler = parcluster('local');
-    euler.NumWorkers = 5;
-    saveProfile(euler);
+    % Derivative of double layer in l_M, borrowed from TP
+    % Partial derivative of b_C
+    % z := y-x
+    kernelC1 = @(x,y,z) 1/(4*pi) * z./vecnorm(z,2,2).^3;
+    C1mat = panel_assembly_shape_derivative(bndmesh,kernelC1,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
+    MC1 = -mu0* Mxn_coeffs' * C1mat * TdA;
+    MC2 = -mu0* TdA' * C1mat * Mxn_coeffs; 
+    % C3 (Is this way of evaluation okay?), z:= y-x
+    kernelC3 = @(x,y,z) -3/(4*pi) * z .* dot(z,Vel(y)-Vel(x),2)./vecnorm(z,2,2).^5 + 1/(4*pi)*(Vel(y)-Vel(x))./vecnorm(z,2,2).^3;
+    C3mat = panel_assembly(bndmesh,kernelC3,RWG,RWG,ii(:),jj(:));
+    MC3 = -mu0* Mxn_coeffs' * C3mat * TdA;
 
-    pool = euler.parpool(5);
+    %% Shape derivative of bilinear forms from the transmission problem
+    % partial derivative of b_A 
+    A1 = TnA' * A1mat * TnA;
+    A2 = 2* TnA' * A2mat * TnA;
 
-    spmd
-        if spmdIndex==1
-            % Red term in implementation.xopp, pg 67
-            % z := y-x, grad_x G = z/norm(z)^3
-            A1mat = panel_assembly(bndmesh,kernelA1,RWG,RWG,ii(:),jj(:));
-            red_remaining = mu/2 * Mxn_coeffs' * A1mat * Mxn_coeffs;
-            red_l_M = mu * TnA' * A1mat * Mxn_coeffs;
-            A1 = TnA' * A1mat * TnA;
+    % Partial derivative of b_C
+    C1 = TnA' * C1mat * TdA;
+    C2 = TdA' * C1mat * TnA; 
+    C3 = TnA' * C3mat * TdA;
 
-        elseif spmdIndex==2
-            % Blue terms in implementation.xopp, pg 67
-            A2mat = panel_assembly_shape_derivative(bndmesh,kernelA2,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
-            blue_remaining = mu * Mxn_coeffs' * A2mat * Mxn_coeffs;
-            blue_l_M = mu * (Mxn_coeffs' * A2mat * TnA + TnA' * A2mat * Mxn_coeffs);
-            A2 = 2* TnA' * A2mat * TnA;
-
-        elseif spmdIndex==3
-            % Derivative of double layer in l_M, borrowed from TP
-            % Partial derivative of b_C
-            % z := y-x
-            C1mat = panel_assembly_shape_derivative(bndmesh,kernelC1,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
-            MC1 = -mu0* Mxn_coeffs' * C1mat * TdA;
-            MC2 = -mu0* TdA' * C1mat * Mxn_coeffs; 
-            C1 = TnA' * C1mat * TdA;
-            C2 = TdA' * C1mat * TnA; 
-
-        elseif spmdIndex==4
-            % C3 (Is this way of evaluation okay?), z:= y-x
-            C3mat = panel_assembly(bndmesh,kernelC3,RWG,RWG,ii(:),jj(:));
-            MC3 = -mu0* Mxn_coeffs' * C3mat * TdA;
-            C3 = TnA' * C3mat * TdA;
-
-        elseif spmdIndex==5
-            % Partial derivative of b_N
-            Nmat = panel_assembly_shape_derivative(bndmesh,kernelN,RWG.div,RWG.div,ii(:),jj(:),Vel,DVel);
-            N = -TdA' * Nmat * TdA;
-
-        end
-
-    end
+    % Partial derivative of b_N
+    kernelN = kernelA1;
+    Nmat = panel_assembly_shape_derivative(bndmesh,kernelN,RWG.div,RWG.div,ii(:),jj(:),Vel,DVel);
+    N = -TdA' * Nmat * TdA;
 
     %% Shape derivative of linear forms from transmission problem
 
@@ -119,11 +105,11 @@ function sd = PermanentMagnetShapeDerivativeBIEVP(Gamma,TnA,TdA,J,omega_src,mu,m
     l21 = sum(W.* dot(cross(gradxG,JYY,2),DVelnxgvalsXX,2),1);
 
     % SD from transmission problem
-    sd = 1/(2*mu0) * ( (1+mu/mu0) * (A1{1}+A2{2})...
-                        -4 * (C1{3}+C2{3}+C3{4})...
-                        +(1+mu0/mu) * (N{5}) )...
+    sd = 1/(2*mu0) * ( (1+mu/mu0) * (A1+A2)...
+                        -4 * (C1+C2+C3)...
+                        +(1+mu0/mu) * (N) )...
                         -l1 + (l21+l22); 
     % SD additional terms for magnet
-    sd = sd + red_remaining{1} + red_l_M{1} + blue_remaining{2} + blue_l_M{2} + MC1{3} + MC2{3} + MC3{4};
-    pool.delete();
+    sd = sd + red_remaining + red_l_M + blue_remaining + blue_l_M + MC1 + MC2 + MC3;
+
 end

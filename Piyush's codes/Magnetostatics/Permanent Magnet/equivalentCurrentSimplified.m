@@ -5,15 +5,16 @@ clear; clc; close all;
 format long;
 
 mu = 1;
-vals = 50:100:1000;
+vals = 5:13;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
 torques_mst = forces_mst;
 torques_bem = forces_mst;
+hvals = 0*vals;
 
 for i = 1:Nvals
-    N = vals(i);
+    N = 2^vals(i);
     disp(N);
     %% SOLUTION DOMAIN
     % Cube size and position
@@ -33,7 +34,7 @@ for i = 1:Nvals
 %     bndmesh = mesh.bnd;
     
     % Mesh size
-    %hvals(i) = sqrt(mean(bndmesh.ndv,1));
+    hvals(i) = sqrt(mean(bndmesh.ndv,1));
     
     Gamma = dom(bndmesh,3);
     normals = Gamma.qudNrm;
@@ -104,11 +105,11 @@ for i = 1:Nvals
     avgB = Bn + 0.5*(Btano + Btani);
     
     % Computing the integral of (Mxn)x{B}
-    force = sum(W.* cross(Mxn,avgB,2),1)
+    forces_mst(i,:) = sum(W.* cross(Mxn,avgB,2),1)
 
     Xcg = [4 0 0];
     r = X-Xcg;
-    torque = sum(W.* cross(r,cross(Mxn,avgB,2),2),1)
+    torques_mst(i,:) = sum(W.* cross(r,cross(Mxn,avgB,2),2),1)
 
     % Computing using BIE based formula
     [Vel1,DVel1] = getTransVelDVel([1 0 0]);
@@ -119,6 +120,18 @@ for i = 1:Nvals
     fbem2 = PermanentMagnetShapeDerivativeBIEVPSimplified(Gamma,TnAJ+TnAM,TdAJ+TdAM,J,omega_src,Vel2);
     fbem3 = PermanentMagnetShapeDerivativeBIEVPSimplified(Gamma,TnAJ+TnAM,TdAJ+TdAM,J,omega_src,Vel3);
 
-    fbem = [fbem1 fbem2 fbem3]
+    forces_bem(i,:) = [fbem1 fbem2 fbem3]
 
+    % Torque computation
+    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
+    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
+    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+
+    tbem1 = PermanentMagnetShapeDerivativeBIEVP(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,Velr1,DVelr1);
+    tbem2 = PermanentMagnetShapeDerivativeBIEVP(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,Velr2,DVelr2);
+    tbem3 = PermanentMagnetShapeDerivativeBIEVP(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,Velr3,DVelr3);
+    
+    torques_bem(i,:) = [tbem1 tbem2 tbem3]
+
+    save("PM_VP_sph.mat","forces_mst","torques_bem","torques_mst","forces_bem","hvals");
 end
