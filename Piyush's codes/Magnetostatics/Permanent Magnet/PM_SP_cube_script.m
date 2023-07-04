@@ -8,15 +8,16 @@ format long;
 
 mu = 1;
 mu0 = mu;
-vals = 50:100:1000;
+vals = 5:13;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
 torques_mst = forces_mst;
 torques_bem = forces_mst;
+hvals = 0*vals;
 
 for i = 1:Nvals
-    N = vals(i);
+    N = 2^vals(i);
     disp(N);
     %% SOLUTION DOMAIN
     % Cube size and position
@@ -27,16 +28,16 @@ for i = 1:Nvals
     %bndmesh = bndmeshCubeTranslated(N,L,T);
     
     % Spherical domain
-    bndmesh = mshSphere(N,1);
-    bndmesh = bndmesh.translate(T);
+    % bndmesh = mshSphere(N,1);
+    % bndmesh = bndmesh.translate(T);
     
-%     mesh = mshCube(N,L);
-%     mesh = mesh.translate(T);
+    mesh = mshCube(N,L);
+    mesh = mesh.translate(T);
 %     %mesh = mesh.sub(1);
-%     bndmesh = mesh.bnd;
+    bndmesh = mesh.bnd;
     
     % Mesh size
-    %hvals(i) = sqrt(mean(bndmesh.ndv,1));
+    hvals(i) = sqrt(mean(bndmesh.ndv,1));
     
     Gamma = dom(bndmesh,3);
     normals = Gamma.qudNrm;
@@ -87,13 +88,15 @@ for i = 1:Nvals
     avgH = avgHn.*normals + Htan + HJ;
     
     % Computing the surface integral of (M.n) {H}
-    force = mu0 * sum(W.* Mdotn .* avgH,1)
+    forces_mst(i,:) = mu0 * sum(W.* Mdotn .* avgH,1)
 
     % Computing force using the simplified expression from BIE based formulation
-    force_bem = mu0 * sum(W.* Mdotn .* HJ)
+    forces_bem(i,:) = mu0 * sum(W.* Mdotn .* HJ)
 
 
     Xcg = [4 0 0];
     r = X-Xcg;
-    torque = mu0 * sum(W.* Mdotn .* cross(r,avgH,2),1)
+    torques_mst(i,:) = mu0 * sum(W.* Mdotn .* cross(r,avgH,2),1)
+
+    save("PM_SP_cube.mat","forces_mst","torques_bem","torques_mst","forces_bem","hvals");
 end
