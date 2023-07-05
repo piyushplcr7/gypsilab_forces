@@ -91,12 +91,23 @@ for i = 1:Nvals
     forces_mst(i,:) = mu0 * sum(W.* Mdotn .* avgH,1)
 
     % Computing force using the simplified expression from BIE based formulation
-    forces_bem(i,:) = mu0 * sum(W.* Mdotn .* HJ)
+    forces_bem(i,:) = mu0 * sum(W.* Mdotn .* HJ,1)
 
 
     Xcg = [4 0 0];
     r = X-Xcg;
     torques_mst(i,:) = mu0 * sum(W.* Mdotn .* cross(r,avgH,2),1)
+
+    % Torque computation
+    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
+    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
+    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+
+    tbem1 = PermanentMagnetShapeDerivativeBIESP(Gamma,g,psi,J,omega_src,Velr1,DVelr1,mu0,M);
+    tbem2 = PermanentMagnetShapeDerivativeBIESP(Gamma,g,psi,J,omega_src,Velr2,DVelr2,mu0,M);
+    tbem3 = PermanentMagnetShapeDerivativeBIESP(Gamma,g,psi,J,omega_src,Velr3,DVelr3,mu0,M);
+
+    torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
     save("PM_SP_sph.mat","forces_mst","torques_bem","torques_mst","forces_bem","hvals");
 end
