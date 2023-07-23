@@ -7,67 +7,57 @@
 % Pairs of elements I x J share a vertex, edge or are identical.
 
 
-function M = panel_assembly_VECTORIZED(mesh,kernel,trial_space,test_space, I, J,Intmat)
+function M = panel_assembly_VECTORIZED(mesh,kernel,trial_space,test_space,Intmat)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% FAR AWAY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     [I0,J0] = find(Intmat == 0);
     
-    elts_I0 = bndmesh.elt(I0,:);
-    elts_J0 = bndmesh.elt(J0,:);
+    elts_I0 = mesh.elt(I0,:);
+    elts_J0 = mesh.elt(J0,:);
     
-    AI0 = bndmesh.vtx(elts_I0(1,:),:);
-    BI0 = bndmesh.vtx(elts_I0(2,:),:);
-    CI0 = bndmesh.vtx(elts_I0(3,:),:);
+    AI0 = mesh.vtx(elts_I0(:,1),:);
+    BI0 = mesh.vtx(elts_I0(:,2),:);
+    CI0 = mesh.vtx(elts_I0(:,3),:);
     
-    AJ0 = bndmesh.vtx(elts_J0(1,:),:);
-    BJ0 = bndmesh.vtx(elts_J0(2,:),:);
-    CJ0 = bndmesh.vtx(elts_J0(3,:),:);
+    AJ0 = mesh.vtx(elts_J0(:,1),:);
+    BJ0 = mesh.vtx(elts_J0(:,2),:);
+    CJ0 = mesh.vtx(elts_J0(:,3),:);
     
     ABCI0 = elts_I0;
     ABCJ0 = elts_J0;
     
-    permI0 = repmat([1 2 3],size(elts_IJ0,1),1);
+    permI0 = repmat([1 2 3],size(elts_I0,1),1);
     permJ0 = permI0;
+
+    [DCVxI0,DCVyI0] = GramianVectorized(AI0,BI0,CI0);
+    [DCVxJ0,DCVyJ0] = GramianVectorized(AJ0,BJ0,CJ0);
     
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% COMMON VERTEX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    [I1 J1] = find(Intmat == 1);
+    [I1,J1] = find(Intmat == 1);
     
     % Getting elements in matrix form corresponding to I1 and J1
-    elts_I1 = bndmesh.elt(I1,:);
-    elts_J1 = bndmesh.elt(J1,:);
-    
-    % cell_elts_I1 = mat2cell(elts_I1,ones(size(I1,1),1));
-    % cell_elts_J1 = mat2cell(elts_J1,ones(size(J1,1),1));
-    % 
-    % % Apply intersection element wise
-    % intersection1 = cellfun(@intersect,cell_elts_I1,cell_elts_J1,'UniformOutput',false);
-    % % Apply setdiff element wise
-    % diffI1 = cellfun(@setdiff,cell_elts_I1,intersection1,'UniformOutput',false);
-    % diffJ1 = cellfun(@setdiff,cell_elts_J1,intersection1,'UniformOutput',false);
-    % 
-    % % Converting back to matrix
-    % intersection1 = cell2mat(intersection1);
-    % diffI1 = cell2mat(diffI1);
-    % diffI2 = cell2mat(diffI2);
+    elts_I1 = mesh.elt(I1,:);
+    elts_J1 = mesh.elt(J1,:);
     
     [intersection1,diffI1,diffJ1] = rowWiseIntersectionDiff(elts_I1,elts_J1);
     
     % Getting the vertices
     
     % Common vertex! AI1 = AJ1
-    AI1 = bndmesh.vtx(intersection1,:);
+    AI1 = mesh.vtx(intersection1,:);
+    AJ1 = AI1;
     
-    BI1 = bndmesh.vtx(diffI1(:,1),:);
-    CI1 = bndmesh.vtx(diffI1(:,2),:);
+    BI1 = mesh.vtx(diffI1(:,1),:);
+    CI1 = mesh.vtx(diffI1(:,2),:);
     
-    BJ1 = bndmesh.vtx(diffJ1(:,1),:);
-    CJ1 = bndmesh.vtx(diffJ1(:,2),:);
+    BJ1 = mesh.vtx(diffJ1(:,1),:);
+    CJ1 = mesh.vtx(diffJ1(:,2),:);
     
     ABCI1 = [intersection1 diffI1];
     ABCJ1 = [intersection1 diffJ1];
@@ -75,6 +65,9 @@ function M = panel_assembly_VECTORIZED(mesh,kernel,trial_space,test_space, I, J,
     % Finding permutation, perm is such that elt(perm) = ABC
     permI1 = findPermVectorized(ABCI1,elts_I1);
     permJ1 = findPermVectorized(ABCJ1,elts_J1);
+
+    [DCVxI1,DCVyI1] = GramianVectorized(AI1,BI1,CI1);
+    [DCVxJ1,DCVyJ1] = GramianVectorized(AJ1,BJ1,CJ1);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% COMMON EDGE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -82,19 +75,21 @@ function M = panel_assembly_VECTORIZED(mesh,kernel,trial_space,test_space, I, J,
     
     [I2,J2] = find(Intmat == 2);
     
-    elts_I2 = bndmesh.elt(I2,:);
-    elts_J2 = bndmesh.elt(J2,:);
+    elts_I2 = mesh.elt(I2,:);
+    elts_J2 = mesh.elt(J2,:);
     
     [intersection2,diffI2,diffJ2] = rowWiseIntersectionDiff(elts_I2,elts_J2);
     
     % Getting the vertices
     
     % Common edge! AI2 = AJ2, BI2 = BJ2
-    AI2 = bndmesh.vtx(intersection2(1,:),:);
-    BI2 = bndmesh.vtx(intersection2(2,:),:);
+    AI2 = mesh.vtx(intersection2(:,1),:);
+    BI2 = mesh.vtx(intersection2(:,2),:);
+    AJ2 = AI2;
+    BJ2 = BI2;
     
-    CI2 = bndmesh.vtx(diffI2,:);
-    CJ2 = bndmesh.vtx(diffJ2,:);
+    CI2 = mesh.vtx(diffI2,:);
+    CJ2 = mesh.vtx(diffJ2,:);
     
     ABCI2 = [intersection2 diffI2];
     ABCJ2 = [intersection2 diffJ2];
@@ -102,6 +97,9 @@ function M = panel_assembly_VECTORIZED(mesh,kernel,trial_space,test_space, I, J,
     % Finding permutation, perm is such that elt(perm) = ABC
     permI2 = findPermVectorized(ABCI2,elts_I2);
     permJ2 = findPermVectorized(ABCJ2,elts_J2);
+
+    [DCVxI2,DCVyI2] = GramianVectorized(AI2,BI2,CI2);
+    [DCVxJ2,DCVyJ2] = GramianVectorized(AJ2,BJ2,CJ2);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% IDENTICAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -110,14 +108,18 @@ function M = panel_assembly_VECTORIZED(mesh,kernel,trial_space,test_space, I, J,
     [I3,J3] = find(Intmat == 3);
     
     % Element I and J are identical
-    elts_IJ3 = bndmesh.elt(I3,:);
+    elts_IJ3 = mesh.elt(I3,:);
     
     % Getting the vertices
     
     % Identical element! AI3 = AJ3, BI3 = BJ3, CI3 = CJ3
-    AIJ3 = bndmesh.vtx(elts_IJ3(1,:),:);
-    BIJ3 = bndmesh.vtx(elts_IJ3(2,:),:);
-    CIJ3 = bndmesh.vtx(elts_IJ3(3,:),:);
+    AI3 = mesh.vtx(elts_IJ3(:,1),:);
+    BI3 = mesh.vtx(elts_IJ3(:,2),:);
+    CI3 = mesh.vtx(elts_IJ3(:,3),:);
+    
+    AJ3 = AI3;
+    BJ3 = BI3;
+    CJ3 = CI3;
     
     ABCI3 = elts_IJ3;
     ABCJ3 = elts_IJ3;
@@ -127,6 +129,13 @@ function M = panel_assembly_VECTORIZED(mesh,kernel,trial_space,test_space, I, J,
     %permJ3 = findPermVectorized(ABCJ3,elts_IJ3);
     permI3 = repmat([1 2 3],size(elts_IJ3,1),1);
     permJ3 = permI3;
+
+    [DCVxI3,DCVyI3] = GramianVectorized(AI3,BI3,CI3);
+    DCVxJ3 = DCVxI3;
+    DCVyJ3 = DCVyI3;
+
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     [X, W] = quad4D(5); 
     Xss{1} = X{1}; Wss{1} = W{1}; % Identical
@@ -169,43 +178,175 @@ function M = panel_assembly_VECTORIZED(mesh,kernel,trial_space,test_space, I, J,
     % X1Mat = X1Mat - X2Mat;
     % Y1Mat = Y1Mat - Y2Mat;
 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%% Computing all interactions 0 %%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    % No. of quadrature points for far away
+    Nqud0 = size(X{4},1);
+    % No. of quadrature points for common vertex
+    Nqud1 = size(X{3},1);
+    % No. of quadrature points for edge
+    Nqud2 = size(X{2},1);
+    % No. of quadrature points for identical elements
+    Nqud3 = size(X{1},1);
 
-    % Computing all interactions 0
-    Nqud = size(X{4},1);
-    XMat = repmat([X{4}(:,1)-X{4}(:,2) X{4}(:,2)],size(I0,1),1);
-    YMat = repmat([X{4}(:,3)-X{4}(:,4) X{4}(:,4)],size(I0,1),1);
-    WMat = repmat(W{4},size(I0,1));
+    % X quadrature points
+    XMat = [repmat([X{4}(:,1)-X{4}(:,2) X{4}(:,2)],size(I0,1),1);... % Nqud0 * NI0 X 2
+            repmat([X{3}(:,1)-X{3}(:,2) X{3}(:,2)],size(I1,1),1);... % Nqud1 * NI1 X 2
+            repmat([X{2}(:,1)-X{2}(:,2) X{2}(:,2)],size(I2,1),1);... % Nqud2 * NI2 X 2
+            repmat([X{1}(:,1)-X{1}(:,2) X{1}(:,2)],size(I3,1),1)];   % Nqud3 * NI3 X 2
 
-    % chi_tau <-> i and xhat
-    % chi_t <-> j and yhat
-    AI0vec = repelem(AI0,Nqud,1);
-    BI0vec = repelem(BI0,Nqud,1);
-    CI0vec = repelem(CIO,Nqud,1);
-    chi_tau0 = AI0vec + (BI0vec-AI0vec).*XMat(:,1) + (CI0vec-AI0vec).*Xmat(:,2);
+    YMat = [repmat([X{4}(:,3)-X{4}(:,4) X{4}(:,4)],size(I0,1),1);... % Nqud0 * NI0 X 2
+            repmat([X{3}(:,3)-X{3}(:,4) X{3}(:,4)],size(I1,1),1);... % Nqud1 * NI1 X 2
+            repmat([X{2}(:,3)-X{2}(:,4) X{2}(:,4)],size(I2,1),1);... % Nqud2 * NI2 X 2
+            repmat([X{1}(:,3)-X{1}(:,4) X{1}(:,4)],size(I3,1),1)];   % Nqud3 * NI3 X 2
 
-    AJ0vec = repelem(AJ0,Nqud,1);
-    BJ0vec = repelem(BJ0,Nqud,1);
-    CJ0vec = repelem(CJ0,Nqud,1);
-    chi_t0 = AJ0vec + (BJ0vec-AJ0vec).*YMat(:,1) + (CJ0vec-AJ0vec).*YMat(:,2);
+    WMat = [repmat(W{4},size(I0,1),1);... % Nqud0 *NI0 x 1
+            repmat(W{3},size(I1,1),1);... % Nqud1 *NI1 x 1
+            repmat(W{2},size(I2,1),1);... % Nqud2 *NI2 x 1
+            repmat(W{1},size(I3,1),1)];   % Nqud3 *NI3 x 1
 
-    KerVec0 = kernel(chi_tau0,chi_t0,chi_t0-chi_tau0);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%% chi_tau <-> i and xhat %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    
-    
-    
+    AIvec = [repelem(AI0,Nqud0,1);...
+             repelem(AI1,Nqud1,1);...
+             repelem(AI2,Nqud2,1);...
+             repelem(AI3,Nqud3,1)];
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    M = zeros(test_space.ndof,trial_space.ndof);
-    
-     %M = sparse(test_space.ndof, trial_space.ndof);
-    
-    % Vector storing volume of the mesh elements
-    vols = mesh.ndv;
-    
+    BIvec = [repelem(BI0,Nqud0,1);...
+             repelem(BI1,Nqud1,1);...
+             repelem(BI2,Nqud2,1);...
+             repelem(BI3,Nqud3,1)];
+
+    CIvec = [repelem(CI0,Nqud0,1);...
+             repelem(CI1,Nqud1,1);...
+             repelem(CI2,Nqud2,1);...
+             repelem(CI3,Nqud3,1)];
+
+    chi_tau = AIvec + (BIvec-AIvec).*XMat(:,1) + (CIvec-AIvec).*XMat(:,2);
+
+%     AI0vec = repelem(AI0,Nqud,1);
+%     BI0vec = repelem(BI0,Nqud,1);
+%     CI0vec = repelem(CI0,Nqud,1);
+%     chi_tau0 = AI0vec + (BI0vec-AI0vec).*XMat(:,1) + (CI0vec-AI0vec).*Xmat(:,2);
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%% chi_t <-> j and yhat %%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    AJvec = [repelem(AJ0,Nqud0,1);...
+             repelem(AJ1,Nqud1,1);...
+             repelem(AJ2,Nqud2,1);...
+             repelem(AJ3,Nqud3,1)];
+
+    BJvec = [repelem(BJ0,Nqud0,1);...
+             repelem(BJ1,Nqud1,1);...
+             repelem(BJ2,Nqud2,1);...
+             repelem(BJ3,Nqud3,1)];
+
+    CJvec = [repelem(CJ0,Nqud0,1);...
+             repelem(CJ1,Nqud1,1);...
+             repelem(CJ2,Nqud2,1);...
+             repelem(CJ3,Nqud3,1)];
+
+    chi_t = AJvec + (BJvec-AJvec).*YMat(:,1) + (CJvec-AJvec).*YMat(:,2);
+
+%     AJ0vec = repelem(AJ0,Nqud,1);
+%     BJ0vec = repelem(BJ0,Nqud,1);
+%     CJ0vec = repelem(CJ0,Nqud,1);
+%     chi_t0 = AJ0vec + (BJ0vec-AJ0vec).*YMat(:,1) + (CJ0vec-AJ0vec).*YMat(:,2);
+
+    % All permutations
+    ABCI = [ABCI0; ABCI1; ABCI2; ABCI3];
+    ABCJ = [ABCJ0; ABCJ1; ABCJ2; ABCJ3];
+
+    % All permutations
+    permI = [permI0; permI1; permI2; permI3];
+    permJ = [permJ0; permJ1; permJ2; permJ3];
+
+    Ivec = [I0;I1;I2;I3];
+    Jvec = [J0;J1;J2;J3];
+    NIvec = [size(I0,1);size(I1,1);size(I2,1);size(I3,1)];
+
+    Nqudvec = [Nqud0;Nqud1;Nqud2;Nqud3];
+
+    % All elements
+    elts_I = mesh.elt(Ivec,:);
+    elts_J = mesh.elt(Jvec,:);
+
+    % DCVx, DCVy
+    DCVxI = [repelem(DCVxI0,Nqud0,1);...
+             repelem(DCVxI1,Nqud1,1);...
+             repelem(DCVxI2,Nqud2,1);...
+             repelem(DCVxI3,Nqud3,1)];
+
+    DCVyI = [repelem(DCVyI0,Nqud0,1);...
+             repelem(DCVyI1,Nqud1,1);...
+             repelem(DCVyI2,Nqud2,1);...
+             repelem(DCVyI3,Nqud3,1)];
+
+    DCVxJ = [repelem(DCVxJ0,Nqud0,1);...
+             repelem(DCVxJ1,Nqud1,1);...
+             repelem(DCVxJ2,Nqud2,1);...
+             repelem(DCVxJ3,Nqud3,1)];
+
+    DCVyJ = [repelem(DCVyJ0,Nqud0,1);...
+             repelem(DCVyJ1,Nqud1,1);...
+             repelem(DCVyJ2,Nqud2,1);...
+             repelem(DCVyJ3,Nqud3,1)];
+
+    % Normals and area info from the mesh
     normals = mesh.nrm;
-    
+    vols = mesh.ndv;
 
+    % Element info
+    elts_I0 = mesh.elt(I0,:);
+    elts_J0 = mesh.elt(J0,:);
+
+    % Normals and area info at interacting pairs I0 and J0
+%     vols_I0 = vols(I0);
+%     vols_J0 = vols(J0);
+%     g_tau_I0 = 2 * vols_I0; % I <-> x
+%     g_t_J0 = 2 * vols_J0; % J <-> y
+    
+    % normals at I0 and J0
+%     nrmx = normals(I0,:);
+%     nrmy = normals(J0,:); 
+
+    % Vectorizing for quadrature
+%     g_tau_I0_vec = repelem(g_tau_I0,Nqud,1);
+    g_tau_I_vec = 2 * [repelem(vols(I0),Nqud0,1);...
+                       repelem(vols(I1),Nqud1,1);...
+                       repelem(vols(I2),Nqud2,1);...
+                       repelem(vols(I3),Nqud3,1)];
+
+%     g_t_J0_vec = repelem(g_t_J0,Nqud,1);
+    g_t_J_vec = 2 * [repelem(vols(J0),Nqud0,1);...
+                     repelem(vols(J1),Nqud1,1);...
+                     repelem(vols(J2),Nqud2,1);...
+                     repelem(vols(J3),Nqud3,1)];
+
+%     nrmx_vec = repelem(nrmx,Nqud,1);
+    nrmx_vec = [repelem(normals(I0,:),Nqud0,1);...
+                repelem(normals(I1,:),Nqud1,1);...
+                repelem(normals(I2,:),Nqud2,1);...
+                repelem(normals(I3,:),Nqud3,1)];
+
+%     nrmy_vec = repelem(nrmy,Nqud,1);
+    nrmy_vec = [repelem(normals(J0,:),Nqud0,1);...
+                repelem(normals(J1,:),Nqud1,1);...
+                repelem(normals(J2,:),Nqud2,1);...
+                repelem(normals(J3,:),Nqud3,1)];
+
+    % Vectorized kernel evaluation 
+%     KerVec0 = kernel(chi_tau0,chi_t0,chi_t0-chi_tau0);
+    KerVec = kernel(chi_tau,chi_t,chi_t-chi_tau);
+
+    
+    % Info about trial and test spaces
     [~,elt2dof_tr] = trial_space.dof;
     [~,elt2dof_ts] = test_space.dof;
     Qtr = size(elt2dof_tr,2);
@@ -218,541 +359,358 @@ function M = panel_assembly_VECTORIZED(mesh,kernel,trial_space,test_space, I, J,
 
     tr_opr = trial_space.opr;
     ts_opr = test_space.opr;
-    
-    % Convention: panel i <-> chi_tau //////<-> hbasisx
-    %             panel j <-> chi_t   //////<-> hbasisy
-    
-    % Double loop over the mesh elements
-    L = size(I, 1);
-    
-    for elt = 1:L
-        i = I(elt);
-        j = J(elt);
+
+    % Output matrix
+    M = zeros(test_space.ndof,trial_space.ndof);
+
+    switch tr_typ
+        case 'P0' % P0 trial function and P0 test, 1 RSF each
+            Psix = rsf_ts{1}(1) .* g_tau_I_vec;
+            Psiy = rsf_tr{1}(1) .* g_t_J_vec;
+            
+            % Quadrature before summation, contains NI0,1,2,3 interactions
+            % at the same time
+            integrands = WMat.*Psix.*KerVec.*Psiy; 
+            integrals = reduceIntegrand(integrands,NIvec,Nqudvec);
+            
+            %local_matrix(ii,jj) = dot(Wh,Psix .* Ker .* Psiy);
+%             M(Ivec, Jvec) = M(Ivec, Jvec) + integrals;
+            % The above operation doesn't work as expected, need to use
+            % linear indices
+            indices = sub2ind(size(M),Ivec,Jvec);
+            M(indices) = M(indices) + integrals;
         
-        
-        dofs_i = elt2dof_ts(i, :);
-        dofs_j = elt2dof_tr(j, :);
-        
-        area_i = vols(i);
-        
-        nrm = normals(j,:);
-        
-        nrmx = normals(i,:);
-        % The Jacobian of transformation from the panel in 3D to reference
-        % triangle of area 0.5
-        g_tau = 2 * area_i;
-        
-%        for j = J'
-          area_j = vols(j);
-          % The Jacobian of transformation from the panel in 3D to reference
-          % triangle of area 0.5
-          g_t = 2 * area_j;
-          
-          %fprintf("Reached element i,j = %d, %d",i,j);
-          
-          % Finding the relation between panels i and j 
-          intersection = intersect(mesh.elt(i,:),mesh.elt(j,:));
-          vtcs = mesh.vtx(intersection,:);
-          l = length(intersection);
-          switch l
-              case 0
-                  relation = "far_away";
-                  % Vertices for elt i
-                  Ai = mesh.vtx(mesh.elt(i,1),:)';
-                  Bi = mesh.vtx(mesh.elt(i,2),:)';
-                  Ci = mesh.vtx(mesh.elt(i,3),:)';
-                  % Vertices for elt j
-                  Aj = mesh.vtx(mesh.elt(j,1),:)';
-                  Bj = mesh.vtx(mesh.elt(j,2),:)';
-                  Cj = mesh.vtx(mesh.elt(j,3),:)';
-                  % Parameterizations
-                  chi_tau = @(xhat) Ai + [Bi-Ai Ci-Ai]*xhat;
-                  chi_t = @(yhat) Aj + [Bj-Aj Cj-Aj]*yhat;
-                  ABC_elti = mesh.elt(i,:);
-                  ABC_eltj = mesh.elt(j,:);
-                  
-                  
-                  perm_i = 1:3;
-                  perm_j = 1:3;
-                  
-                  % E is the Jacobian Matrix of the mapping for panel j
-                  E = [Bj-Aj Cj-Aj]; 
-                  % Gram matrix
-                  EtE = E' * E; 
-                  Dxy = inv(EtE);
-                  
-                  DCVx = Dxy(1, 1) * E(:, 1) + Dxy(1, 2) * E(:, 2);
-                  DCVy = Dxy(2, 1) * E(:, 1) + Dxy(2, 2) * E(:, 2);
-                  
-                  DCV = [DCVx DCVy];
+        case 'P1' % P1 trial function
+            switch tr_opr
+                case '[psi]' % Trial: P1, Test: P1, 3 RSFs each
+                    Psix = g_tau_I_vec.*[rsf_ts{1}(XMat) rsf_ts{2}(XMat) rsf_ts{3}(XMat)];
+                    Psiy = g_t_J_vec.*[rsf_tr{1}(YMat) rsf_tr{2}(YMat) rsf_tr{3}(YMat)];
 
-                  % Ei is the Jacobian Matrix of the Mapping for panel i
-                  Ei = [Bi-Ai Ci-Ai]; 
-                  % Gram Matrix
-                  EitEi = Ei' * Ei; Dxy = inv(EitEi);
-                  
-                  DCVx = Dxy(1, 1) * Ei(:, 1) + Dxy(1, 2) * Ei(:, 2);
-                  DCVy = Dxy(2, 1) * Ei(:, 1) + Dxy(2, 2) * Ei(:, 2);
-                  
-                  DCVi = [DCVx DCVy];
-                  
-                  % This is done to transform the reference element
-                  % from (0,0), (1,0), (1,1) to
-                  % (0,0), (1,0) , (0,1)
-                  Xh = Xss{4}(:, 1:2);
-                  Yh = Xss{4}(:, 3:4);
-                  
-                  Xh(:,1) = Xh(:,1) - Xh(:,2);
-                  Yh(:,1) = Yh(:,1) - Yh(:,2);
-                  Wh = Wss{4};
-                  
-                  
-              case 1
-                  relation = "common_vertex";
-                  Ai = vtcs(1,:)'; Aj = Ai;
-                  diffi = setdiff(mesh.elt(i,:),intersection);
-                  BCi = mesh.vtx(diffi,:);
-                  Bi = BCi(1,:)';
-                  Ci = BCi(2,:)';
-                  diffj = setdiff(mesh.elt(j,:),intersection);
-                  BCj = mesh.vtx(diffj,:);
-                  Bj = BCj(1,:)';
-                  Cj = BCj(2,:)';
-                  ABC_elti = [intersection diffi(1) diffi(2)];
-                  ABC_eltj = [intersection diffj(1) diffj(2)];
-                  % 0,0 for common point
-                  chi_tau = @(xhat) Ai + [Bi-Ai Ci-Ai]*xhat;
-                  chi_t = @(yhat) Aj + [Bj-Aj Cj-Aj]*yhat;
-                  
-                  
-                  perm_i = [find(mesh.elt(i, :) == ABC_elti(1)), ...
-                            find(mesh.elt(i, :) == ABC_elti(2)), ...
-                            find(mesh.elt(i, :) == ABC_elti(3))];
-                  
-                  perm_j = [find(mesh.elt(j, :) == ABC_eltj(1)), ...
-                            find(mesh.elt(j, :) == ABC_eltj(2)), ...
-                            find(mesh.elt(j, :) == ABC_eltj(3))];
-                  
-                  
-                  E = [Bj-Aj Cj-Aj]; EtE = E' * E; Dxy = inv(EtE);
-                  
-                  DCVx = Dxy(1, 1) * E(:, 1) + Dxy(1, 2) * E(:, 2);
-                  DCVy = Dxy(2, 1) * E(:, 1) + Dxy(2, 2) * E(:, 2);
-                  
-                  DCV = [DCVx DCVy];
-                  
-                  Ei = [Bi-Ai Ci-Ai]; EitEi = Ei' * Ei; Dxy = inv(EitEi);
-                  
-                  DCVx = Dxy(1, 1) * Ei(:, 1) + Dxy(1, 2) * Ei(:, 2);
-                  DCVy = Dxy(2, 1) * Ei(:, 1) + Dxy(2, 2) * Ei(:, 2);
-                  
-                  DCVi = [DCVx DCVy];
-                  
-                  
-                  
-                  Xh = Xss{3}(:, 1:2);
-                  Yh = Xss{3}(:, 3:4);
-                  
-                  Xh(:,1) = Xh(:,1) - Xh(:,2);
-                  Yh(:,1) = Yh(:,1) - Yh(:,2);
-                  Wh = Wss{3};
-                  
-                  
-              case 2
-                  relation = "common_edge";
-                  Ai = vtcs(1,:)'; Aj = Ai;
-                  Bi = vtcs(2,:)'; Bj = Bi;
-                  ci = setdiff(mesh.elt(i,:),intersection);
-                  Ci = mesh.vtx(ci,:)';
-                  cj = setdiff(mesh.elt(j,:),intersection);
-                  Cj = mesh.vtx(cj,:)';
-                  ABC_elti = [intersection(1) intersection(2) ci];
-                  ABC_eltj = [intersection(1) intersection(2) cj];
-                  % 0,0 and 1,0 for common points
-                  chi_tau = @(xhat) Ai + [Bi-Ai Ci-Ai]*xhat;
-                  chi_t = @(yhat) Aj + [Bj-Aj Cj-Aj]*yhat;
-                  
-                  perm_i = [find(mesh.elt(i, :) == ABC_elti(1)), ...
-                            find(mesh.elt(i, :) == ABC_elti(2)), ...
-                            find(mesh.elt(i, :) == ABC_elti(3))];
-                  
-                  perm_j = [find(mesh.elt(j, :) == ABC_eltj(1)), ...
-                            find(mesh.elt(j, :) == ABC_eltj(2)), ...
-                            find(mesh.elt(j, :) == ABC_eltj(3))];
-                  
-                  E = [Bj-Aj Cj-Aj]; EtE = E' * E; Dxy = inv(EtE);
-                  
-                  DCVx = Dxy(1, 1) * E(:, 1) + Dxy(1, 2) * E(:, 2);
-                  DCVy = Dxy(2, 1) * E(:, 1) + Dxy(2, 2) * E(:, 2);
-                  
-                  DCV = [DCVx DCVy];
-                  
-                  Ei = [Bi-Ai Ci-Ai]; EitEi = Ei' * Ei; Dxy = inv(EitEi);
-                  
-                  DCVx = Dxy(1, 1) * Ei(:, 1) + Dxy(1, 2) * Ei(:, 2);
-                  DCVy = Dxy(2, 1) * Ei(:, 1) + Dxy(2, 2) * Ei(:, 2);
-                  
-                  DCVi = [DCVx DCVy];
-                  
-                  
-                  
-                  Xh = Xss{2}(:, 1:2);
-                  Yh = Xss{2}(:, 3:4);
-                  
-                  Xh(:,1) = Xh(:,1) - Xh(:,2);
-                  Yh(:,1) = Yh(:,1) - Yh(:,2);
-                  Wh = Wss{2};
-                  
-              case 3
-                  relation = "identical";
-                  Aj = vtcs(1,:)'; Ai = Aj;
-                  Bj = vtcs(2,:)'; Bi = Bj;
-                  Cj = vtcs(3,:)'; Ci = Cj;
-                  chi_tau = @(xhat) Ai + [Bi-Ai Ci-Ai]*xhat;
-                  chi_t = @(yhat) Aj + [Bj-Aj Cj-Aj]*yhat;
-                  ABC_elti = intersection;
-                  ABC_eltj = intersection;
-                  
-                  perm_i = [find(mesh.elt(i, :) == ABC_elti(1)), ...
-                            find(mesh.elt(i, :) == ABC_elti(2)), ...
-                            find(mesh.elt(i, :) == ABC_elti(3))];
-                  
-                  perm_j = [find(mesh.elt(j, :) == ABC_eltj(1)), ...
-                            find(mesh.elt(j, :) == ABC_eltj(2)), ...
-                            find(mesh.elt(j, :) == ABC_eltj(3))];
-                  
-                  E = [Bj-Aj Cj-Aj]; EtE = E' * E; Dxy = inv(EtE);
-                  
-                  DCVx = Dxy(1, 1) * E(:, 1) + Dxy(1, 2) * E(:, 2);
-                  DCVy = Dxy(2, 1) * E(:, 1) + Dxy(2, 2) * E(:, 2);
-                  
-                  DCV = [DCVx DCVy];
-                  
-                  Ei = [Bi-Ai Ci-Ai]; EitEi = Ei' * Ei; Dxy = inv(EitEi);
-                  
-                  DCVx = Dxy(1, 1) * Ei(:, 1) + Dxy(1, 2) * Ei(:, 2);
-                  DCVy = Dxy(2, 1) * Ei(:, 1) + Dxy(2, 2) * Ei(:, 2);
-                  
-                  DCVi = [DCVx DCVy];
-                  
-                  
-                  
-                  Xh = Xss{1}(:, 1:2);
-                  Yh = Xss{1}(:, 3:4);
-                  
-                  
-                  Xh(:,1) = Xh(:,1) - Xh(:,2);
-                  Yh(:,1) = Yh(:,1) - Yh(:,2);
-                  Wh = Wss{1};
-          end
-          
-          
-          local_matrix = zeros(Qts,Qtr);
+                    % Injecting weights and kernel into Psix
+                    Psix = Psix.*WMat.*KerVec;
+                    
+                    % If Psix = [a1 a2 a3], 
+                    % Psix_triple_vector = [a1 a2 a3
+                    %                       a1 a2 a3
+                    %                       a1 a2 a3]
+                    Psix_triple_vector = repmat(Psix,3,1);
 
-          
-          
-          if iscell(kernel)
-            Ker{1} = kernel{1}(chi_tau(Xh')',chi_t(Yh')',chi_t(Yh')'-chi_tau(Xh')');
-            Ker{2} = kernel{2}(chi_tau(Xh')',chi_t(Yh')',chi_t(Yh')'-chi_tau(Xh')');
-            Ker{3} = kernel{3}(chi_tau(Xh')',chi_t(Yh')',chi_t(Yh')'-chi_tau(Xh')');
-          
-          else
-              
-            Ker = kernel(chi_tau(Xh')',chi_t(Yh')',chi_t(Yh')'-chi_tau(Xh')');
-          end
-          
-          switch tr_typ
-              
-              
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          %%%%%%%%%%%%%%%%%%%%%%% P0 FINITE ELEMENTS BASIS FUNCTIONS   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-              case 'P0' 
-          
-                  for ii = 1:Qts
-                      Psix = rsf_ts{ii}(Xh) .* g_tau;
+                    % If Psiy = [b1 b2 b3]
+                    % Psiy_triple_row = [b1 b2 b3 b1 b2 b3 b1 b2 b3];
+                    Psiy_triple_row = repmat(Psiy,1,3);
 
-                      for jj = 1:Qtr
-                        Psiy = rsf_tr{jj}(Yh) .* g_t;
-                        local_matrix(ii,jj) = dot(Wh,Psix .* Ker .* Psiy);
-                      end
+                    % Reshaping to get long vectors
+                    % Psix_triple_vector = [a1 
+                    %                       a1
+                    %                       a1
+                    %                       a2
+                    %                       a2
+                    %                       a2
+                    %                       a3
+                    %                       a3
+                    %                       a3]
+                    Psix_triple_vector = reshape(Psix_triple_vector,9*size(XMat,1),1);
 
-                  end
-                  M(i, j) = M(i, j) + local_matrix;
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          %%%%%%%%%%%%%%%%%%%%%%%%%% P1 FINITE ELEMENTS BASIS FUNCTIONS   %%%%%%%%%%%%%%%%%%%%%%%%%%%
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-              case 'P1'
-                  
-                  switch tr_opr
+                    % Psiy_triple_row    = [b1 
+                    %                       b2
+                    %                       b3
+                    %                       b1
+                    %                       b2
+                    %                       b3
+                    %                       b1
+                    %                       b2
+                    %                       b3]
+                    Psiy_triple_row = reshape(Psiy_triple_row,9*size(YMat,1),1);
 
-                      case '[psi]' % Trial: P1, Test: P1
-                          
-                      for ii = 1:Qts
-                          Psix = rsf_ts{ii}(Xh) .* g_tau;
+                    % All i,j combinations
+                    % Combinations =       [a1 b1
+                    %                       a1 b2
+                    %                       a1 b3
+                    %                       a2 b1
+                    %                       a2 b2
+                    %                       a2 b3
+                    %                       a3 b1 
+                    %                       a3 b2
+                    %                       a3 b3]
+                    Psix_triple_vector = reshape(Psix_triple_vector,9*size(XMat,1),1);
+                    combinations = Psix_triple_vector .* Psiy_triple_row;
 
-                          for jj = 1:Qtr
-                            Psiy = rsf_tr{jj}(Yh) .* g_t;
-                            local_matrix(ii,jj) = dot(Wh,Psix .* Ker .* Psiy);
-                          end
+                    % Reducing the combinations
+                    % Combinations =
+                    % [a1b1 a1b2 a1b3 a2b1 a2b2 a2b3 a3b1 a3b2 a3b3]
+                    combinations = reshape(combinations,size(XMat,1),9);
 
-                      end
-                      M(ABC_elti, ABC_eltj) = M(ABC_elti, ABC_eltj) + local_matrix;
+                    % Summing up for quadrature
+                    combinations = reduceIntegrand(combinations,NIvec,Nqudvec);
 
-                      case 'grad[psi]' % Trial gradP1, test: nxRWG
+                    % Filling the global matrix
+                    % Getting the right indices
+%                     M( reshape(repmat(ABCI,3,1),9*size(ABCI,1),1) ,...
+%                        repmat(reshape(ABCJ,3*size(ABCJ,1)),3,1) ) = ...
+%                     M( reshape(repmat(ABCI,3,1),9*size(ABCI,1),1) ,...
+%                        repmat(reshape(ABCJ,3*size(ABCJ,1)),3,1) ) +...
+%                     combinations(:);
+                    indices = sub2ind(size(M),...
+                            reshape(repmat(ABCI,3,1),9*size(ABCI,1),1),...
+                            repmat(reshape(ABCJ,3*size(ABCJ,1),1),3,1));
+                    M(indices) = M(indices) + combinations(:);
+                    
+                case 'grad[psi]' % Trial gradP1, test: nxRWG, both have 3 RSF
                           assert(strcmp(ts_typ,'RWG'));
                           assert(strcmp(ts_opr,'nx[psi]'));
 
-                          volsi = vols(i);
-                          elti  = mesh.elt(i, :);
+                          dofs_I = elt2dof_ts(Ivec,:);
 
                           for ii = 1:Qts
-                                ip1 = mod(perm_i(ii),3)+1;
+                                ip1 = mod(permI(:,ii),3)+1;
                                 ip2 = mod(ip1,3)+1;
+
+                                % Fluxes
+                                flux0 = (2*(mesh.elt(I0,ip1) < mesh.elt(I0,ip2))-1);
+                                flux1 = (2*(mesh.elt(I1,ip1) < mesh.elt(I1,ip2))-1);
+                                flux2 = (2*(mesh.elt(I2,ip1) < mesh.elt(I2,ip2))-1);
+                                flux3 = (2*(mesh.elt(I3,ip1) < mesh.elt(I3,ip2))-1);
+
+                                flux = [repelem(flux0,Nqud0,1);...
+                                        repelem(flux1,Nqud1,1);...
+                                        repelem(flux2,Nqud2,1);...
+                                        repelem(flux3,Nqud3,1)];
                                 
-                                % Flux through the face
-                                flux = (2*(elti(ip1) < elti(ip2))-1);
                                 
-                                dPsi1i = rsf_ts{ii}{1}(Xh); % Sizes N X 1
-                                dPsi2i = rsf_ts{ii}{2}(Xh);
+                                % RTO reference element
+                                Psix_ref = flux.*[rsf_ts{ii}{1}(XMat)...
+                                                                  rsf_ts{ii}{2}(XMat)];
+
+                                % Transforming the basis, g_tau/(2 volsi)
+                                % cancels
+                                Psix = (BIvec-AIvec).*Psix_ref(:,1)...
+                                    + (CIvec-AIvec).*Psix_ref(:,2);
                                 
-                                % Size 2 X N
-                                diP  = flux * [dPsi1i dPsi2i]'; % RT0 reference element 2X1
+                                % evaluating nxPsi
+                                nxPsix = cross(nrmx_vec,Psix,2);
 
-                                % Psi (basis function at quadrature points,
-                                % size N X 3). Adding the scaling with
-                                % g_tau and 1/(2 * volsi)
-                                Psi = g_tau * (Ei * diP)' /(2 * volsi);
+                                for jj = 1:Qtr
+                                    % Reference gradient
+                                    dPsiy_ref = [rsf_tr{jj}{1} rsf_tr{jj}{2}];
 
-                                % Manually evaluating nxPsi
-                                nxPsi1 = nrmx(2) * Psi(:,3) - nrmx(3) * Psi(:,2);
-                                nxPsi2 = nrmx(3) * Psi(:,1) - nrmx(1) * Psi(:,3);
-                                nxPsi3 = nrmx(1) * Psi(:,2) - nrmx(2) * Psi(:,1);
+                                    % Transformed element obtained by 
+                                    % multiplication with DCV
+                                    dPsiy = DCVxJ * dPsiy_ref(1)...
+                                           +DCVyJ * dPsiy_ref(2);
 
-                              for jj = 1:Qtr % Loop over trial basis fns
-
-
-                                dPsi1 = rsf_tr{jj}{1};
-                                dPsi2 = rsf_tr{jj}{2};
-
-                                dP = [dPsi1; dPsi2]; % Gradient reference element
-
-                                dxP = DCV * dP;
-
-                                PY1 = dxP(1) .* g_t;
-                                PY2 = dxP(2) .* g_t;
-                                PY3 = dxP(3) .* g_t;
-
-                                local_matrix(ii,jj) = dot(Wh,Ker.*(nxPsi1 * PY1 + nxPsi2 * PY2 + nxPsi3 * PY3));
-                              end
-
-                          end
-                          M(dofs_i(perm_i), ABC_eltj) = M(dofs_i(perm_i), ABC_eltj) + local_matrix;
-                      
-                      case 'nxgrad[psi]'  % Trial: nxgrad(P1), Test: nxgrad(P1)
-
-                          for ii = 1:Qts
-
-                            dPsi1 = rsf_ts{ii}{1};
-                            dPsi2 = rsf_ts{ii}{2};
-
-                            dP = [dPsi1; dPsi2]; % Gradient reference element
-
-                            dxP = DCVi * dP;
-                            Psix1 = dxP(1) .* g_tau;
-                            Psix2 = dxP(2) .* g_tau;
-                            Psix3 = dxP(3) .* g_tau;
-                            
-                            PX1 = nrmx(2) * Psix3 - nrmx(3) * Psix2;
-                            PX2 = nrmx(3) * Psix1 - nrmx(1) * Psix3;
-                            PX3 = nrmx(1) * Psix2 - nrmx(2) * Psix1;
-
-                              for jj = 1:Qtr
-
-
-                                dPsi1 = rsf_tr{jj}{1};
-                                dPsi2 = rsf_tr{jj}{2};
-
-                                dP = [dPsi1; dPsi2]; % Gradient reference element
-
-                                dxP = DCV * dP;
-                                Psiy1 = dxP(1) .* g_t;
-                                Psiy2 = dxP(2) .* g_t;
-                                Psiy3 = dxP(3) .* g_t;
-
-                                PY1 = nrm(2) * Psiy3 - nrm(3) * Psiy2;
-                                PY2 = nrm(3) * Psiy1 - nrm(1) * Psiy3;
-                                PY3 = nrm(1) * Psiy2 - nrm(2) * Psiy1;
-
-                                local_matrix(ii,jj) = dot(Wh,PX1 .* Ker .* PY1) ...
-                                                    + dot(Wh,PX2 .* Ker .* PY2) ...
-                                                    + dot(Wh,PX3 .* Ker .* PY3);
-                              end
-
-                          end
-                          M(ABC_elti, ABC_eltj) = M(ABC_elti, ABC_eltj) + local_matrix;
-
-
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                      case 'n*[psi]'
-
-                          switch ts_opr
-                              
-                              case '[psi]'  % Trial: ntimes(P1), Test: P0
-                                  
-                                  %dKer = Ker{1} * nrm(1) + Ker{2} * nrm(2)
-                                  %+ Ker{3} * nrm(3); PP edit
-                                  dKer = Ker(:,1) * nrm(1) + Ker(:,2) * nrm(2) + Ker(:,3) * nrm(3);
-                                  for ii = 1:Qts
-                                      Psix = rsf_ts{ii}(Xh) .* g_tau;
-
-                                      for jj = 1:Qtr
-                                        Psiy = rsf_tr{jj}(Yh) .* g_t;
-                                        
-                                        local_matrix(ii,jj) = dot(Wh,Psix .* dKer .* Psiy);
-%                                         local_matrix(ii,jj) = dot(Wh,Psix .* Ker{1} .* (Psiy * nrm(1))) ...
-%                                                             + dot(Wh,Psix .* Ker{2} .* (Psiy * nrm(2))) ...
-%                                                             + dot(Wh,Psix .* Ker{3} .* (Psiy * nrm(3)));
-                                      end
-
-                                  end
-                                  M(i, ABC_eltj) = M(i, ABC_eltj) + local_matrix;
-                                  
-                              case 'n*[psi]'  % Trial: ntimes(P1), Test: ntimes(P1)
-                                  
-                                  ndotn = nrmx(1)*nrm(1) + nrmx(2)*nrm(2) + nrmx(3)*nrm(3);
-                                  for ii = 1:Qts
-                                      Psix = rsf_ts{ii}(Xh) .* g_tau;
-
-                                      for jj = 1:Qtr
-                                        Psiy = rsf_tr{jj}(Yh) .* g_t;
-                                        
-                                        local_matrix(ii,jj) = dot(Wh, Psix .* Ker .* Psiy) * ndotn;
-%                                         local_matrix(ii,jj) = dot(Wh,(Psix * nrmx(1)) .* Ker .* (Psiy * nrm(1))) ...
-%                                                             + dot(Wh,(Psix * nrmx(2)) .* Ker .* (Psiy * nrm(2))) ...
-%                                                             + dot(Wh,(Psix * nrmx(3)) .* Ker .* (Psiy * nrm(3)));
-                                      end
-
-                                  end
-                                  M(ABC_elti, ABC_eltj) = M(ABC_elti, ABC_eltj) + local_matrix;
-                                  
-                                  
-                                  
-                          end
-                          
-
-                  
-                  
-                  
-                  end
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                    % adding g_t
+                                    dPsiy = dPsiy.*g_t_J_vec;
                                     
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          %%%%%%%%%%%%%%%%%%%%%%%%%% RWG FINITE ELEMENTS BASIS FUNCTIONS   %%%%%%%%%%%%%%%%%%%%%%%%%%%
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-              case 'RWG'
-                  
-                  
-                  switch tr_opr
-                      
-                      case '[psi]'
-                  volsi = vols(i);
-                  volsj = vols(j);
-                  
-                  elti  = mesh.elt(i, :);
-                  eltj  = mesh.elt(j, :);
-                  for ii = 1:Qts
-                
-                
-                ip1 = mod(perm_i(ii),3)+1;
-                ip2 = mod(ip1,3)+1;
-                
-                % Flux through the face
-                flux = (2*(elti(ip1) < elti(ip2))-1);
-                 
-                    dPsi1i = rsf_ts{ii}{1}(Xh);
-                    dPsi2i = rsf_ts{ii}{2}(Xh);
+                                    integrand_ii_jj = WMat.*KerVec.*dot(nxPsix,dPsiy,2);
+                                    integral_ii_jj = reduceIntegrand(integrand_ii_jj,NIvec,Nqudvec);
+                                    
+                                    dofsI_at_permI = evalRowWisePerm(dofs_I,permI);
+                                    M(dofsI_at_permI(:,ii),ABCJ(:,jj)) = M(dofsI_at_permI(:,ii),ABCJ(:,jj)) + integral_ii_jj;
+
+                                end
+
+                          end
+
+                case 'nxgrad[psi]'  % Trial,test: nxgrad(P1), 3 RSFs
+                    % Panel pairs we want to check
+                    itest = 1;
+                    jtest = 5;
+                    % Find this pair in Ivec, Jvec
+                    fi = find(Ivec == itest);
+                    fj = find(Jvec(fi) == jtest);
+                    found_idx = fi(fj);
+                    assert(Ivec(found_idx) == itest);
+                    assert(Jvec(found_idx) == jtest);
+
+                    % Checking DCV
+                    found_indices = findIndicesInBigVec(itest,jtest,I0,I1,I2,I3,J0,J1,J2,J3,Nqudvec);
+                    found_indices = found_indices(1)
+
+%                     Ai=AIvec(found_indices,:)
+%                     Bi=BIvec(found_indices,:)
+%                     Ci=CIvec(found_indices,:)
+
+%                     Aj=AJvec(found_indices,:)
+%                     Bj=BJvec(found_indices,:)
+%                     Cj=CJvec(found_indices,:)
                     
-                    diP  = flux * [dPsi1i dPsi2i]'; % RT0 reference element
+%                     DCVj = [DCVxJ(found_indices,:)' DCVyJ(found_indices,:)']
+%                     DCVi = [DCVxI(found_indices,:)' DCVyI(found_indices,:)']
                     
-                    diP = g_tau * (Ei * diP)' / (2 * volsi);
-                     
 
-                      for jj = 1:Qtr
+                    for ii = 1:Qts
+                        % Reference gradient
+                        dPsix_ref = [rsf_ts{ii}{1} rsf_ts{ii}{2}];
 
-                        jp1 = mod(perm_j(jj),3)+1;
-                        jp2 = mod(jp1,3)+1;
+                        % Transformed element obtained by 
+                        % multiplication with DCV
+                        dPsix = DCVxI * dPsix_ref(1)...
+                               +DCVyI * dPsix_ref(2);
 
-                        % Flux through the face
-                        fluxj = (2*(eltj(jp1) < eltj(jp2))-1);
+                        % adding g_tau
+                        dPsix = dPsix.*g_tau_I_vec;
 
-                        
-                        dPsi1j = rsf_tr{jj}{1}(Yh);
-                        dPsi2j = rsf_tr{jj}{2}(Yh);
+                        nxdPsix = cross(nrmx_vec,dPsix,2);
+                       
+                        for jj = 1:Qtr
+                            % Reference gradient
+                            dPsiy_ref = [rsf_tr{jj}{1} rsf_tr{jj}{2}];
 
-                        djP  = fluxj * [dPsi1j dPsi2j]'; % RT0 reference element
-                        
-                        djP = g_t * (E * djP)' / (2 * volsj);
+                            % Transformed element obtained by 
+                            % multiplication with DCV
+                            dPsiy = DCVxJ * dPsiy_ref(1)...
+                                   +DCVyJ * dPsiy_ref(2);
 
-                        
-%                         local_matrix(ii,jj) = dot(Wh,Psi1i .* Ker .* Psi1j + Psi2i .* Ker .* Psi2j + Psi3i .* Ker .* Psi3j);
-                        if size(Ker,2) == 1
-                                    local_matrix(ii,jj) = dot(Wh,diP(:, 1) .* Ker .* djP(:, 1) + diP(:, 2) .* Ker .* djP(:, 2) + diP(:, 3) .* Ker .* djP(:, 3));
-                        elseif size(Ker,2) ==3
-                                    % Need to perform {kernel x trial}.test
-                                    kerxtrial = cross(Ker,djP,2);
-                                    local_matrix(ii,jj) = dot(Wh,dot(kerxtrial,diP,2));
+                            % adding g_t
+                            dPsiy = dPsiy.*g_t_J_vec;
+
+                            nxdPsiy = cross(nrmy_vec,dPsiy,2);
+
+                            integrand_ii_jj = WMat.*KerVec.*dot(nxdPsix,nxdPsiy,2);
+                            integral_ii_jj = reduceIntegrand(integrand_ii_jj,NIvec,Nqudvec);
+                            indices = sub2ind(size(M),ABCI(:,ii),ABCJ(:,jj));
+%                             M(ABCI(:,ii),ABCJ(:,jj)) = M(ABCI(:,ii),ABCJ(:,jj)) + integral_ii_jj;
+%                             M(indices) = M(indices) + integral_ii_jj;
+
+                            for var = 1:size(ABCI,1)
+                                M(ABCI(var,ii),ABCJ(var,jj)) = M(ABCI(var,ii),ABCJ(var,jj)) + integral_ii_jj(var); 
+
+                            end
+%                             Ntif = size(testidxfind,1);
+%                             if Ntif ~= 0
+%                                 for yo = 1:Ntif
+%                                  fprintf("Interaction of panels %d and %d for RSFs %d and %d gives %.9f \n", Ivec(found_idx),Jvec(found_idx),ii,jj,integral_ii_jj(found_idx));
+%                                 end
+%                             end
+
+                            % Galerkin matrix entries we want to check
+%                             it = 1; jt = 1;
+%                             ijidx = sub2ind(size(M),it,jt);
+%                             findijidx = find(indices = ididx);
+
                         end
 
-                      end
+                    end
 
-                  end
-                  % Check local2global map
-                  M(dofs_i(perm_i), dofs_j(perm_j)) = M(dofs_i(perm_i), dofs_j(perm_j)) + ...
-                                                      local_matrix;
-                      
-                      
-                  end
-                      
-          
-          
-          
-          end
-          
-          
-          
-%           
-%           for ii = 1:Qts
-%               for jj = 1:Qtr
-%                   local_matrix(ii,jj) = sstri_integrate(kernel,rsf_ts{ii},rsf_tr{jj},chi_tau,chi_t,g_tau,g_t,relation);
-%                   
-%                   % Hard coding local to global map
-%                   switch ts_typ
-%                     case 'P0'
-%                         II = i;
-%                     case 'P1'
-%                         II = ABC_elti(ii);
-%                   end
-%                   
-%                   switch tr_typ
-%                     case 'P0'
-%                         JJ = j;
-%                     case 'P1'
-%                         JJ = ABC_eltj(jj);
-%                   end
-%                   
-%                   M(II,JJ) = M(II,JJ) + local_matrix(ii,jj);
-%                   
-%               end
-%           end
-       
-          % what's the convention here? hbasisx from which space?
-          %local_integral = sstri_integrate(kernel,rsf_tr,rsf_ts,chi_tau,chi_t,g_tau,g_t,relation);
-       
-%        end
-    end
+                case 'n*[psi]'
+                    switch ts_opr
+
+                        case '[psi]' % Trial: ntimes(P1), Test: P0
+                            % Kernel has to be vectorial! ker(x,y).n(y)
+                            Kerdotn_vec = dot(KerVec,nrmy_vec,2);
+
+                            for ii = 1:Qts
+                                Psix = rsf_ts{ii}(XMat).*g_tau_I_vec;
+                                for jj = 1:Qtr
+                                    Psiy = rsf_tr{jj}(YMat).*g_t_J_vec;
+
+                                    integrand_ii_jj = WMat.*Kerdotn_vec.*Psix.*Psiy;
+                                    integral_ii_jj = reduceIntegrand(integrand_ii_jj,NIvec,Nqudvec);
+%                                     M(Ivec,ABCJ(:,jj)) = M(Ivec,ABCJ(:,jj)) + integral_ii_jj;
+                                    for var = 1:size(Ivec,1)
+                                        M(Ivec(var),ABCJ(var,jj)) = M(Ivec(var),ABCJ(var,jj)) + integral_ii_jj(var);
+                                    end
+                                end
+                            end
+
+                        case 'n*[psi]' % Trial: ntimes(P1), Test: ntimes(P1)
+                            ndotn = dot(nrmx_vec,nrmy_vec);
+
+                            for ii = 1:Qts
+                                Psix = rsf_ts{ii}(XMat).*g_tau_I_vec;
+                                for jj = 1:Qtr
+                                    Psiy = rsf_tr{jj}(YMat).*g_t_J_vec;
+                                    integrand_ii_jj = WMat.*KerVec.*Psix.*Psiy.*ndotn;
+                                    integral_ii_jj = reduceIntegrand(integrand_ii_jj,NIvec,Nqudvec);
+                                    M(ABCI(:,ii),ABCJ(:,jj)) = M(ABCI(:,ii),ABCJ(:,jj)) + integral_ii_jj;
+                                end
+                            end
+ 
+
+
+                    end
+
+            end % Switch tr_opr
+
+        case 'RWG'
+            switch tr_opr
+                case '[psi]'
+
+                    dofs_I = elt2dof_ts(Ivec,:);
+                    dofs_J = elt2dof_tr(Jvec,:);
+
+                    for ii = 1:Qts
+                        ip1 = mod(permI(:,ii),3)+1;
+                        ip2 = mod(ip1,3)+1;
+
+                        % Fluxes
+                        flux0i = (2*(mesh.elt(I0,ip1) < mesh.elt(I0,ip2))-1);
+                        flux1i = (2*(mesh.elt(I1,ip1) < mesh.elt(I1,ip2))-1);
+                        flux2i = (2*(mesh.elt(I2,ip1) < mesh.elt(I2,ip2))-1);
+                        flux3i = (2*(mesh.elt(I3,ip1) < mesh.elt(I3,ip2))-1);
+
+                        fluxi = [repelem(flux0i,Nqud0,1);...
+                                repelem(flux1i,Nqud1,1);...
+                                repelem(flux2i,Nqud2,1);...
+                                repelem(flux3i,Nqud3,1)];
+                        
+                        
+                        % RTO reference element
+                        Psix_ref = fluxi.*[rsf_ts{ii}{1}(XMat)...
+                                                          rsf_ts{ii}{2}(XMat)];
+
+                        % Transforming the basis, g_tau/(2 volsi)
+                        % cancels
+                        Psix = (BIvec-AIvec).*Psix_ref(:,1)...
+                            + (CIvec-AIvec).*Psix_ref(:,2);
+
+                        for jj = 1:Qtr
+                            jp1 = mod(permJ(:,jj),3)+1;
+                            jp2 = mod(jp1,3)+1;
     
-    % Creating the final matrix M
+                            % Fluxes
+                            flux0j = (2*(mesh.elt(J0,jp1) < mesh.elt(J0,jp2))-1);
+                            flux1j = (2*(mesh.elt(J1,jp1) < mesh.elt(J1,jp2))-1);
+                            flux2j = (2*(mesh.elt(J2,jp1) < mesh.elt(J2,jp2))-1);
+                            flux3j = (2*(mesh.elt(J3,jp1) < mesh.elt(J3,jp2))-1);
+    
+                            fluxj = [repelem(flux0j,Nqud0,1);...
+                                    repelem(flux1j,Nqud1,1);...
+                                    repelem(flux2j,Nqud2,1);...
+                                    repelem(flux3j,Nqud3,1)];
+                            
+                            
+                            % RTO reference element
+                            Psiy_ref = fluxj.*[rsf_tr{jj}{1}(YMat)...
+                                                              rsf_tr{jj}{2}(YMat)];
+    
+                            % Transforming the basis, g_tau/(2 volsi)
+                            % cancels
+                            Psiy = (BJvec-AJvec).*Psiy_ref(:,1)...
+                                + (CJvec-AJvec).*Psiy_ref(:,2);
 
-end
+                            if size(KerVec,2) == 1
+                                integrand_ii_jj = WMat.*KerVec.*dot(Psix,Psiy,2);
+                            elseif size(KerVec,2) == 3
+                                % Need to perform {kernel x trial}.test
+                                kerxtrial_vec = cross(KerVec,Psiy,2);
+                                integrand_ii_jj = WMat.*dot(kerxtrial_vec,Psix,2);
+                            end
+
+                            integral_ii_jj = reduceIntegrand(integrand_ii_jj,NIvec,Nqudvec);
+                            
+                            dofsI_at_permI = evalRowWisePerm(dofs_I,permI);
+                            dofsJ_at_permJ = evalRowWisePerm(dofs_J,permJ);
+                            M(dofsI_at_permI(:,ii),dofsJ_at_permJ(:,jj)) = M(dofsI_at_permI(:,ii),dofsJ_at_permJ(:,jj)) + integral_ii_jj;
+                        end
+                    end
+
+            end
+
+
+        
+    end % Switch tr_typ
+
+
+end % Function end
+   

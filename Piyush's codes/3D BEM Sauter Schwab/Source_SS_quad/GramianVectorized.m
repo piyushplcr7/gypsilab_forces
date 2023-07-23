@@ -28,8 +28,8 @@ function [DCVx,DCVy] = GramianVectorized(A,B,C)
     ga = alpha./detG;
 
     % Computing DCVx and DCVy
-    DCVx = al * BmA + be * CmA;
-    DCVy = be * BmA + ga * CmA;
+    DCVx = al .* BmA + be .* CmA;
+    DCVy = be .* BmA + ga .* CmA;
     
     
 
