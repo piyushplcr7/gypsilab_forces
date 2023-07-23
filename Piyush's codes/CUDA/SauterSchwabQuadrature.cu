@@ -2,9 +2,6 @@
 #include <stdio.h>
 #include <cuda.h>
 #include <math.h>
-#include <thrust/device_vector.h>
-#include <thrust/set_operations.h>
-#include <thrust/sort.h>
 
 #include <cassert>
 #include <iostream>
@@ -17,10 +14,11 @@ __device__ double Kernel(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d Y
 }
 
 // Returns Intersection, DiffI, DiffJ
-__device__ thrust::tuple<thrust::device_vector<int>, thrust::device_vector<int>, thrust::device_vector<int>> ComputeIntersectionDiff(int *EltI, int *EltJ)
+__device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int diffI[], int diffJ[])
 {
-    thrust::device_vector<bool> EltITracker(3, false), EltJTracker(3, false);
-    thrust::device_vector<int> intersection{}, diffI{}, diffJ{};
+    bool EltITracker[] = {false, false, false};
+    bool EltJTracker[] = {false, false, false};
+
     for (int i = 0; i < 3; ++i)
     {
         for (int j = 0; j < 3; ++j)
@@ -33,20 +31,18 @@ __device__ thrust::tuple<thrust::device_vector<int>, thrust::device_vector<int>,
         }
     }
 
+    int interidx = 0, diffiidx = 0, diffjidx = 0;
+
     for (int i = 0; i < 3; ++i)
     {
         if (EltITracker[i])
-            intersection.push_back(EltI[i]);
+            intersection[interidx++] = EltI[i];
         else
-            diffI.push_back(EltI[i]);
+            diffI[diffiidx++] = EltI[i];
 
         if (!EltJTracker[i])
-            diffJ.push_back(EltJ[i]);
+            diffJ[diffjidx++] = EltJ[i];
     }
-
-    // Determine diffs
-    thrust::tuple<thrust::device_vector<int>, thrust::device_vector<int>, thrust::device_vector<int>> output(intersection, diffI, diffJ);
-    return output;
 }
 
 // Defining the kernel for SS computation
@@ -55,18 +51,18 @@ __device__ thrust::tuple<thrust::device_vector<int>, thrust::device_vector<int>,
  *
  * NTriangles : Number of elements
  */
-__global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles,
-                                       int NThreads, int *I, int *J, int *relation,
-                                       double *W0, double **X0, int Nq0,
-                                       double *W1, double **X1, int Nq1,
-                                       double *W2, double **X2, int Nq2,
-                                       double *W3, double **X3, int Nq3,
-                                       double *shapeDerivative,
-                                       double **GalerkinMatrix,
-                                       double *trial_vec, double *test_vec,
-                                       int **Elements, double **Vertices, double **Normals, double *Areas,
-                                       int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
-                                       int NRSFTrial, int NRSFTest)
+extern "C" __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles,
+                                                  int NThreads, int *I, int *J, int *relation,
+                                                  double *W0, double **X0, int Nq0,
+                                                  double *W1, double **X1, int Nq1,
+                                                  double *W2, double **X2, int Nq2,
+                                                  double *W3, double **X3, int Nq3,
+                                                  double *shapeDerivative,
+                                                  double **GalerkinMatrix,
+                                                  double *trial_vec, double *test_vec,
+                                                  int **Elements, double **Vertices, double **Normals, double *Areas,
+                                                  int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
+                                                  int NRSFTrial, int NRSFTest)
 {
     int ThreadID = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -83,7 +79,7 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
 
     // Stores the contribution to the shape derivative from the
     // local matrix that will be computed in this thread
-    double localval = 0;
+    // double localval = 0;
 
     // Looping over all assigned interactions
     for (int idx = 0; idx < InteractionsPerThread; ++idx)
@@ -95,6 +91,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
         // Preparing variables
         Eigen::Vector3d Ai, Bi, Ci, ABCi, permi, Aj, Bj, Cj, ABCj, permj;
         Eigen::MatrixXd Ei(3, 2), Ej(3, 2);
+
+        int intersection[3], diffI[3], diffJ[3];
 
         double *W = NULL;
         double **X = NULL;
@@ -128,10 +126,7 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
         }
         else if (relation[InteractionIdx] == 1) // Common vertex
         {
-            thrust::device_vector<int> intersection;
-            thrust::device_vector<int> diffI;
-            thrust::device_vector<int> diffJ;
-            thrust::tie(intersection, diffI, diffJ) = ComputeIntersectionDiff(Elements[i], Elements[j]);
+            IntersectionDiff(Elements[i], Elements[j], intersection, diffI, diffJ);
 
             // Vertices of element i
             Ai = Eigen::Vector3d(Vertices[Elements[intersection[0]][0]]);
@@ -150,10 +145,7 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
         }
         else if (relation[InteractionIdx] == 2) // Common edge
         {
-            thrust::device_vector<int> intersection;
-            thrust::device_vector<int> diffI;
-            thrust::device_vector<int> diffJ;
-            thrust::tie(intersection, diffI, diffJ) = ComputeIntersectionDiff(Elements[i], Elements[j]);
+            IntersectionDiff(Elements[i], Elements[j], intersection, diffI, diffJ);
 
             // Vertices of element i
             Ai = Eigen::Vector3d(Vertices[Elements[intersection[0]][0]]);
@@ -196,8 +188,23 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
         Ej.col(0) = Bj - Aj;
         Ej.col(1) = Cj - Aj;
 
-        Eigen::MatrixXd Dxyi = (Ei.transpose() * Ei).inverse();
-        Eigen::MatrixXd Dxyj = (Ej.transpose() * Ej).inverse();
+        Eigen::MatrixXd EtEi = Ei.transpose() * Ei;
+        Eigen::MatrixXd EtEj = Ej.transpose() * Ej;
+        double deti = EtEi(0, 0) * EtEi(1, 1) - EtEi(0, 1) * EtEi(1, 0);
+        double detj = EtEj(0, 0) * EtEj(1, 1) - EtEj(0, 1) * EtEj(1, 0);
+
+        Eigen::MatrixXd Dxyi = -EtEi;
+        Eigen::MatrixXd Dxyj = -EtEj;
+
+        Dxyi(0, 0) = EtEi(1, 1);
+        Dxyi(1, 1) = EtEi(0, 0);
+
+        Dxyj(0, 0) = EtEj(1, 1);
+        Dxyj(1, 1) = EtEj(0, 0);
+
+        Dxyi /= deti;
+        Dxyj /= detj;
+
         Eigen::MatrixXd DCVi = Ei * Dxyi, DCVj = Ej * Dxyj;
 
         Eigen::MatrixXd LocalMatrix = Eigen::MatrixXd::Zero(NRSFTest, NRSFTrial);
@@ -222,13 +229,4 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
             }
         }
     }
-}
-
-// Link with matlab
-
-int main()
-{
-    // Indices received from matlab are ordered based on interactions
-
-    return 0;
 }
