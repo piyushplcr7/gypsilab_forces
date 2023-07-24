@@ -51,18 +51,18 @@ __device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int d
  *
  * NTriangles : Number of elements
  */
-extern "C" __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles,
-                                                  int NThreads, int *I, int *J, int *relation,
-                                                  double *W0, double **X0, int Nq0,
-                                                  double *W1, double **X1, int Nq1,
-                                                  double *W2, double **X2, int Nq2,
-                                                  double *W3, double **X3, int Nq3,
-                                                  double *shapeDerivative,
-                                                  double **GalerkinMatrix,
-                                                  double *trial_vec, double *test_vec,
-                                                  int **Elements, double **Vertices, double **Normals, double *Areas,
-                                                  int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
-                                                  int NRSFTrial, int NRSFTest)
+__global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles,
+                                       int NThreads, int *I, int *J, int *relation,
+                                       double *W0, double *X0, int Nq0,
+                                       double *W1, double *X1, int Nq1,
+                                       double *W2, double *X2, int Nq2,
+                                       double *W3, double *X3, int Nq3,
+                                       double *shapeDerivative,
+                                       double *GalerkinMatrix,
+                                       double *trial_vec, double *test_vec,
+                                       int *Elements, double *Vertices, double *Normals, double *Areas,
+                                       int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
+                                       int NRSFTrial, int NRSFTest)
 {
     int ThreadID = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -95,7 +95,7 @@ extern "C" __global__ void computeShapeDerivative(int TrialDim, int TestDim, int
         int intersection[3], diffI[3], diffJ[3];
 
         double *W = NULL;
-        double **X = NULL;
+        double *X = NULL;
         int NQudPts = 0;
 
         // Make sure that the last thread stays in limit
@@ -107,18 +107,16 @@ extern "C" __global__ void computeShapeDerivative(int TrialDim, int TestDim, int
 
         double g_tau = 2 * Areas[i], g_t = 2 * Areas[j];
 
+        int EltI[] = {Elements[i],
+                      Elements[i + NTriangles],
+                      Elements[i + 2 * NTriangles]};
+
+        int EltJ[] = {Elements[j],
+                      Elements[j + NTriangles],
+                      Elements[j + 2 * NTriangles]};
+
         if (relation[InteractionIdx] == 0) // No interaction
         {
-            // Vertices of element i
-            Ai = Eigen::Vector3d(Vertices[Elements[i][0]]);
-            Bi = Eigen::Vector3d(Vertices[Elements[i][1]]);
-            Ci = Eigen::Vector3d(Vertices[Elements[i][2]]);
-
-            // Vertices of element j
-            Aj = Eigen::Vector3d(Vertices[Elements[j][0]]);
-            Bj = Eigen::Vector3d(Vertices[Elements[j][1]]);
-            Cj = Eigen::Vector3d(Vertices[Elements[j][2]]);
-
             // Computing Quadrature
             W = W0;
             X = X0;
@@ -126,17 +124,15 @@ extern "C" __global__ void computeShapeDerivative(int TrialDim, int TestDim, int
         }
         else if (relation[InteractionIdx] == 1) // Common vertex
         {
-            IntersectionDiff(Elements[i], Elements[j], intersection, diffI, diffJ);
+            IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
 
-            // Vertices of element i
-            Ai = Eigen::Vector3d(Vertices[Elements[intersection[0]][0]]);
-            Bi = Eigen::Vector3d(Vertices[Elements[diffI[0]][1]]);
-            Ci = Eigen::Vector3d(Vertices[Elements[diffI[1]][2]]);
+            EltI[0] = intersection[0];
+            EltI[1] = diffI[0];
+            EltI[2] = diffI[1];
 
-            // Vertices of element j
-            Aj = Eigen::Vector3d(Vertices[Elements[intersection[0]][0]]);
-            Bj = Eigen::Vector3d(Vertices[Elements[diffJ[0]][1]]);
-            Cj = Eigen::Vector3d(Vertices[Elements[diffJ[1]][2]]);
+            EltJ[0] = intersection[0];
+            EltJ[1] = diffJ[0];
+            EltJ[2] = diffJ[1];
 
             // Computing Quadrature
             W = W1;
@@ -145,17 +141,15 @@ extern "C" __global__ void computeShapeDerivative(int TrialDim, int TestDim, int
         }
         else if (relation[InteractionIdx] == 2) // Common edge
         {
-            IntersectionDiff(Elements[i], Elements[j], intersection, diffI, diffJ);
+            IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
 
-            // Vertices of element i
-            Ai = Eigen::Vector3d(Vertices[Elements[intersection[0]][0]]);
-            Bi = Eigen::Vector3d(Vertices[Elements[intersection[1]][1]]);
-            Ci = Eigen::Vector3d(Vertices[Elements[diffI[0]][2]]);
+            EltI[0] = intersection[0];
+            EltI[1] = intersection[1];
+            EltI[2] = diffI[0];
 
-            // Vertices of element j
-            Aj = Eigen::Vector3d(Vertices[Elements[intersection[0]][0]]);
-            Bj = Eigen::Vector3d(Vertices[Elements[intersection[1]][1]]);
-            Cj = Eigen::Vector3d(Vertices[Elements[diffJ[0]][2]]);
+            EltJ[0] = intersection[0];
+            EltJ[1] = intersection[1];
+            EltJ[2] = diffJ[0];
 
             // Computing Quadrature
             W = W2;
@@ -164,21 +158,21 @@ extern "C" __global__ void computeShapeDerivative(int TrialDim, int TestDim, int
         }
         else // Identical panels, case 3
         {
-            // Vertices of element i
-            Ai = Eigen::Vector3d(Vertices[Elements[i][0]]);
-            Bi = Eigen::Vector3d(Vertices[Elements[i][1]]);
-            Ci = Eigen::Vector3d(Vertices[Elements[i][2]]);
-
-            // Vertices of element j
-            Aj = Eigen::Vector3d(Vertices[Elements[j][0]]);
-            Bj = Eigen::Vector3d(Vertices[Elements[j][1]]);
-            Cj = Eigen::Vector3d(Vertices[Elements[j][2]]);
-
             // Computing Quadrature
             W = W3;
             X = X3;
             NQudPts = Nq3;
         }
+
+        // Vertices of element i
+        Ai = Eigen::Vector3d(Vertices[EltI[0]], Vertices[EltI[0] + NTriangles], Vertices[EltI[0] + 2 * NTriangles]);
+        Bi = Eigen::Vector3d(Vertices[EltI[1]], Vertices[EltI[1] + NTriangles], Vertices[EltI[1] + 2 * NTriangles]);
+        Ci = Eigen::Vector3d(Vertices[EltI[2]], Vertices[EltI[2] + NTriangles], Vertices[EltI[2] + 2 * NTriangles]);
+
+        // Vertices of element j
+        Aj = Eigen::Vector3d(Vertices[EltJ[0]], Vertices[EltJ[0] + NTriangles], Vertices[EltJ[0] + 2 * NTriangles]);
+        Bj = Eigen::Vector3d(Vertices[EltJ[1]], Vertices[EltJ[1] + NTriangles], Vertices[EltJ[1] + 2 * NTriangles]);
+        Cj = Eigen::Vector3d(Vertices[EltJ[2]], Vertices[EltJ[2] + NTriangles], Vertices[EltJ[2] + 2 * NTriangles]);
 
         // Jacobian Matrices
 
@@ -220,11 +214,11 @@ extern "C" __global__ void computeShapeDerivative(int TrialDim, int TestDim, int
                     double Psiy = g_t;
                     for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
                     {
-                        Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt][0] + Ei.col(1) * X[QudPt][1];
-                        Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt][3] + Ej.col(1) * X[QudPt][4];
+                        Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
+                        Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
                         LocalMatrix(ii, jj) += W[QudPt] * Psix * Kernel(chi_tau, chi_t, chi_t - chi_tau) * Psiy;
                     }
-                    GalerkinMatrix[i][j] += LocalMatrix(ii, jj);
+                    GalerkinMatrix[i + TestDim * j] += LocalMatrix(ii, jj);
                 }
             }
         }

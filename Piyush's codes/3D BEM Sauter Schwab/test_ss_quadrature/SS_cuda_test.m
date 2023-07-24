@@ -25,14 +25,17 @@ Intmat = Eltmat * Eltmat';
 [I2,J2] = find(Intmat == 2);
 [I3,J3] = find(Intmat == 3);
 Ivec = [I0;I1;I2;I3];
+Ivec = cast(Ivec,'int32');
 Jvec = [J0;J1;J2;J3];
+Jvec = cast(Jvec,'int32');
 relation = [0*ones(size(I0,1),1);...
             1*ones(size(I1,1),1);...
             2*ones(size(I2,1),1);...
             3*ones(size(I3,1),1)];
+relation = cast(relation,'int32');
 
-ptxFilePath = 'SauterSchwabQuadrature.ptx';
-cuFilePath = 'SauterSchwabQuadrature.cu';
+ptxFilePath = '../../CUDA/SauterSchwabQuadrature.ptx';
+cuFilePath = '../../CUDA/SauterSchwabQuadrature.cu';
 kernelName = 'computeShapeDerivative';
 
 [X, W] = quad4D(5);
@@ -72,15 +75,17 @@ X2_gpu = gpuArray(X2);
 X3 = X{1}; X3(:,1) = X3(:,1)-X3(:,2); X3(:,3) = X3(:,3)-X3(:,4);
 X3_gpu = gpuArray(X3);
 
-shapeDerivative_gpu = gpuArray.zeros(1,1,'single');
+shapeDerivative_gpu = gpuArray.zeros(1,1);
 
-GalerkinMatrix_gpu = gpuArray.zeros(P0.ndof,P0.ndof,'single');
+GalerkinMatrix_gpu = gpuArray.zeros(P0.ndof,P0.ndof);
 
-trialVec_gpu = gpuArray.zeros(1,1,'single');
+trialVec_gpu = gpuArray.zeros(1,1);
 
-testVec_gpu = gpuArray.zeros(1,1,'single');
+testVec_gpu = gpuArray.zeros(1,1);
 
-Elements_gpu = gpuArray(bndmesh.elt);
+Elements = cast(bndmesh.elt,'int32');
+
+Elements_gpu = gpuArray(Elements);
 
 Vertices_gpu = gpuArray(bndmesh.vtx);
 
@@ -99,6 +104,8 @@ TestOperator_gpu = 0;
 NRSFTrial = size(P0.rsf,1);
 
 NRSFTest = size(P0.rsf,1);
+
+%%
 
 % Launch CUDA kernel
 feval(kernel,P0.ndof,P0.ndof,bndmesh.nelt,...
