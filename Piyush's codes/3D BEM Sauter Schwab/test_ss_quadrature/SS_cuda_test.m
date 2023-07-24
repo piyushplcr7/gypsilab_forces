@@ -2,9 +2,11 @@
 
 clear;clc;
 
+format long;
+
 %bndmesh = mshSphere(2,1);
 mesh = mshCube(2,[1 1 1]);
-%mesh = mesh.sub(1);
+% mesh = mesh.sub(1);
 bndmesh = mesh.bnd;
 
 bndmesh_copy = bndmesh;
@@ -24,9 +26,9 @@ Intmat = Eltmat * Eltmat';
 [I1,J1] = find(Intmat == 1);
 [I2,J2] = find(Intmat == 2);
 [I3,J3] = find(Intmat == 3);
-Ivec = [I0;I1;I2;I3];
+Ivec = [I0;I1;I2;I3]-1;
 Ivec = cast(Ivec,'int32');
-Jvec = [J0;J1;J2;J3];
+Jvec = [J0;J1;J2;J3]-1;
 Jvec = cast(Jvec,'int32');
 relation = [0*ones(size(I0,1),1);...
             1*ones(size(I1,1),1);...
@@ -84,7 +86,7 @@ trialVec_gpu = gpuArray.zeros(1,1);
 
 testVec_gpu = gpuArray.zeros(1,1);
 
-Elements = cast(bndmesh.elt,'int32');
+Elements = cast(bndmesh.elt-1,'int32');
 
 Elements_gpu = gpuArray(Elements);
 
@@ -108,9 +110,17 @@ NRSFTest = size(P0.rsf,1);
 
 %%
 
+testout_gpu = gpuArray.zeros(size(W{2},1),1);
+testABCi_gpu = gpuArray.zeros(3,3); 
+testABCj_gpu = gpuArray.zeros(3,3); 
+origelti_gpu = gpuArray.zeros(3,1,'int32');
+origeltj_gpu = gpuArray.zeros(3,1,'int32');
+modifelti_gpu = gpuArray.zeros(3,1,'int32');
+modifeltj_gpu = gpuArray.zeros(3,1,'int32');
+
 % Launch CUDA kernel
-[sd,gmat] = feval(kernel,...
-    P0.ndof,P0.ndof,bndmesh.nelt,...
+[sd,gmat,testout,testABCi_gpu,testABCj_gpu,origelti_gpu,origeltj_gpu,modifelti_gpu,modifeltj_gpu] = feval(kernel,...
+    P0.ndof,P0.ndof,bndmesh.nelt,bndmesh.nvtx,...
     Nthreads,Ivec_gpu,Jvec_gpu,relation_gpu,...
     W0_gpu,X0_gpu,size(X0,1),...
     W1_gpu,X1_gpu,size(X1,1),...
@@ -121,8 +131,11 @@ NRSFTest = size(P0.rsf,1);
     trialVec_gpu, testVec_gpu,...
     Elements_gpu,Vertices_gpu,Normals_gpu,Areas_gpu,...
     TrialSpace_gpu,TestSpace_gpu,TrialOperator_gpu,TestOperator_gpu,...
-    NRSFTrial,NRSFTest);
+    NRSFTrial,NRSFTest,testout_gpu,testABCi_gpu,testABCj_gpu, ...
+    origelti_gpu,origeltj_gpu,modifelti_gpu,modifeltj_gpu);
 
-% Collect the Galerkin matrix from gpu
+KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
+Nelt = bndmesh.nelt;
+[ii,jj] = meshgrid(1:Nelt,1:Nelt);
+V = panel_assembly(bndmesh,KV,P0,P0,ii(:),jj(:));
 
-GalerkinMatrix = gather(GalerkinMatrix_gpu);
