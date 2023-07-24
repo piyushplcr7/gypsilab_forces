@@ -42,7 +42,8 @@ kernelName = 'computeShapeDerivative';
 
 % CUDAKernel object
 % kernel = parallel.gpu.CUDAKernel(ptxFilePath, kernelName);
-kernel = parallel.gpu.CUDAKernel(ptxFilePath, cuFilePath,kernelName);
+% kernel = parallel.gpu.CUDAKernel(ptxFilePath, cuFilePath,kernelName);
+kernel = parallel.gpu.CUDAKernel(ptxFilePath, cuFilePath);
 
 % Set grid and block dimensions (example values).
 gridDim = [1, 1, 1];
@@ -108,7 +109,8 @@ NRSFTest = size(P0.rsf,1);
 %%
 
 % Launch CUDA kernel
-feval(kernel,P0.ndof,P0.ndof,bndmesh.nelt,...
+[sd,gmat] = feval(kernel,...
+    P0.ndof,P0.ndof,bndmesh.nelt,...
     Nthreads,Ivec_gpu,Jvec_gpu,relation_gpu,...
     W0_gpu,X0_gpu,size(X0,1),...
     W1_gpu,X1_gpu,size(X1,1),...

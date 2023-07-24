@@ -52,19 +52,23 @@ __device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int d
  * NTriangles : Number of elements
  */
 __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles,
-                                       int NThreads, int *I, int *J, int *relation,
-                                       double *W0, double *X0, int Nq0,
-                                       double *W1, double *X1, int Nq1,
-                                       double *W2, double *X2, int Nq2,
-                                       double *W3, double *X3, int Nq3,
+                                       int NThreads, const int *I, const int *J, const int *relation,
+                                       const double *W0, const double *X0, int Nq0,
+                                       const double *W1, const double *X1, int Nq1,
+                                       const double *W2, const double *X2, int Nq2,
+                                       const double *W3, const double *X3, int Nq3,
                                        double *shapeDerivative,
                                        double *GalerkinMatrix,
-                                       double *trial_vec, double *test_vec,
-                                       int *Elements, double *Vertices, double *Normals, double *Areas,
+                                       const double *trial_vec, const double *test_vec,
+                                       const int *Elements, const double *Vertices, const double *Normals, const double *Areas,
                                        int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
                                        int NRSFTrial, int NRSFTest)
 {
     int ThreadID = blockIdx.x * blockDim.x + threadIdx.x;
+
+    *shapeDerivative = 3.145;
+
+    printf("Inside thread %d \n", ThreadID);
 
     // Size of the matrix
     // int NInteractions = TrialDim * TestDim;
@@ -94,8 +98,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
 
         int intersection[3], diffI[3], diffJ[3];
 
-        double *W = NULL;
-        double *X = NULL;
+        const double *W = NULL;
+        const double *X = NULL;
         int NQudPts = 0;
 
         // Make sure that the last thread stays in limit
@@ -104,6 +108,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
 
         // The pair of panels
         int i = I[InteractionIdx], j = J[InteractionIdx];
+
+        printf("Interaction  (%d, %d) \n", i, j);
 
         double g_tau = 2 * Areas[i], g_t = 2 * Areas[j];
 
@@ -223,4 +229,6 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
             }
         }
     }
+
+    GalerkinMatrix[0] = 5;
 }
