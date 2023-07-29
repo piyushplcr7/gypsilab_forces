@@ -44,6 +44,17 @@ __device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int d
         if (!EltJTracker[i])
             diffJ[diffjidx++] = EltJ[i];
     }
+
+    /* for (int i = 0; i < 3; ++i)
+    {
+        if (EltJTracker[i])
+            intersection[interidx++] = EltJ[i];
+        else
+            diffJ[diffjidx++] = EltJ[i];
+
+        if (!EltITracker[i])
+            diffI[diffiidx++] = EltI[i];
+    } */
 }
 
 // Defining the kernel for SS computation
@@ -63,12 +74,15 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        const double *trial_vec, const double *test_vec,
                                        const int *Elements, const double *Vertices, const double *Normals, const double *Areas,
                                        int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
-                                       int NRSFTrial, int NRSFTest, double *testout, double *testABCi, double *testABCj,
-                                       int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj)
+                                       int NRSFTrial, int NRSFTest)
+/* double *testout, double *testABCi, double *testABCj,
+int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
     int ThreadID = blockIdx.x * blockDim.x + threadIdx.x;
 
     *shapeDerivative = 3.145;
+
+    /* int idebug = 1, jdebug = 2; */
 
     // Size of the matrix
     // int NInteractions = TrialDim * TestDim;
@@ -81,6 +95,13 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
     // to a thread
     int InteractionsPerThread = ceil(double(NInteractions) / double(NThreads));
 
+    if (blockIdx.x == 0 && threadIdx.x == 0)
+    {
+        printf("Number of blocks: %d \n ", gridDim.x);
+        printf("Threads per block: %d \n ", blockDim.x);
+        printf("Total interactions: %d , Interactions per thread: %d \n ", NInteractions, InteractionsPerThread);
+    }
+
     // Stores the contribution to the shape derivative from the
     // local matrix that will be computed in this thread
     // double localval = 0;
@@ -88,6 +109,10 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
     // Looping over all assigned interactions
     for (int idx = 0; idx < InteractionsPerThread; ++idx)
     {
+        /* if (blockIdx.x == 0 && threadIdx.x == 0)
+        {
+            printf("In block 0 thread 0 computing interaction no. : %d \n ", idx);
+        } */
         // The interaction number
         // int InteractionIdx = ThreadID + NThreads * idx;
         int InteractionIdx = ThreadID * InteractionsPerThread + idx;
@@ -109,7 +134,7 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
         // The pair of panels
         int i = I[InteractionIdx], j = J[InteractionIdx];
 
-        printf("Interaction  (%d, %d) \n", i, j);
+        /* printf("Interaction  (%d, %d) \n", i, j); */
 
         double g_tau = 2 * Areas[i], g_t = 2 * Areas[j];
 
@@ -121,7 +146,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                       Elements[j + NTriangles],
                       Elements[j + 2 * NTriangles]};
 
-        if (i == 1 && j == 4)
+        // Storing the original elements
+        /* if (i == idebug && j == jdebug)
         {
             // Storing the original element assigned at this point
             for (int idx = 0; idx < 3; ++idx)
@@ -129,7 +155,7 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                 orig_elti[idx] = EltI[idx];
                 orig_eltj[idx] = EltJ[idx];
             }
-        }
+        } */
 
         if (relation[InteractionIdx] == 0) // No interaction
         {
@@ -190,7 +216,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
         Bj = Eigen::Vector3d(Vertices[EltJ[1]], Vertices[EltJ[1] + NVertices], Vertices[EltJ[1] + 2 * NVertices]);
         Cj = Eigen::Vector3d(Vertices[EltJ[2]], Vertices[EltJ[2] + NVertices], Vertices[EltJ[2] + 2 * NVertices]);
 
-        if (i == 1 && j == 4)
+        // Storing ABC after reassignment from intersection and diff
+        /* if (i == idebug && j == jdebug)
         {
             // storing the vertices using column major format
 
@@ -206,15 +233,15 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
             }
         }
 
-        if (i == 1 && j == 4)
+        // Storing the modified element
+        if (i == idebug && j == jdebug)
         {
-            // Storing the modified element
             for (int idx = 0; idx < 3; ++idx)
             {
                 modif_elti[idx] = EltI[idx];
                 modif_eltj[idx] = EltJ[idx];
             }
-        }
+        } */
 
         // Jacobian Matrices
 
@@ -259,16 +286,20 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                         Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
                         Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
                         LocalMatrix(ii, jj) += W[QudPt] * Psix * Kernel(chi_tau, chi_t, chi_t - chi_tau) * Psiy;
-                        if (i == 1 && j == 4)
+
+                        // Storing Kernel values
+                        /* if (i == idebug && j == jdebug)
                         {
                             testout[QudPt] = Kernel(chi_tau, chi_t, chi_t - chi_tau);
-                        }
+                        } */
                     }
                     GalerkinMatrix[i + TestDim * j] += LocalMatrix(ii, jj);
+
+                    // Atomic update of the galerkin matrix
+                    /* double contribution = LocalMatrix(ii, jj);
+                    atomicAdd(&GalerkinMatrix[i + TestDim * j], contribution); */
                 }
             }
         }
     }
-
-    // GalerkinMatrix[0] = 5;
 }

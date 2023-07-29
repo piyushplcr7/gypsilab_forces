@@ -1,15 +1,16 @@
 % Script testing CUDA
+addpath(genpath("../../../"));
 
 clear;clc;
 
 format long;
 
 %bndmesh = mshSphere(2,1);
-mesh = mshCube(2,[1 1 1]);
+mesh = mshCube(2000,[1 1 1]);
 % mesh = mesh.sub(1);
 bndmesh = mesh.bnd;
 
-bndmesh_copy = bndmesh;
+% bndmesh_copy = bndmesh;
 
 P1 = fem(bndmesh,'P1');
 P0 = fem(bndmesh,'P0');
@@ -40,7 +41,8 @@ ptxFilePath = '../../CUDA/SauterSchwabQuadrature.ptx';
 cuFilePath = '../../CUDA/SauterSchwabQuadrature.cu';
 kernelName = 'computeShapeDerivative';
 
-[X, W] = quad4D(5);
+order = 10;
+[X, W] = quad4D(order);
 
 % CUDAKernel object
 % kernel = parallel.gpu.CUDAKernel(ptxFilePath, kernelName);
@@ -48,10 +50,13 @@ kernelName = 'computeShapeDerivative';
 kernel = parallel.gpu.CUDAKernel(ptxFilePath, cuFilePath);
 
 % Set grid and block dimensions (example values).
-gridDim = [1, 1, 1];
-blockDim = [1, 1, 1];
+gridDim = [100, 1, 1];
+blockDim = [512, 1, 1];
 
-Nthreads = prod(blockDim);
+% gridDim = [1, 1, 1];
+% blockDim = [1, 1, 1];
+
+Nthreads = prod(blockDim) * prod(gridDim);
 
 kernel.GridSize = gridDim;
 kernel.ThreadBlockSize = blockDim;
@@ -110,16 +115,16 @@ NRSFTest = size(P0.rsf,1);
 
 %%
 
-testout_gpu = gpuArray.zeros(size(W{2},1),1);
-testABCi_gpu = gpuArray.zeros(3,3); 
-testABCj_gpu = gpuArray.zeros(3,3); 
-origelti_gpu = gpuArray.zeros(3,1,'int32');
-origeltj_gpu = gpuArray.zeros(3,1,'int32');
-modifelti_gpu = gpuArray.zeros(3,1,'int32');
-modifeltj_gpu = gpuArray.zeros(3,1,'int32');
+% testout_gpu = gpuArray.zeros(size(W{2},1),1);
+% testABCi_gpu = gpuArray.zeros(3,3); 
+% testABCj_gpu = gpuArray.zeros(3,3); 
+% origelti_gpu = gpuArray.zeros(3,1,'int32');
+% origeltj_gpu = gpuArray.zeros(3,1,'int32');
+% modifelti_gpu = gpuArray.zeros(3,1,'int32');
+% modifeltj_gpu = gpuArray.zeros(3,1,'int32');
 
 % Launch CUDA kernel
-[sd,gmat,testout,testABCi_gpu,testABCj_gpu,origelti_gpu,origeltj_gpu,modifelti_gpu,modifeltj_gpu] = feval(kernel,...
+[sd,gmat] = feval(kernel,...
     P0.ndof,P0.ndof,bndmesh.nelt,bndmesh.nvtx,...
     Nthreads,Ivec_gpu,Jvec_gpu,relation_gpu,...
     W0_gpu,X0_gpu,size(X0,1),...
@@ -131,11 +136,17 @@ modifeltj_gpu = gpuArray.zeros(3,1,'int32');
     trialVec_gpu, testVec_gpu,...
     Elements_gpu,Vertices_gpu,Normals_gpu,Areas_gpu,...
     TrialSpace_gpu,TestSpace_gpu,TrialOperator_gpu,TestOperator_gpu,...
-    NRSFTrial,NRSFTest,testout_gpu,testABCi_gpu,testABCj_gpu, ...
-    origelti_gpu,origeltj_gpu,modifelti_gpu,modifeltj_gpu);
+    NRSFTrial,NRSFTest); %...
+%     ,testout_gpu,testABCi_gpu,testABCj_gpu, ...
+%     origelti_gpu,origeltj_gpu,modifelti_gpu,modifeltj_gpu);
 
 KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
 Nelt = bndmesh.nelt;
 [ii,jj] = meshgrid(1:Nelt,1:Nelt);
+
+tic;
 V = panel_assembly(bndmesh,KV,P0,P0,ii(:),jj(:));
+
+elapsed_time = toc;
+fprintf('CPU took %.4f seconds.\n', elapsed_time);
 
