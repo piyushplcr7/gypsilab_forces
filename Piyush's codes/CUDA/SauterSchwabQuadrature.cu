@@ -27,10 +27,17 @@ __device__ double atomicAdd(double *address, double val)
     return __longlong_as_double(old);
 }
 
-__device__ double Kernel(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
+__device__ double SLKernel(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
 {
     // return 1;
     return 1. / (4 * M_PI) / YmX.norm();
+}
+
+__device__ Eigen::Vector3d DLKernel(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
+{
+    // return 1;
+    double znorm = YmX.norm();
+    return -YmX / (4 * M_PI) / (znorm * znorm * znorm);
 }
 
 // Returns Intersection, DiffI, DiffJ
@@ -76,12 +83,6 @@ __device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int d
     } */
 }
 
-// Defining the kernel for SS computation
-/*
- * inputs
- *
- * NTriangles : Number of elements
- */
 __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles, int NVertices,
                                        int NThreads, const int *I, const int *J, const int *relation,
                                        const double *W0, const double *X0, int Nq0,
@@ -92,6 +93,7 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        double *GalerkinMatrix,
                                        const double *trial_vec, const double *test_vec,
                                        const int *Elements, const double *Vertices, const double *Normals, const double *Areas,
+                                       const int *Elt2DofTest, const int *Elt2DofTrial,
                                        int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
                                        int NRSFTrial, int NRSFTest)
 /* double *testout, double *testABCi, double *testABCj,
@@ -151,6 +153,10 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         double g_tau = 2 * Areas[i], g_t = 2 * Areas[j];
 
+        // Obtaining the normals
+        Eigen::Vector3d normalx(Normals[i], Normals[i + NTriangles], Normals[i + 2 * NTriangles]);
+        Eigen::Vector3d normaly(Normals[j], Normals[j + NTriangles], Normals[j + 2 * NTriangles]);
+
         int EltI[] = {Elements[i],
                       Elements[i + NTriangles],
                       Elements[i + 2 * NTriangles]};
@@ -158,6 +164,16 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         int EltJ[] = {Elements[j],
                       Elements[j + NTriangles],
                       Elements[j + 2 * NTriangles]};
+
+        int origEltI[] = {EltI[0], EltI[1], EltI[2]};
+        int origEltJ[] = {EltJ[0], EltJ[1], EltJ[2]};
+
+        int DofsI[] = {Elt2DofTest[i], Elt2DofTest[i + NTriangles], Elt2DofTest[i + 2 * NTriangles]};
+        int DofsJ[] = {Elt2DofTrial[j], Elt2DofTrial[j + NTriangles], Elt2DofTrial[j + 2 * NTriangles]};
+
+        // Original permutation of elements
+        int permI[] = {0, 1, 2};
+        int permJ[] = {0, 1, 2};
 
         if (relation[InteractionIdx] == 0) // No interaction
         {
@@ -170,10 +186,43 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         {
             IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
 
+            for (int l = 0; l < 3; ++l)
+            {
+                // Permutation for I
+                if (EltI[l] == intersection[0])
+                {
+                    permI[0] = l;
+                }
+                else if (EltI[l] == diffI[0])
+                {
+                    permI[1] = l;
+                }
+                else if (EltI[l] == diffI[1])
+                {
+                    permI[2] = l;
+                }
+
+                // Permutation for J
+                if (EltJ[l] == intersection[0])
+                {
+                    permJ[0] = l;
+                }
+                else if (EltJ[l] == diffJ[0])
+                {
+                    permJ[1] = l;
+                }
+                else if (EltJ[l] == diffJ[1])
+                {
+                    permJ[2] = l;
+                }
+            }
+
+            // Changing EltI into ABCI
             EltI[0] = intersection[0];
             EltI[1] = diffI[0];
             EltI[2] = diffI[1];
 
+            // Changing EltI into ABCJ
             EltJ[0] = intersection[0];
             EltJ[1] = diffJ[0];
             EltJ[2] = diffJ[1];
@@ -186,6 +235,37 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         else if (relation[InteractionIdx] == 2) // Common edge
         {
             IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
+
+            for (int l = 0; l < 3; ++l)
+            {
+                // Permutation for I
+                if (EltI[l] == intersection[0])
+                {
+                    permI[0] = l;
+                }
+                else if (EltI[l] == intersection[1])
+                {
+                    permI[1] = l;
+                }
+                else if (EltI[l] == diffI[0])
+                {
+                    permI[2] = l;
+                }
+
+                // Permutation for J
+                if (EltJ[l] == intersection[0])
+                {
+                    permJ[0] = l;
+                }
+                else if (EltJ[l] == intersection[1])
+                {
+                    permJ[1] = l;
+                }
+                else if (EltJ[l] == diffJ[0])
+                {
+                    permJ[2] = l;
+                }
+            }
 
             EltI[0] = intersection[0];
             EltI[1] = intersection[1];
@@ -258,7 +338,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                 {
                     Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
                     Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
-                    LocalMatrix(ii, jj) += W[QudPt] * Psix * Kernel(chi_tau, chi_t, chi_t - chi_tau) * Psiy;
+                    LocalMatrix(ii, jj) += W[QudPt] * Psix * SLKernel(chi_tau, chi_t, chi_t - chi_tau) * Psiy;
                 }
                 GalerkinMatrix[i + TestDim * j] += LocalMatrix(ii, jj);
 
@@ -269,7 +349,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         } */
 
         // P1 X P1
-        for (int ii = 0; ii < NRSFTest; ++ii)
+        /* for (int ii = 0; ii < NRSFTest; ++ii)
         {
 
             for (int jj = 0; jj < NRSFTrial; ++jj)
@@ -286,16 +366,82 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                     Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
                     Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
 
-                    LocalMatrix(ii, jj) += W[QudPt] * RSFsX(ii) * Kernel(chi_tau, chi_t, chi_t - chi_tau) * RSFsY(jj);
+                    LocalMatrix(ii, jj) += W[QudPt] * RSFsX(ii) * SLKernel(chi_tau, chi_t, chi_t - chi_tau) * RSFsY(jj);
                 }
-                // GalerkinMatrix[i + TestDim * j] += LocalMatrix(ii, jj);
-
                 // GalerkinMatrix[EltI[ii] + TestDim * EltJ[jj]] += LocalMatrix(ii, jj);
 
-                atomicAdd(&GalerkinMatrix[EltI[ii] + TestDim * EltJ[jj]], LocalMatrix(ii, jj));
                 //  Atomic update of the galerkin matrix
-                //  double contribution = LocalMatrix(ii, jj);
-                //  atomicAdd(&GalerkinMatrix[i + TestDim * j], contribution);
+                atomicAdd(&GalerkinMatrix[EltI[ii] + TestDim * EltJ[jj]], LocalMatrix(ii, jj));
+            }
+        } */
+
+        // P0 X ntimes(P1)
+        /* for (int ii = 0; ii < NRSFTest; ++ii)
+        {
+            double Psix = g_tau;
+
+            for (int jj = 0; jj < NRSFTrial; ++jj)
+            {
+
+                for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
+                {
+
+                    Eigen::Vector3d RSFsY(1 - X[QudPt + 2 * NQudPts] - X[QudPt + 3 * NQudPts], X[QudPt + 2 * NQudPts], X[QudPt + 3 * NQudPts]);
+
+                    RSFsY *= g_t;
+
+                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
+                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
+
+                    LocalMatrix(ii, jj) += W[QudPt] * Psix * DLKernel(chi_tau, chi_t, chi_t - chi_tau).dot(normaly) * RSFsY(jj);
+                }
+                // GalerkinMatrix[i + TestDim * EltJ[jj]] += LocalMatrix(ii, jj);
+
+                //  Atomic update of the galerkin matrix
+                atomicAdd(&GalerkinMatrix[i + TestDim * EltJ[jj]], LocalMatrix(ii, jj));
+            }
+        } */
+
+        // RWG X RWG
+        for (int ii = 0; ii < NRSFTest; ++ii)
+        {
+            int iip1 = (permI[ii] + 1) % 3;
+            int iip2 = (iip1 + 1) % 3;
+
+            double fluxI = origEltI[iip1] < origEltI[iip2] ? 1. : -1.;
+
+            for (int jj = 0; jj < NRSFTrial; ++jj)
+            {
+                int jjp1 = (permJ[jj] + 1) % 3;
+                int jjp2 = (jjp1 + 1) % 3;
+
+                double fluxJ = origEltJ[jjp1] < origEltJ[jjp2] ? 1. : -1.;
+
+                for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
+                {
+                    // Reference basis RT0
+                    Eigen::MatrixXd RWGX_ref(3, 2); // Rows represent the 3 RSFs
+                    RWGX_ref << X[QudPt], X[QudPt + NQudPts],
+                        X[QudPt] - 1, X[QudPt + NQudPts],
+                        X[QudPt], X[QudPt + NQudPts] - 1;
+
+                    Eigen::MatrixXd RWGY_ref(3, 2); // Rows represent the 3 RSFs
+                    RWGY_ref << X[QudPt + 2 * NQudPts], X[QudPt + 3 * NQudPts],
+                        X[QudPt + 2 * NQudPts] - 1, X[QudPt + 3 * NQudPts],
+                        X[QudPt + 2 * NQudPts], X[QudPt + 3 * NQudPts] - 1;
+
+                    Eigen::Vector3d Psix = fluxI * Ei * RWGX_ref.row(ii).transpose();
+                    Eigen::Vector3d Psiy = fluxJ * Ej * RWGY_ref.row(jj).transpose();
+
+                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
+                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
+
+                    LocalMatrix(ii, jj) += W[QudPt] * (DLKernel(chi_tau, chi_t, chi_t - chi_tau).cross(Psiy)).dot(Psix);
+                }
+                // GalerkinMatrix[i + TestDim * EltJ[jj]] += LocalMatrix(ii, jj);
+
+                //  Atomic update of the galerkin matrix
+                atomicAdd(&GalerkinMatrix[DofsI[permI[ii]] + TestDim * DofsJ[permJ[jj]]], LocalMatrix(ii, jj));
             }
         }
     }
