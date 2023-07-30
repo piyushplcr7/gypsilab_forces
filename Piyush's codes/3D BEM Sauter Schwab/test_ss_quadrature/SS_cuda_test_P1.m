@@ -6,14 +6,13 @@ clear;clc;
 format long;
 
 %bndmesh = mshSphere(2,1);
-mesh = mshCube(2,[1 1 1]);
+mesh = mshCube(200,[1 1 1]);
 % mesh = mesh.sub(1);
 bndmesh = mesh.bnd;
 
 % bndmesh_copy = bndmesh;
 
 P1 = fem(bndmesh,'P1');
-P0 = fem(bndmesh,'P0');
 
 elts = 1:bndmesh.nelt;
 elts = elts';
@@ -53,11 +52,11 @@ kernel = parallel.gpu.CUDAKernel(ptxFilePath, cuFilePath);
 % gridDim = [150, 1, 1];
 % blockDim = [64, 1, 1]; % 32 is the SIMD Width or wrap size, 
 
-% gridDim = [200, 1, 1];
-% blockDim = [32, 1, 1]; % 32 is the SIMD Width or wrap size, 
+gridDim = [200, 1, 1];
+blockDim = [32, 1, 1]; % 32 is the SIMD Width or wrap size, 
 
-gridDim = [1, 1, 1];
-blockDim = [1, 1, 1];
+% gridDim = [1, 1, 1];
+% blockDim = [1, 1, 1];
 
 Nthreads = prod(blockDim) * prod(gridDim);
 
@@ -88,7 +87,7 @@ X3_gpu = gpuArray(X3);
 
 shapeDerivative_gpu = gpuArray.zeros(1,1);
 
-GalerkinMatrix_gpu = gpuArray.zeros(P0.ndof,P0.ndof);
+GalerkinMatrix_gpu = gpuArray.zeros(P1.ndof,P1.ndof);
 
 trialVec_gpu = gpuArray.zeros(1,1);
 
@@ -112,42 +111,6 @@ TrialOperator_gpu = 0;
 
 TestOperator_gpu = 0;
 
-%% P0
-
-% testout_gpu = gpuArray.zeros(size(W{2},1),1);
-% testABCi_gpu = gpuArray.zeros(3,3); 
-% testABCj_gpu = gpuArray.zeros(3,3); 
-% origelti_gpu = gpuArray.zeros(3,1,'int32');
-% origeltj_gpu = gpuArray.zeros(3,1,'int32');
-% modifelti_gpu = gpuArray.zeros(3,1,'int32');
-% modifeltj_gpu = gpuArray.zeros(3,1,'int32');
-
-% Launch CUDA kernel
-% [sd,gmat] = feval(kernel,...
-%     P0.ndof,P0.ndof,bndmesh.nelt,bndmesh.nvtx,...
-%     Nthreads,Ivec_gpu,Jvec_gpu,relation_gpu,...
-%     W0_gpu,X0_gpu,size(X0,1),...
-%     W1_gpu,X1_gpu,size(X1,1),...
-%     W2_gpu,X2_gpu,size(X2,1),...
-%     W3_gpu,X3_gpu,size(X3,1),...
-%     shapeDerivative_gpu,...
-%     GalerkinMatrix_gpu,...
-%     trialVec_gpu, testVec_gpu,...
-%     Elements_gpu,Vertices_gpu,Normals_gpu,Areas_gpu,...
-%     TrialSpace_gpu,TestSpace_gpu,TrialOperator_gpu,TestOperator_gpu,...
-%     size(P0.rsf,1),size(P0.rsf,1)); %...
-%     ,testout_gpu,testABCi_gpu,testABCj_gpu, ...
-%     origelti_gpu,origeltj_gpu,modifelti_gpu,modifeltj_gpu);
-
-% KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
-% Nelt = bndmesh.nelt;
-% [ii,jj] = meshgrid(1:Nelt,1:Nelt);
-% 
-% tic;
-% V = panel_assembly(bndmesh,KV,P0,P0,ii(:),jj(:));
-% 
-% elapsed_time = toc;
-% fprintf('CPU took %.4f seconds.\n', elapsed_time);
 
 %% P1
 
@@ -166,13 +129,18 @@ TestOperator_gpu = 0;
     TrialSpace_gpu,TestSpace_gpu,TrialOperator_gpu,TestOperator_gpu,...
     size(P1.rsf,1),size(P1.rsf,1)); 
 
-KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
-Nelt = bndmesh.nelt;
-[ii,jj] = meshgrid(1:Nelt,1:Nelt);
+% KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
+% Nelt = bndmesh.nelt;
+% [ii,jj] = meshgrid(1:Nelt,1:Nelt);
+% 
+% tic;
+% V = panel_assembly(bndmesh,KV,P1,P1,ii(:),jj(:));
+% 
+% elapsed_time = toc;
+% fprintf('CPU took %.4f seconds.\n', elapsed_time);
 
-tic;
-V = panel_assembly(bndmesh,KV,P1,P1,ii(:),jj(:));
-
-elapsed_time = toc;
-fprintf('CPU took %.4f seconds.\n', elapsed_time);
+newgmat = gmat;
+load("V_P1P1_200.mat");
+norm(V-gmat)
+norm(V-newgmat)
 
