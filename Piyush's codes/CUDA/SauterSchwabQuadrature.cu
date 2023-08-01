@@ -83,7 +83,7 @@ __device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int d
     } */
 }
 
-__global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles, int NVertices,
+__global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles, int NVertices, int NInteractions,
                                        int NThreads, const int *I, const int *J, const int *relation,
                                        const double *W0, const double *X0, int Nq0,
                                        const double *W1, const double *X1, int Nq1,
@@ -101,39 +101,39 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
     int ThreadID = blockIdx.x * blockDim.x + threadIdx.x;
 
-    *shapeDerivative = 3.145;
+    //*shapeDerivative = 3.145;
 
     // Size of the matrix
     // int NInteractions = TrialDim * TestDim;
 
     // Number of element interaction
-    int NInteractions = NTriangles * NTriangles;
+    // int NInteractions = NTriangles * NTriangles;
 
     // Matrix size is NTriangles^2. Each entry is assigned to a thread
     // InteractionsPerThread gives the max no.of element interactions assigned
     // to a thread
     int InteractionsPerThread = ceil(double(NInteractions) / double(NThreads));
 
-    if (blockIdx.x == 0 && threadIdx.x == 0)
+    /* if (blockIdx.x == 0 && threadIdx.x == 0)
     {
         printf("Number of blocks: %d \n ", gridDim.x);
         printf("Threads per block: %d \n ", blockDim.x);
         printf("Total interactions: %d , Interactions per thread: %d \n ", NInteractions, InteractionsPerThread);
-    }
+    } */
 
     // Looping over all assigned interactions
     for (int idx = 0; idx < InteractionsPerThread; ++idx)
     {
-        if (blockIdx.x == 0 && threadIdx.x == 0)
+        /* if (blockIdx.x == 0 && threadIdx.x == 0)
         {
             printf("In block 0 thread 0 computing interaction no. : %d \n ", idx);
-        }
+        } */
         // The interaction number
         // int InteractionIdx = ThreadID + NThreads * idx;
         int InteractionIdx = ThreadID * InteractionsPerThread + idx;
 
         // Preparing variables
-        Eigen::Vector3d Ai, Bi, Ci, ABCi, permi, Aj, Bj, Cj, ABCj, permj;
+        Eigen::Vector3d Ai, Bi, Ci, Aj, Bj, Cj;
         Eigen::MatrixXd Ei(3, 2), Ej(3, 2);
 
         int intersection[3], diffI[3], diffJ[3];
@@ -357,14 +357,14 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
                 for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
                 {
-                    Eigen::Vector3d RSFsX(1 - X[QudPt] - X[QudPt + NQudPts], X[QudPt], X[QudPt + NQudPts]);
-                    Eigen::Vector3d RSFsY(1 - X[QudPt + 2 * NQudPts] - X[QudPt + 3 * NQudPts], X[QudPt + 2 * NQudPts], X[QudPt + 3 * NQudPts]);
+                    Eigen::Vector3d RSFsX(1 - X[4 * QudPt] - X[4 * QudPt + 1], X[4 * QudPt], X[4 * QudPt + 1]);
+                    Eigen::Vector3d RSFsY(1 - X[4 * QudPt + 2] - X[4 * QudPt + 3], X[4 * QudPt + 2], X[4 * QudPt + 3]);
 
                     RSFsX *= g_tau;
                     RSFsY *= g_t;
 
-                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
-                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
+                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[4 * QudPt] + Ei.col(1) * X[4 * QudPt + 1];
+                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[4 * QudPt + 2] + Ej.col(1) * X[4 * QudPt + 3];
 
                     LocalMatrix(ii, jj) += W[QudPt] * RSFsX(ii) * SLKernel(chi_tau, chi_t, chi_t - chi_tau) * RSFsY(jj);
                 }
@@ -419,22 +419,26 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
                 for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
                 {
+                    if (blockIdx.x == 0 && threadIdx.x == 0)
+                    {
+                        printf("Qud pt %d\n", QudPt);
+                    }
                     // Reference basis RT0
                     Eigen::MatrixXd RWGX_ref(3, 2); // Rows represent the 3 RSFs
-                    RWGX_ref << X[QudPt], X[QudPt + NQudPts],
-                        X[QudPt] - 1, X[QudPt + NQudPts],
-                        X[QudPt], X[QudPt + NQudPts] - 1;
+                    RWGX_ref << X[4 * QudPt], X[4 * QudPt + 1],
+                        X[4 * QudPt] - 1, X[4 * QudPt + 1],
+                        X[4 * QudPt], X[4 * QudPt + 1] - 1;
 
                     Eigen::MatrixXd RWGY_ref(3, 2); // Rows represent the 3 RSFs
-                    RWGY_ref << X[QudPt + 2 * NQudPts], X[QudPt + 3 * NQudPts],
-                        X[QudPt + 2 * NQudPts] - 1, X[QudPt + 3 * NQudPts],
-                        X[QudPt + 2 * NQudPts], X[QudPt + 3 * NQudPts] - 1;
+                    RWGY_ref << X[4 * QudPt + 2], X[4 * QudPt + 3],
+                        X[4 * QudPt + 2] - 1, X[4 * QudPt + 3],
+                        X[4 * QudPt + 2], X[4 * QudPt + 3] - 1;
 
                     Eigen::Vector3d Psix = fluxI * Ei * RWGX_ref.row(ii).transpose();
                     Eigen::Vector3d Psiy = fluxJ * Ej * RWGY_ref.row(jj).transpose();
 
-                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
-                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
+                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[4 * QudPt] + Ei.col(1) * X[4 * QudPt + 1];
+                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[4 * QudPt + 2] + Ej.col(1) * X[4 * QudPt + 3];
 
                     LocalMatrix(ii, jj) += W[QudPt] * (DLKernel(chi_tau, chi_t, chi_t - chi_tau).cross(Psiy)).dot(Psix);
                 }

@@ -6,7 +6,7 @@ clear;clc;
 format long;
 
 %bndmesh = mshSphere(2,1);
-mesh = mshCube(200,[1 1 1]);
+mesh = mshCube(2,[1 1 1]);
 % mesh = mesh.sub(1);
 bndmesh = mesh.bnd;
 
@@ -53,7 +53,7 @@ kernel = parallel.gpu.CUDAKernel(ptxFilePath, cuFilePath);
 % gridDim = [150, 1, 1];
 % blockDim = [64, 1, 1]; % 32 is the SIMD Width or wrap size, 
 
-gridDim = [300, 1, 1];
+gridDim = [150, 1, 1];
 blockDim = [32, 1, 1]; % 32 is the SIMD Width or wrap size, 
 
 % gridDim = [1, 1, 1];
@@ -75,16 +75,16 @@ W2_gpu = gpuArray(W{2});
 W3_gpu = gpuArray(W{1});
 
 X0 = X{4}; X0(:,1) = X0(:,1)-X0(:,2); X0(:,3) = X0(:,3)-X0(:,4);
-X0_gpu = gpuArray(X0);
+X0_gpu = gpuArray(X0');
 
 X1 = X{3}; X1(:,1) = X1(:,1)-X1(:,2); X1(:,3) = X1(:,3)-X1(:,4);
-X1_gpu = gpuArray(X1);
+X1_gpu = gpuArray(X1');
 
 X2 = X{2}; X2(:,1) = X2(:,1)-X2(:,2); X2(:,3) = X2(:,3)-X2(:,4);
-X2_gpu = gpuArray(X2);
+X2_gpu = gpuArray(X2');
 
 X3 = X{1}; X3(:,1) = X3(:,1)-X3(:,2); X3(:,3) = X3(:,3)-X3(:,4);
-X3_gpu = gpuArray(X3);
+X3_gpu = gpuArray(X3');
 
 shapeDerivative_gpu = gpuArray.zeros(1,1);
 
@@ -118,9 +118,11 @@ TestOperator_gpu = 0;
 
 %% P1
 
+% r = parallel.gpu.ranges.create('My Kernel');
+
 % Launch CUDA kernel
 [sd,gmat] = feval(kernel,...
-    RWG.ndof,RWG.ndof,bndmesh.nelt,bndmesh.nvtx,...
+    RWG.ndof,RWG.ndof,bndmesh.nelt,bndmesh.nvtx,bndmesh.nelt^2,...
     Nthreads,Ivec_gpu,Jvec_gpu,relation_gpu,...
     W0_gpu,X0_gpu,size(X0,1),...
     W1_gpu,X1_gpu,size(X1,1),...
@@ -133,6 +135,8 @@ TestOperator_gpu = 0;
     elt2dof_gpu,elt2dof_gpu,...
     TrialSpace_gpu,TestSpace_gpu,TrialOperator_gpu,TestOperator_gpu,...
     size(RWG.rsf,1),size(RWG.rsf,1)); 
+    
+% clear r;
 
 KK = @(x,y,z) -z./vecnorm(z,2,2).^3/4./pi;
 Nelt = bndmesh.nelt;

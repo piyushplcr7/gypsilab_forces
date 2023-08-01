@@ -13,7 +13,7 @@ bndmesh = mesh.bnd;
 % bndmesh_copy = bndmesh;
 
 P1 = fem(bndmesh,'P1');
-
+[~,elt2dof] = P1.dof;
 elts = 1:bndmesh.nelt;
 elts = elts';
 elts = repelem(elts,3);
@@ -74,16 +74,16 @@ W2_gpu = gpuArray(W{2});
 W3_gpu = gpuArray(W{1});
 
 X0 = X{4}; X0(:,1) = X0(:,1)-X0(:,2); X0(:,3) = X0(:,3)-X0(:,4);
-X0_gpu = gpuArray(X0);
+X0_gpu = gpuArray(X0');
 
 X1 = X{3}; X1(:,1) = X1(:,1)-X1(:,2); X1(:,3) = X1(:,3)-X1(:,4);
-X1_gpu = gpuArray(X1);
+X1_gpu = gpuArray(X1');
 
 X2 = X{2}; X2(:,1) = X2(:,1)-X2(:,2); X2(:,3) = X2(:,3)-X2(:,4);
-X2_gpu = gpuArray(X2);
+X2_gpu = gpuArray(X2');
 
 X3 = X{1}; X3(:,1) = X3(:,1)-X3(:,2); X3(:,3) = X3(:,3)-X3(:,4);
-X3_gpu = gpuArray(X3);
+X3_gpu = gpuArray(X3');
 
 shapeDerivative_gpu = gpuArray.zeros(1,1);
 
@@ -103,6 +103,9 @@ Normals_gpu = gpuArray(bndmesh.nrm);
 
 Areas_gpu = gpuArray(bndmesh.ndv);
 
+% zeroIdxelt2dof = cast(elt2dof-1,'int32');
+elt2dof_gpu = gpuArray.zeros(1,1,'int32');
+
 TrialSpace_gpu = 0;
 
 TestSpace_gpu = 0;
@@ -116,7 +119,7 @@ TestOperator_gpu = 0;
 
 % Launch CUDA kernel
 [sd,gmat] = feval(kernel,...
-    P1.ndof,P1.ndof,bndmesh.nelt,bndmesh.nvtx,...
+    P1.ndof,P1.ndof,bndmesh.nelt,bndmesh.nvtx,bndmesh.nelt^2,...
     Nthreads,Ivec_gpu,Jvec_gpu,relation_gpu,...
     W0_gpu,X0_gpu,size(X0,1),...
     W1_gpu,X1_gpu,size(X1,1),...
@@ -126,6 +129,7 @@ TestOperator_gpu = 0;
     GalerkinMatrix_gpu,...
     trialVec_gpu, testVec_gpu,...
     Elements_gpu,Vertices_gpu,Normals_gpu,Areas_gpu,...
+    elt2dof_gpu,elt2dof_gpu,...
     TrialSpace_gpu,TestSpace_gpu,TrialOperator_gpu,TestOperator_gpu,...
     size(P1.rsf,1),size(P1.rsf,1)); 
 
