@@ -6,7 +6,7 @@ clear;clc;
 format long;
 
 %bndmesh = mshSphere(2,1);
-mesh = mshCube(2,[1 1 1]);
+mesh = mshCube(200,[1 1 1]);
 % mesh = mesh.sub(1);
 bndmesh = mesh.bnd;
 
