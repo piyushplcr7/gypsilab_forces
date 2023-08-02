@@ -114,20 +114,20 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
     // to a thread
     int InteractionsPerThread = ceil(double(NInteractions) / double(NThreads));
 
-    /* if (blockIdx.x == 0 && threadIdx.x == 0)
+    if (blockIdx.x == 0 && threadIdx.x == 0)
     {
         printf("Number of blocks: %d \n ", gridDim.x);
         printf("Threads per block: %d \n ", blockDim.x);
         printf("Total interactions: %d , Interactions per thread: %d \n ", NInteractions, InteractionsPerThread);
-    } */
+    }
 
     // Looping over all assigned interactions
     for (int idx = 0; idx < InteractionsPerThread; ++idx)
     {
-        /* if (blockIdx.x == 0 && threadIdx.x == 0)
+        if (blockIdx.x == 0 && threadIdx.x == 0)
         {
             printf("In block 0 thread 0 computing interaction no. : %d \n ", idx);
-        } */
+        }
         // The interaction number
         // int InteractionIdx = ThreadID + NThreads * idx;
         int InteractionIdx = ThreadID * InteractionsPerThread + idx;
@@ -409,6 +409,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
             int iip2 = (iip1 + 1) % 3;
 
             double fluxI = origEltI[iip1] < origEltI[iip2] ? 1. : -1.;
+            // double RWGX_ref_0 = -ii % 2, RWGX_ref_1 = -ii / 2;
 
             for (int jj = 0; jj < NRSFTrial; ++jj)
             {
@@ -416,15 +417,16 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                 int jjp2 = (jjp1 + 1) % 3;
 
                 double fluxJ = origEltJ[jjp1] < origEltJ[jjp2] ? 1. : -1.;
+                // double RWGY_ref_0 = -jj % 2, RWGY_ref_1 = -jj / 2;
 
                 for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
                 {
-                    if (blockIdx.x == 0 && threadIdx.x == 0)
+                    /* if (blockIdx.x == 0 && threadIdx.x == 0)
                     {
                         printf("Qud pt %d\n", QudPt);
-                    }
+                    } */
                     // Reference basis RT0
-                    Eigen::MatrixXd RWGX_ref(3, 2); // Rows represent the 3 RSFs
+                    /* Eigen::MatrixXd RWGX_ref(3, 2); // Rows represent the 3 RSFs
                     RWGX_ref << X[4 * QudPt], X[4 * QudPt + 1],
                         X[4 * QudPt] - 1, X[4 * QudPt + 1],
                         X[4 * QudPt], X[4 * QudPt + 1] - 1;
@@ -435,7 +437,16 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                         X[4 * QudPt + 2], X[4 * QudPt + 3] - 1;
 
                     Eigen::Vector3d Psix = fluxI * Ei * RWGX_ref.row(ii).transpose();
-                    Eigen::Vector3d Psiy = fluxJ * Ej * RWGY_ref.row(jj).transpose();
+                    Eigen::Vector3d Psiy = fluxJ * Ej * RWGY_ref.row(jj).transpose(); */
+
+                    double RWGX_ref_0 = X[4 * QudPt] - ii % 2;
+                    double RWGX_ref_1 = X[4 * QudPt + 1] - ii / 2;
+
+                    double RWGY_ref_0 = X[4 * QudPt + 2] - jj % 2;
+                    double RWGY_ref_1 = X[4 * QudPt + 3] - jj / 2;
+
+                    Eigen::Vector3d Psix = fluxI * (Ei.col(0) * RWGX_ref_0 + Ei.col(1) * RWGX_ref_1);
+                    Eigen::Vector3d Psiy = fluxJ * (Ej.col(0) * RWGY_ref_0 + Ej.col(1) * RWGY_ref_1);
 
                     Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[4 * QudPt] + Ei.col(1) * X[4 * QudPt + 1];
                     Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[4 * QudPt + 2] + Ej.col(1) * X[4 * QudPt + 3];
