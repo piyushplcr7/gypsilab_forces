@@ -96,16 +96,16 @@ testVec_gpu = gpuArray.zeros(1,1);
 
 Elements = cast(bndmesh.elt-1,'int32');
 
-Elements_gpu = gpuArray(Elements);
+Elements_gpu = gpuArray(Elements');
 
-Vertices_gpu = gpuArray(bndmesh.vtx);
+Vertices_gpu = gpuArray(bndmesh.vtx');
 
-Normals_gpu = gpuArray(bndmesh.nrm);
+Normals_gpu = gpuArray(bndmesh.nrm');
 
 Areas_gpu = gpuArray(bndmesh.ndv);
 
 zeroIdxelt2dof = cast(elt2dof-1,'int32');
-elt2dof_gpu = gpuArray(zeroIdxelt2dof);
+elt2dof_gpu = gpuArray(zeroIdxelt2dof');
 
 TrialSpace_gpu = 0;
 
@@ -138,15 +138,15 @@ TestOperator_gpu = 0;
     
 % clear r;
 
-KK = @(x,y,z) -z./vecnorm(z,2,2).^3/4./pi;
-Nelt = bndmesh.nelt;
-[ii,jj] = meshgrid(1:Nelt,1:Nelt);
-
-tic;
-K = panel_assembly(bndmesh,KK,RWG,RWG,ii(:),jj(:));
-
-elapsed_time = toc;
-fprintf('CPU took %.4f seconds.\n', elapsed_time);
+% KK = @(x,y,z) -z./vecnorm(z,2,2).^3/4./pi;
+% Nelt = bndmesh.nelt;
+% [ii,jj] = meshgrid(1:Nelt,1:Nelt);
+% 
+% tic;
+% K = panel_assembly(bndmesh,KK,RWG,RWG,ii(:),jj(:));
+% 
+% elapsed_time = toc;
+% fprintf('CPU took %.4f seconds.\n', elapsed_time);
 
 
 
