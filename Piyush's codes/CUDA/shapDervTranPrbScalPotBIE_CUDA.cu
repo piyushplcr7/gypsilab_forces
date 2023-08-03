@@ -161,7 +161,8 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         // Preparing variables
         Eigen::Vector3d Ai, Bi, Ci, Aj, Bj, Cj;
-        Eigen::MatrixXd Ei(3, 2), Ej(3, 2);
+        // Eigen::MatrixXd Ei(3, 2), Ej(3, 2);
+        Eigen::Vector3d Eicol0, Eicol1, Ejcol0, Ejcol1;
 
         int intersection[3], diffI[3], diffJ[3];
 
@@ -268,19 +269,31 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         // Jacobian Matrices
 
-        Ei.col(0) = Bi - Ai;
+        /* Ei.col(0) = Bi - Ai;
         Ei.col(1) = Ci - Ai;
 
         Ej.col(0) = Bj - Aj;
-        Ej.col(1) = Cj - Aj;
+        Ej.col(1) = Cj - Aj; */
 
-        Eigen::MatrixXd EtEi = Ei.transpose() * Ei;
-        Eigen::MatrixXd EtEj = Ej.transpose() * Ej;
+        Eicol0 = Bi - Ai;
+        Eicol1 = Ci - Ai;
+
+        Ejcol0 = Bj - Aj;
+        Ejcol1 = Cj - Aj;
+
+        Eigen::Matrix2d EtEi;
+        // EtEi = Ei.transpose() * Ei;
+        EtEi << Eicol0.dot(Eicol0), Eicol0.dot(Eicol1), Eicol1.dot(Eicol0), Eicol1.dot(Eicol1);
+        Eigen::Matrix2d EtEj;
+        // EtEj = Ej.transpose() * Ej;
+        EtEj << Ejcol0.dot(Ejcol0), Ejcol0.dot(Ejcol1), Ejcol1.dot(Ejcol0), Ejcol1.dot(Ejcol1);
+
         double deti = EtEi(0, 0) * EtEi(1, 1) - EtEi(0, 1) * EtEi(1, 0);
         double detj = EtEj(0, 0) * EtEj(1, 1) - EtEj(0, 1) * EtEj(1, 0);
 
-        Eigen::MatrixXd Dxyi = -EtEi;
-        Eigen::MatrixXd Dxyj = -EtEj;
+        // Dxyi and Dxyj are the inverses of EtEi and EtEj respectively
+        Eigen::Matrix2d Dxyi = -EtEi;
+        Eigen::Matrix2d Dxyj = -EtEj;
 
         Dxyi(0, 0) = EtEi(1, 1);
         Dxyi(1, 1) = EtEi(0, 0);
@@ -291,7 +304,13 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         Dxyi /= deti;
         Dxyj /= detj;
 
-        Eigen::MatrixXd DCVi = Ei * Dxyi, DCVj = Ej * Dxyj;
+        // Eigen::MatrixXd DCVi = Ei * Dxyi, DCVj = Ej * Dxyj;
+        //  Manually computing the above products
+        Eigen::Vector3d DCVicol0 = Eicol0 * Dxyi(0, 0) + Eicol1 * Dxyi(0, 1);
+        Eigen::Vector3d DCVicol1 = Eicol0 * Dxyi(1, 0) + Eicol1 * Dxyi(1, 1);
+
+        Eigen::Vector3d DCVjcol0 = Ejcol0 * Dxyj(0, 0) + Ejcol1 * Dxyj(0, 1);
+        Eigen::Vector3d DCVjcol1 = Ejcol0 * Dxyj(1, 0) + Ejcol1 * Dxyj(1, 1);
 
         Eigen::Matrix3d LocalMatrix_kerneloldmat_nxgradP1_nxgradP1 = Eigen::MatrixX3d::Zero(3, 3);
         Eigen::Matrix3d LocalMatrix_SL_Dvelnxgrad_nxgrad = Eigen::MatrixX3d::Zero(3, 3);
@@ -306,8 +325,8 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
             double Psix_P0 = g_tau;
             double Psiy_P0 = g_t;
 
-            Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[4 * QudPt] + Ei.col(1) * X[4 * QudPt + 1];
-            Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[4 * QudPt + 2] + Ej.col(1) * X[4 * QudPt + 3];
+            Eigen::Vector3d chi_tau = Ai + Eicol0 * X[4 * QudPt] + Eicol1 * X[4 * QudPt + 1];
+            Eigen::Vector3d chi_t = Aj + Ejcol0 * X[4 * QudPt + 2] + Ejcol1 * X[4 * QudPt + 3];
 
             Local_kerneloldmat_P0_P0 += W[QudPt] * Psix_P0 * KernelOld(chi_tau, chi_t, chi_t - chi_tau) * Psiy_P0;
 
@@ -319,15 +338,15 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                 int Psiy_nxgradP1_0 = (3 - jj) % 3 - 1;
                 int Psiy_nxgradP1_1 = jj - 1;
 
-                Eigen::Vector3d Psiy_nxgradP1 = g_t * normaly.cross(DCVj.col(0) * Psiy_nxgradP1_0 + DCVj.col(1) * Psiy_nxgradP1_1);
+                Eigen::Vector3d Psiy_nxgradP1 = g_t * normaly.cross(DCVjcol0 * Psiy_nxgradP1_0 + DCVjcol1 * Psiy_nxgradP1_1);
 
                 Eigen::Vector3d RSFsY_P1(1 - X[4 * QudPt + 2] - X[4 * QudPt + 3], X[4 * QudPt + 2], X[4 * QudPt + 3]);
                 RSFsY_P1 *= g_t;
 
                 // P0 X ntimes(P1) (test X trial)
-                LocalMatrix_kernelintegrablemat(jj) += W[QudPt] * KernelIntegrable(chi_tau, chi_t, chi_t - chi_tau).dot(normaly) * RSFsY_P1 * Psix_P0;
+                LocalMatrix_kernelintegrablemat(jj) += W[QudPt] * KernelIntegrable(chi_tau, chi_t, chi_t - chi_tau).dot(normaly) * RSFsY_P1(jj) * Psix_P0;
 
-                LocalMatrix_combkernelmat(jj) += W[QudPt] * KernelComb(chi_tau, chi_t, chi_t - chi_tau).dot(normaly) * RSFsY_P1 * Psix_P0;
+                LocalMatrix_combkernelmat(jj) += W[QudPt] * KernelComb(chi_tau, chi_t, chi_t - chi_tau).dot(normaly) * RSFsY_P1(jj) * Psix_P0;
 
                 // Test
                 for (int ii = 0; ii < 3; ++ii)
@@ -336,7 +355,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                     int Psix_nxgradP1_0 = (3 - ii) % 3 - 1;
                     int Psix_nxgradP1_1 = ii - 1;
 
-                    Eigen::Vector3d Psix_nxgradP1 = g_tau * normalx.cross(DCVi.col(0) * Psix_nxgradP1_0 + DCVi.col(1) * Psix_nxgradP1_1);
+                    Eigen::Vector3d Psix_nxgradP1 = g_tau * normalx.cross(DCVicol0 * Psix_nxgradP1_0 + DCVicol1 * Psix_nxgradP1_1);
 
                     Eigen::Vector3d RSFsX_P1(1 - X[4 * QudPt] - X[4 * QudPt + 1], X[4 * QudPt], X[4 * QudPt + 1]);
                     RSFsX_P1 *= g_tau;

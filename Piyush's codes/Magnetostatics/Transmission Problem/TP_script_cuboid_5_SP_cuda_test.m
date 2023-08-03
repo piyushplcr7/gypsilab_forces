@@ -6,7 +6,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 5:12;
+vals = 7:12;
 Nvals = size(vals,2);
 forces_vol = zeros(Nvals,3);
 forces_bem = forces_vol;
@@ -74,20 +74,9 @@ for i = 1:Nvals
 
     torques_vol(i,:) = [t1 t2 t3]
 
+    [Vel,DVel] = getPolyVelDVel(1,1,1,1);
+
     % BEM based shape derivative
-    fbem1 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel1,DVel1,mu0,mu);
-    fbem2 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel2,DVel2,mu0,mu);
-    fbem3 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel3,DVel3,mu0,mu);
-
-    forces_bem(i,:) = [fbem1 fbem2 fbem3]
-
-    tbem1 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr1,DVelr1,mu0,mu);
-    tbem2 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr2,DVelr2,mu0,mu);
-    tbem3 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr3,DVelr3,mu0,mu);
-
-    torques_bem(i,:) = [tbem1 tbem2 tbem3]
-
-    save('TP_SP_cuboid.mat',"forces_vol","torques_vol","forces_bem","torques_bem","hvals");
-
+    fbem1 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel,mu0,mu);
 
 end
