@@ -1,0 +1,3 @@
+Invalid MEX-file '.../decodeBitMatrix_mex.mexa64': /usr/local/MATLAB/R2022b/bin/glnxa64/../../sys/os/glnxa64/libstdc++.so.6: version `GLIBCXX_3.4.29' not found (required by .../decodeBitMatrix_mex.mexa64)
+
+export LD_PRELOAD=/lib/x86_64-linux-gnu/libstdc++.so.6 matlab
