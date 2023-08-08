@@ -300,7 +300,7 @@ public:
       Eigen::MatrixXd LocalMatrix = Eigen::MatrixXd::Zero(NRSFTest, NRSFTrial);
 
       // Debug
-      if (i == 0 && j == 0) {
+      /* if (i == 0 && j == 0) {
         std::cout << "Ai = " << Ai.transpose() << std::endl;
         std::cout << "Bi = " << Bi.transpose() << std::endl;
         std::cout << "Ci = " << Ci.transpose() << std::endl;
@@ -311,7 +311,7 @@ public:
 
         std::cout << "g_tau = " << g_tau << std::endl;
         std::cout << "g_t = " << g_t << std::endl;
-      }
+      } */
 
       if (TrialSpace == 0 && TestSpace == 0) {
         // P0 X P0
@@ -329,9 +329,9 @@ public:
                                      SLKernel(chi_tau, chi_t, chi_t - chi_tau) *
                                      Psiy;
             }
-            if (i == 0 && j == 0) {
+            /* if (i == 0 && j == 0) {
               std::cout << "Nqudpts =  " << NQudPts << std::endl;
-            }
+            } */
             GalerkinMatrix[i + TestDim * j] += LocalMatrix(ii, jj);
 
             // Atomic update of the galerkin matrix
