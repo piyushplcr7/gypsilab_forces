@@ -1,6 +1,6 @@
 % Script for constant Magnetization
-delete(gcp('nocreate'));
-addpath(genpath("../../../"));
+
+addpath(genpath("../../../../"));
 clear; clc; close all;
 format long;
 
@@ -8,6 +8,33 @@ mu = 1;
 vals = 5:13;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
+% indices for velocity fields go from 0 to kappa-1
+kappa = 3;
+shape_derivatives_mst = zeros(Nvals,3 * kappa^3);
+shape_derivatives_bem = shape_derivatives_mst;
+
+% Map of velocity field to index
+abc_alpha = zeros(3 * kappa^3,4);
+
+for a = 0:kappa-1
+    for b = 0:kappa-1
+        for c = 0:kappa-1
+            for alpha = 0:2
+                idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
+                abc_alpha(idx,:) = [a b c alpha];
+            end
+        end
+    end
+end
+
+testidx = 1 + kappa * 1 + kappa^2 * 1 + kappa^3 * 0 + 1;
+
+% abc_alpha = [1 1 1 0];
+% abc_alpha = repelem(abc_alpha,4,1);
+
+% Number of fields
+Nfields = size(abc_alpha,1);
+
 forces_bem = forces_mst;
 torques_mst = forces_mst;
 torques_bem = forces_mst;
@@ -105,26 +132,20 @@ for i = 1:Nvals
     avgB = Bn + 0.5*(Btano + Btani);
     
     % Computing the integral of (Mxn)x{B}
-    forces_mst(i,:) = sum(W.* cross(Mxn,avgB,2),1)
-
-    Xcg = [4 0 0];
-    r = X-Xcg;
-    torques_mst(i,:) = sum(W.* cross(r,cross(Mxn,avgB,2),2),1)
-
-    % Computing using BIE based formula
-    [Vel1,DVel1] = getTransVelDVel([1 0 0]);
-    [Vel2,DVel2] = getTransVelDVel([0 1 0]);
-    [Vel3,DVel3] = getTransVelDVel([0 0 1]);
-
-    fbem1 = PermanentMagnetShapeDerivativeBIEVPSimplified(Gamma,TnAJ+TnAM,TdAJ+TdAM,J,omega_src,Vel1);
-    fbem2 = PermanentMagnetShapeDerivativeBIEVPSimplified(Gamma,TnAJ+TnAM,TdAJ+TdAM,J,omega_src,Vel2);
-    fbem3 = PermanentMagnetShapeDerivativeBIEVPSimplified(Gamma,TnAJ+TnAM,TdAJ+TdAM,J,omega_src,Vel3);
-
-    forces_bem(i,:) = [fbem1 fbem2 fbem3]
+    
+    for fieldID = 1:Nfields
+        a = abc_alpha(fieldID,1);
+        b = abc_alpha(fieldID,2);
+        c = abc_alpha(fieldID,3);
+        alpha = abc_alpha(fieldID,4);
+        [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+        Vels = Vel(X);
+        shape_derivatives_mst(i,fieldID) = sum(W.* dot(Vels,cross(Mxn,avgB,2),2),1);
+    end
+%     forces_mst(i,:) = sum(W.* cross(Mxn,avgB,2),1)
 
 %     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
-    [Vel,DVel] = getCosVelDVel(1,1,1,1);
 
-    tbem1 = PermanentMagnetShapeDerivativeBIEVP(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,Vel,DVel);
+    tbem1 = PermanentMagnetShapeDerivativeBIEVP_dualnorm(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,abc_alpha);
     
 end
