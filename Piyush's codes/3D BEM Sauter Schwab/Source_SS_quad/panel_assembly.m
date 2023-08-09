@@ -9,7 +9,7 @@
 
 function M = panel_assembly(mesh,kernel,trial_space,test_space, I, J)
 
-    order = 10;
+    order = 5;
     [X, W] = quad4D(order); 
     Xss{1} = X{1}; Wss{1} = W{1};
     Xss{2} = X{2}; Wss{2} = W{2};

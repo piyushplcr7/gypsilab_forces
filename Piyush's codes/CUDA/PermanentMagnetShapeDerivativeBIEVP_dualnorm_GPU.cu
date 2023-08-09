@@ -145,6 +145,14 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
 /* double *testout, double *testABCi, double *testABCj,
 int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
+    // shared memory for writing shape derivatives
+    // Need to specify the size beforehand, hard coding Nabc_alpha = 81, blockDim.x = 32
+    __shared__ double localShapeDerivatives[81 * 32];
+    // Initialization of shared memory
+    for (int l = 0; l < Nabc_alpha; ++l)
+    {
+        localShapeDerivatives[l + threadIdx.x * Nabc_alpha] = 0;
+    }
     int ThreadID = blockIdx.x * blockDim.x + threadIdx.x;
 
     //*shapeDerivative = 3.145;
@@ -160,20 +168,20 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
     // to a thread
     int InteractionsPerThread = ceil(double(NInteractions) / double(NThreads));
 
-    if (blockIdx.x == 0 && threadIdx.x == 0)
+    /* if (blockIdx.x == 0 && threadIdx.x == 0)
     {
         printf("Number of blocks: %d \n ", gridDim.x);
         printf("Threads per block: %d \n ", blockDim.x);
         printf("Total interactions: %d , Interactions per thread: %d \n ", NInteractions, InteractionsPerThread);
-    }
+    } */
 
     // Looping over all assigned interactions
     for (int idx = 0; idx < InteractionsPerThread; ++idx)
     {
-        if (blockIdx.x == 0 && threadIdx.x == 0)
+        /* if (blockIdx.x == 0 && threadIdx.x == 0)
         {
             printf("In block 0 thread 0 computing interaction no. : %d \n ", idx);
-        }
+        } */
         // The interaction number
         // int InteractionIdx = ThreadID + NThreads * idx;
         int InteractionIdx = ThreadID * InteractionsPerThread + idx;
@@ -386,7 +394,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         Eigen::MatrixXd DCVi = Ei * Dxyi, DCVj = Ej * Dxyj;
 
         // RWG X RWG
-        for (int ii = 0; ii < 3; ++ii)
+        /* for (int ii = 0; ii < 3; ++ii)
         {
             int iip1 = (permI[ii] + 1) % 3;
             int iip2 = (iip1 + 1) % 3;
@@ -408,10 +416,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                     Eigen::Matrix3d LocalMatrixC1 = Eigen::MatrixX3d::Zero(3, 3);
                     Eigen::Matrix3d LocalMatrixC3 = Eigen::MatrixX3d::Zero(3, 3);
                     Eigen::Matrix3d LocalMatrixN = Eigen::MatrixX3d::Zero(3, 3);
-                    if (blockIdx.x == 0 && threadIdx.x == 0)
-                    {
-                        printf("FieldIdx =  %d, a,b,c,alpha = %d,%d,%d,%d \n", fieldIdx, abc_alpha[4 * fieldIdx], abc_alpha[4 * fieldIdx + 1], abc_alpha[4 * fieldIdx + 2], abc_alpha[4 * fieldIdx + 3]);
-                    }
+
                     // Computing the shape derivaive for the field specified by fieldIdx
                     for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
                     {
@@ -430,82 +435,146 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                         Eigen::Vector3d chi_t = Aj + Ej.col(0) * __ldg(&X[4 * QudPt + 2]) + Ej.col(1) * __ldg(&X[4 * QudPt + 3]);
 
                         // A1 with RWG . RWG
-                        LocalMatrixA1(ii, jj) += __ldg(&W[QudPt]) * KernelA1(abc_alpha[4 * fieldIdx], abc_alpha[4 * fieldIdx + 1], abc_alpha[4 * fieldIdx + 2], abc_alpha[4 * fieldIdx + 3], chi_tau, chi_t, chi_t - chi_tau) * Psiy.dot(Psix);
+                        LocalMatrixA1(ii, jj) += __ldg(&W[QudPt]) * KernelA1(__ldg(&abc_alpha[4 * fieldIdx]), __ldg(&abc_alpha[4 * fieldIdx + 1]), __ldg(&abc_alpha[4 * fieldIdx + 2]), __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_tau, chi_t, chi_t - chi_tau) * Psiy.dot(Psix);
 
                         // A2 with DVelRWG(y) . RWG(x)
-                        LocalMatrixA2(ii, jj) += __ldg(&W[QudPt]) * KernelA2(chi_tau, chi_t, chi_t - chi_tau) * (DVel(abc_alpha[4 * fieldIdx], abc_alpha[4 * fieldIdx + 1], abc_alpha[4 * fieldIdx + 2], abc_alpha[4 * fieldIdx + 3], chi_t) * Psiy).dot(Psix);
+                        LocalMatrixA2(ii, jj) += __ldg(&W[QudPt]) * KernelA2(chi_tau, chi_t, chi_t - chi_tau) * (DVel(__ldg(&abc_alpha[4 * fieldIdx]), __ldg(&abc_alpha[4 * fieldIdx + 1]), __ldg(&abc_alpha[4 * fieldIdx + 2]), __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t) * Psiy).dot(Psix);
 
                         // C1 with DVelRWG(y) X RWG(X)
-                        LocalMatrixC1(ii, jj) += __ldg(&W[QudPt]) * (KernelC1(chi_tau, chi_t, chi_t - chi_tau).cross(DVel(abc_alpha[4 * fieldIdx], abc_alpha[4 * fieldIdx + 1], abc_alpha[4 * fieldIdx + 2], abc_alpha[4 * fieldIdx + 3], chi_t) * Psiy)).dot(Psix);
+                        LocalMatrixC1(ii, jj) += __ldg(&W[QudPt]) * (KernelC1(chi_tau, chi_t, chi_t - chi_tau).cross(DVel(__ldg(&abc_alpha[4 * fieldIdx]), __ldg(&abc_alpha[4 * fieldIdx + 1]), __ldg(&abc_alpha[4 * fieldIdx + 2]), __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t) * Psiy)).dot(Psix);
 
                         // C3 with RWG X RWG
-                        LocalMatrixC3(ii, jj) += __ldg(&W[QudPt]) * (KernelC3(abc_alpha[4 * fieldIdx], abc_alpha[4 * fieldIdx + 1], abc_alpha[4 * fieldIdx + 2], abc_alpha[4 * fieldIdx + 3], chi_tau, chi_t, chi_t - chi_tau).cross(Psiy)).dot(Psix);
+                        LocalMatrixC3(ii, jj) += __ldg(&W[QudPt]) * (KernelC3(__ldg(&abc_alpha[4 * fieldIdx]), __ldg(&abc_alpha[4 * fieldIdx + 1]), __ldg(&abc_alpha[4 * fieldIdx + 2]), __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_tau, chi_t, chi_t - chi_tau).cross(Psiy)).dot(Psix);
 
                         // N with RWG.div X RWG.div, kernelN = kernelA1
-                        LocalMatrixN(ii, jj) += __ldg(&W[QudPt]) * KernelA1(abc_alpha[4 * fieldIdx], abc_alpha[4 * fieldIdx + 1], abc_alpha[4 * fieldIdx + 2], abc_alpha[4 * fieldIdx + 3], chi_tau, chi_t, chi_t - chi_tau) * 4 * fluxI * fluxJ;
+                        LocalMatrixN(ii, jj) += __ldg(&W[QudPt]) * KernelA1(__ldg(&abc_alpha[4 * fieldIdx]), __ldg(&abc_alpha[4 * fieldIdx + 1]), __ldg(&abc_alpha[4 * fieldIdx + 2]), __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_tau, chi_t, chi_t - chi_tau) * 4 * fluxI * fluxJ;
                     }
 
-                    // Combining all the atomic adds above into a single one
-                    atomicAdd(&shapeDerivative[fieldIdx],
-                              1 / (2 * mu0) * ((1 + mu / mu0) * (TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]]        // A1
-                                                                 + 2 * TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]]) // A2
-                                               - 4 * (TnA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]]                   // C1
-                                                      + TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TnA[DofsJ[permJ[jj]]]                 // C2
-                                                      + TnA[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]])                // C3
-                                               + (1 + mu0 / mu) * -TdA[DofsI[permI[ii]]] * LocalMatrixN(ii, jj) * TdA[DofsJ[permJ[jj]]])      // N
-                                  + mu / 2 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]              // red_remaining
-                                  + mu * TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]                         // red_l_M
-                                  + mu * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]                  // blue_remaining
-                                  + mu * (Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]] +                      // blue_l_M
-                                          TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]) +
-                                  -mu0 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]]     // MC1
-                                  + -mu0 * TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]   // MC2
-                                  + -mu0 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]]); // MC3
+                    // Adding the shape derivative to the local shared storage
+                    localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += 1 / (2 * mu0) * ((1 + mu / mu0) * (TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]]        // A1
+                                                                                                                     + 2 * TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]]) // A2
+                                                                                                   - 4 * (TnA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]]                   // C1
+                                                                                                          + TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TnA[DofsJ[permJ[jj]]]                 // C2
+                                                                                                          + TnA[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]])                // C3
+                                                                                                   + (1 + mu0 / mu) * -TdA[DofsI[permI[ii]]] * LocalMatrixN(ii, jj) * TdA[DofsJ[permJ[jj]]])      // N
+                                                                                  + mu / 2 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]                  // red_remaining
+                                                                                  + mu * TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]                             // red_l_M
+                                                                                  + mu * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]                      // blue_remaining
+                                                                                  + mu * (Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]] +                          // blue_l_M
+                                                                                          TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]) +
+                                                                                  -mu0 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]]    // MC1
+                                                                                  + -mu0 * TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]  // MC2
+                                                                                  + -mu0 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]]; // MC3
                 }
+            }
+        } */
 
-                // Accumulating the shape derivative
-                // Local matrix (ii,jj) contains part of the global element DofsI[permI[ii]] , DofsJ[permJ[jj]]
+        // Changed loop order, MUCH SLOWER!!!
+        for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
+        {
+            Eigen::Vector3d chi_tau = Ai + Ei.col(0) * __ldg(&X[4 * QudPt]) + Ei.col(1) * __ldg(&X[4 * QudPt + 1]);
+            Eigen::Vector3d chi_t = Aj + Ej.col(0) * __ldg(&X[4 * QudPt + 2]) + Ej.col(1) * __ldg(&X[4 * QudPt + 3]);
 
-                /* // red_remaining = mu/2 * Mxn_coeffs' * A1mat * Mxn_coeffs;
-                atomicAdd(red_remaining, mu / 2 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]);
+            // Looping over different fields
+            for (int fieldIdx = 0; fieldIdx < Nabc_alpha; ++fieldIdx)
+            {
+                double localval = 0;
+                for (int ii = 0; ii < 3; ++ii)
+                {
+                    int iip1 = (permI[ii] + 1) % 3;
+                    int iip2 = (iip1 + 1) % 3;
 
-                // red_l_M = mu * TnA' * A1mat * Mxn_coeffs;
-                atomicAdd(red_l_M, mu * TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]);
+                    double fluxI = origEltI[iip1] < origEltI[iip2] ? 1. : -1.;
+                    for (int jj = 0; jj < 3; ++jj)
+                    {
+                        int jjp1 = (permJ[jj] + 1) % 3;
+                        int jjp2 = (jjp1 + 1) % 3;
 
-                // TnA' * A1mat * TnA
-                atomicAdd(A1, TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]]);
+                        double fluxJ = origEltJ[jjp1] < origEltJ[jjp2] ? 1. : -1.;
 
-                // blue_remaining = mu * Mxn_coeffs' * A2mat * Mxn_coeffs;
-                atomicAdd(blue_remaining, mu * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]);
+                        double RWGX_ref_0 = __ldg(&X[4 * QudPt]) - ii % 2;
+                        double RWGX_ref_1 = __ldg(&X[4 * QudPt + 1]) - ii / 2;
 
-                // blue_l_M = mu * (Mxn_coeffs' * A2mat * TnA + TnA' * A2mat * Mxn_coeffs);
-                atomicAdd(blue_l_M, mu * (Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]] +
-                                          TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]));
+                        double RWGY_ref_0 = __ldg(&X[4 * QudPt + 2]) - jj % 2;
+                        double RWGY_ref_1 = __ldg(&X[4 * QudPt + 3]) - jj / 2;
 
-                // 2 * TnA' * A2mat * TnA
-                atomicAdd(A2, 2 * TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]]);
+                        // RWG elements
+                        Eigen::Vector3d Psix = fluxI * (Ei.col(0) * RWGX_ref_0 + Ei.col(1) * RWGX_ref_1);
+                        Eigen::Vector3d Psiy = fluxJ * (Ej.col(0) * RWGY_ref_0 + Ej.col(1) * RWGY_ref_1);
 
-                // MC1 = -mu0* Mxn_coeffs' * C1mat * TdA;
-                atomicAdd(MC1, -mu0 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]]);
+                        // A1 with RWG . RWG
+                        double LocalMatrixA1_ii_jj = __ldg(&W[QudPt]) //
+                                                     * KernelA1(abc_alpha[4 * fieldIdx],
+                                                                abc_alpha[4 * fieldIdx + 1],
+                                                                abc_alpha[4 * fieldIdx + 2],
+                                                                abc_alpha[4 * fieldIdx + 3],
+                                                                chi_tau, chi_t, chi_t - chi_tau) *
+                                                     Psiy.dot(Psix);
 
-                // MC2 = -mu0* TdA' * C1mat * Mxn_coeffs;
-                atomicAdd(MC2, -mu0 * TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * Mxn_coeffs[DofsJ[permJ[jj]]]);
+                        // A2 with DVelRWG(y) . RWG(x)
+                        double LocalMatrixA2_ii_jj = __ldg(&W[QudPt])                                                                 //
+                                                     * KernelA2(chi_tau, chi_t, chi_t - chi_tau) * (DVel(abc_alpha[4 * fieldIdx],     //
+                                                                                                         abc_alpha[4 * fieldIdx + 1], //
+                                                                                                         abc_alpha[4 * fieldIdx + 2], //
+                                                                                                         abc_alpha[4 * fieldIdx + 3], //
+                                                                                                         chi_t) *
+                                                                                                    Psiy)
+                                                                                                       .dot(Psix);
 
-                // C1 = TnA' * C1mat * TdA
-                atomicAdd(C1, TnA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]]);
+                        // C1 with DVelRWG(y) X RWG(X)
+                        double LocalMatrixC1_ii_jj = __ldg(&W[QudPt]) *                                                                 //
+                                                     (KernelC1(chi_tau, chi_t, chi_t - chi_tau).cross(DVel(abc_alpha[4 * fieldIdx],     //
+                                                                                                           abc_alpha[4 * fieldIdx + 1], //
+                                                                                                           abc_alpha[4 * fieldIdx + 2], //
+                                                                                                           abc_alpha[4 * fieldIdx + 3], chi_t) *
+                                                                                                      Psiy))
+                                                         .dot(Psix);
 
-                // C2 = TdA' * C1mat * TnA
-                atomicAdd(C2, TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TnA[DofsJ[permJ[jj]]]);
+                        // C3 with RWG X RWG
+                        double LocalMatrixC3_ii_jj = __ldg(&W[QudPt])                         //
+                                                     * (KernelC3(abc_alpha[4 * fieldIdx],     //
+                                                                 abc_alpha[4 * fieldIdx + 1], //
+                                                                 abc_alpha[4 * fieldIdx + 2], //
+                                                                 abc_alpha[4 * fieldIdx + 3], //
+                                                                 chi_tau, chi_t, chi_t - chi_tau)
+                                                            .cross(Psiy))
+                                                           .dot(Psix);
 
-                // MC3 = -mu0* Mxn_coeffs' * C3mat * TdA;
-                atomicAdd(MC3, -mu0 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]]);
+                        // N with RWG.div X RWG.div, kernelN = kernelA1
+                        double LocalMatrixN_ii_jj = __ldg(&W[QudPt])                        //
+                                                    * KernelA1(abc_alpha[4 * fieldIdx],     //
+                                                               abc_alpha[4 * fieldIdx + 1], //
+                                                               abc_alpha[4 * fieldIdx + 2], //
+                                                               abc_alpha[4 * fieldIdx + 3], //
+                                                               chi_tau, chi_t, chi_t - chi_tau) *
+                                                    4 * fluxI * fluxJ;
 
-                // C3 = TnA' * C3mat * TdA
-                atomicAdd(C3, TnA[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]]);
-
-                // N = -TdA' * Nmat * TdA
-                atomicAdd(N, -TdA[DofsI[permI[ii]]] * LocalMatrixN(ii, jj) * TdA[DofsJ[permJ[jj]]]); */
+                        // Combining all the atomic adds above into a single one
+                        localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += 1 / (2 * mu0) * ((1 + mu / mu0) * (TnA[DofsI[permI[ii]]] * LocalMatrixA1_ii_jj * TnA[DofsJ[permJ[jj]]]        // A1
+                                                                                                                         + 2 * TnA[DofsI[permI[ii]]] * LocalMatrixA2_ii_jj * TnA[DofsJ[permJ[jj]]]) // A2
+                                                                                                       - 4 * (TnA[DofsI[permI[ii]]] * LocalMatrixC1_ii_jj * TdA[DofsJ[permJ[jj]]]                   // C1
+                                                                                                              + TdA[DofsI[permI[ii]]] * LocalMatrixC1_ii_jj * TnA[DofsJ[permJ[jj]]]                 // C2
+                                                                                                              + TnA[DofsI[permI[ii]]] * LocalMatrixC3_ii_jj * TdA[DofsJ[permJ[jj]]])                // C3
+                                                                                                       + (1 + mu0 / mu) * -TdA[DofsI[permI[ii]]] * LocalMatrixN_ii_jj * TdA[DofsJ[permJ[jj]]])      // N
+                                                                                      + mu / 2 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA1_ii_jj * Mxn_coeffs[DofsJ[permJ[jj]]]                  // red_remaining
+                                                                                      + mu * TnA[DofsI[permI[ii]]] * LocalMatrixA1_ii_jj * Mxn_coeffs[DofsJ[permJ[jj]]]                             // red_l_M
+                                                                                      + mu * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2_ii_jj * Mxn_coeffs[DofsJ[permJ[jj]]]                      // blue_remaining
+                                                                                      + mu * (Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2_ii_jj * TnA[DofsJ[permJ[jj]]] +                          // blue_l_M
+                                                                                              TnA[DofsI[permI[ii]]] * LocalMatrixA2_ii_jj * Mxn_coeffs[DofsJ[permJ[jj]]]) +
+                                                                                      -mu0 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixC1_ii_jj * TdA[DofsJ[permJ[jj]]]    // MC1
+                                                                                      + -mu0 * TdA[DofsI[permI[ii]]] * LocalMatrixC1_ii_jj * Mxn_coeffs[DofsJ[permJ[jj]]]  // MC2
+                                                                                      + -mu0 * Mxn_coeffs[DofsI[permI[ii]]] * LocalMatrixC3_ii_jj * TdA[DofsJ[permJ[jj]]]; // MC3
+                    }
+                }
+                // Combining all the atomic adds above into a single one
+                // atomicAdd(&shapeDerivative[fieldIdx], localval);
             }
         }
+    }
+    // Writing to global memory
+    for (int l = 0; l < Nabc_alpha; ++l)
+    {
+        atomicAdd(&shapeDerivative[l], localShapeDerivatives[l + threadIdx.x * Nabc_alpha]);
+        // localShapeDerivatives[l + threadIdx.x * Nabc_alpha] = 0;
     }
 }
