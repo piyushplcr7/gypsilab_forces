@@ -141,7 +141,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        const int *Elt2DofTest, const int *Elt2DofTrial,
                                        int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
                                        int NRSFTrial, int NRSFTest,
-                                       const int *abc_alpha, int Nabc_alpha)
+                                       const int *abc_alpha, int Nabc_alpha,
+                                       const int *permII, const int *permJJ)
 /* double *testout, double *testABCi, double *testABCj,
 int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
@@ -190,7 +191,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         Eigen::Vector3d Ai, Bi, Ci, Aj, Bj, Cj;
         Eigen::MatrixXd Ei(3, 2), Ej(3, 2);
 
-        int intersection[3], diffI[3], diffJ[3];
+        // int intersection[3], diffI[3], diffJ[3];
 
         const double *W = NULL;
         const double *X = NULL;
@@ -252,7 +253,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         }
         else if (relation[InteractionIdx] == 1) // Common vertex
         {
-            IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
+            /* IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
 
             for (int l = 0; l < 3; ++l)
             {
@@ -283,17 +284,17 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                 {
                     permJ[2] = l;
                 }
-            }
+            } */
 
             // Changing EltI into ABCI
-            EltI[0] = intersection[0];
+            /* EltI[0] = intersection[0];
             EltI[1] = diffI[0];
             EltI[2] = diffI[1];
 
             // Changing EltI into ABCJ
             EltJ[0] = intersection[0];
             EltJ[1] = diffJ[0];
-            EltJ[2] = diffJ[1];
+            EltJ[2] = diffJ[1]; */
 
             // Computing Quadrature
             W = W1;
@@ -302,7 +303,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         }
         else if (relation[InteractionIdx] == 2) // Common edge
         {
-            IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
+            /* IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
 
             for (int l = 0; l < 3; ++l)
             {
@@ -341,7 +342,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
             EltJ[0] = intersection[0];
             EltJ[1] = intersection[1];
-            EltJ[2] = diffJ[0];
+            EltJ[2] = diffJ[0]; */
 
             // Computing Quadrature
             W = W2;
@@ -357,6 +358,24 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         }
 
         // Vertices of element i
+        /* Ai = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[0]]), __ldg(&Vertices[3 * EltI[0] + 1]), __ldg(&Vertices[3 * EltI[0] + 2]));
+        Bi = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[1]]), __ldg(&Vertices[3 * EltI[1] + 1]), __ldg(&Vertices[3 * EltI[1] + 2]));
+        Ci = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[2]]), __ldg(&Vertices[3 * EltI[2] + 1]), __ldg(&Vertices[3 * EltI[2] + 2]));
+
+        // Vertices of element j
+        Aj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[0]]), __ldg(&Vertices[3 * EltJ[0] + 1]), __ldg(&Vertices[3 * EltJ[0] + 2]));
+        Bj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[1]]), __ldg(&Vertices[3 * EltJ[1] + 1]), __ldg(&Vertices[3 * EltJ[1] + 2]));
+        Cj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[2]]), __ldg(&Vertices[3 * EltJ[2] + 1]), __ldg(&Vertices[3 * EltJ[2] + 2])); */
+
+        // EltI and EltJ changed according to permII and permJJ
+        for (int k = 0; k < 3; ++k)
+        {
+            permI[k] = permII[3 * InteractionIdx + k];
+            permJ[k] = permJJ[3 * InteractionIdx + k];
+            EltI[k] = origEltI[permI[k]];
+            EltJ[k] = origEltJ[permJ[k]];
+        }
+
         Ai = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[0]]), __ldg(&Vertices[3 * EltI[0] + 1]), __ldg(&Vertices[3 * EltI[0] + 2]));
         Bi = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[1]]), __ldg(&Vertices[3 * EltI[1] + 1]), __ldg(&Vertices[3 * EltI[1] + 2]));
         Ci = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[2]]), __ldg(&Vertices[3 * EltI[2] + 1]), __ldg(&Vertices[3 * EltI[2] + 2]));
