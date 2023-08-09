@@ -191,12 +191,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         Eigen::Vector3d Ai, Bi, Ci, Aj, Bj, Cj;
         Eigen::MatrixXd Ei(3, 2), Ej(3, 2);
 
-        // int intersection[3], diffI[3], diffJ[3];
-
-        const double *W = NULL;
-        const double *X = NULL;
-        int NQudPts = 0;
-
         // Make sure that the last thread stays in limit
         if (InteractionIdx >= NInteractions)
             break;
@@ -208,20 +202,8 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         double g_tau = 2 * Areas[i], g_t = 2 * Areas[j];
 
-        // Obtaining the normals
-        /* Eigen::Vector3d normalx(Normals[i], Normals[i + NTriangles], Normals[i + 2 * NTriangles]);
-        Eigen::Vector3d normaly(Normals[j], Normals[j + NTriangles], Normals[j + 2 * NTriangles]); */
-
         Eigen::Vector3d normalx(__ldg(&Normals[3 * i]), __ldg(&Normals[3 * i + 1]), __ldg(&Normals[3 * i + 2]));
         Eigen::Vector3d normaly(__ldg(&Normals[3 * j]), __ldg(&Normals[3 * j + 1]), __ldg(&Normals[3 * j + 2]));
-
-        /* int EltI[] = {Elements[i],
-                      Elements[i + NTriangles],
-                      Elements[i + 2 * NTriangles]};
-
-        int EltJ[] = {Elements[j],
-                      Elements[j + NTriangles],
-                      Elements[j + 2 * NTriangles]}; */
 
         int EltI[] = {__ldg(&Elements[3 * i]),
                       __ldg(&Elements[3 * i + 1]),
@@ -244,7 +226,15 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         int permI[] = {0, 1, 2};
         int permJ[] = {0, 1, 2};
 
-        if (relation[InteractionIdx] == 0) // No interaction
+        const double *Weights[4] = {W0, W1, W2, W3};
+        const double *Points[4] = {X0, X1, X2, X3};
+        const int NumPoints[4] = {Nq0, Nq1, Nq2, Nq3};
+
+        const double *W = Weights[relation[InteractionIdx]];
+        const double *X = Points[relation[InteractionIdx]];
+        int NQudPts = NumPoints[relation[InteractionIdx]];
+
+        /* if (relation[InteractionIdx] == 0) // No interaction
         {
             // Computing Quadrature
             W = W0;
@@ -253,49 +243,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         }
         else if (relation[InteractionIdx] == 1) // Common vertex
         {
-            /* IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
-
-            for (int l = 0; l < 3; ++l)
-            {
-                // Permutation for I
-                if (EltI[l] == intersection[0])
-                {
-                    permI[0] = l;
-                }
-                else if (EltI[l] == diffI[0])
-                {
-                    permI[1] = l;
-                }
-                else if (EltI[l] == diffI[1])
-                {
-                    permI[2] = l;
-                }
-
-                // Permutation for J
-                if (EltJ[l] == intersection[0])
-                {
-                    permJ[0] = l;
-                }
-                else if (EltJ[l] == diffJ[0])
-                {
-                    permJ[1] = l;
-                }
-                else if (EltJ[l] == diffJ[1])
-                {
-                    permJ[2] = l;
-                }
-            } */
-
-            // Changing EltI into ABCI
-            /* EltI[0] = intersection[0];
-            EltI[1] = diffI[0];
-            EltI[2] = diffI[1];
-
-            // Changing EltI into ABCJ
-            EltJ[0] = intersection[0];
-            EltJ[1] = diffJ[0];
-            EltJ[2] = diffJ[1]; */
-
             // Computing Quadrature
             W = W1;
             X = X1;
@@ -303,47 +250,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         }
         else if (relation[InteractionIdx] == 2) // Common edge
         {
-            /* IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
-
-            for (int l = 0; l < 3; ++l)
-            {
-                // Permutation for I
-                if (EltI[l] == intersection[0])
-                {
-                    permI[0] = l;
-                }
-                else if (EltI[l] == intersection[1])
-                {
-                    permI[1] = l;
-                }
-                else if (EltI[l] == diffI[0])
-                {
-                    permI[2] = l;
-                }
-
-                // Permutation for J
-                if (EltJ[l] == intersection[0])
-                {
-                    permJ[0] = l;
-                }
-                else if (EltJ[l] == intersection[1])
-                {
-                    permJ[1] = l;
-                }
-                else if (EltJ[l] == diffJ[0])
-                {
-                    permJ[2] = l;
-                }
-            }
-
-            EltI[0] = intersection[0];
-            EltI[1] = intersection[1];
-            EltI[2] = diffI[0];
-
-            EltJ[0] = intersection[0];
-            EltJ[1] = intersection[1];
-            EltJ[2] = diffJ[0]; */
-
             // Computing Quadrature
             W = W2;
             X = X2;
@@ -355,17 +261,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
             W = W3;
             X = X3;
             NQudPts = Nq3;
-        }
-
-        // Vertices of element i
-        /* Ai = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[0]]), __ldg(&Vertices[3 * EltI[0] + 1]), __ldg(&Vertices[3 * EltI[0] + 2]));
-        Bi = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[1]]), __ldg(&Vertices[3 * EltI[1] + 1]), __ldg(&Vertices[3 * EltI[1] + 2]));
-        Ci = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[2]]), __ldg(&Vertices[3 * EltI[2] + 1]), __ldg(&Vertices[3 * EltI[2] + 2]));
-
-        // Vertices of element j
-        Aj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[0]]), __ldg(&Vertices[3 * EltJ[0] + 1]), __ldg(&Vertices[3 * EltJ[0] + 2]));
-        Bj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[1]]), __ldg(&Vertices[3 * EltJ[1] + 1]), __ldg(&Vertices[3 * EltJ[1] + 2]));
-        Cj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[2]]), __ldg(&Vertices[3 * EltJ[2] + 1]), __ldg(&Vertices[3 * EltJ[2] + 2])); */
+        } */
 
         // EltI and EltJ changed according to permII and permJJ
         for (int k = 0; k < 3; ++k)
@@ -376,6 +272,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
             EltJ[k] = origEltJ[permJ[k]];
         }
 
+        // Vertices of element i
         Ai = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[0]]), __ldg(&Vertices[3 * EltI[0] + 1]), __ldg(&Vertices[3 * EltI[0] + 2]));
         Bi = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[1]]), __ldg(&Vertices[3 * EltI[1] + 1]), __ldg(&Vertices[3 * EltI[1] + 2]));
         Ci = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[2]]), __ldg(&Vertices[3 * EltI[2] + 1]), __ldg(&Vertices[3 * EltI[2] + 2]));
