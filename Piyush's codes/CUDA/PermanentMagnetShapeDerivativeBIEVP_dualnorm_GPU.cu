@@ -126,7 +126,7 @@ __device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int d
 }
 
 __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles, int NVertices, int NInteractions,
-                                       int NThreads, const int *I, const int *J, const int *relation,
+                                       int NThreads, const unsigned short int *I, const unsigned short int *J, const int *relation,
                                        const double *W0, const double *X0, int Nq0,
                                        const double *W1, const double *X1, int Nq1,
                                        const double *W2, const double *X2, int Nq2,
