@@ -78,7 +78,7 @@ function sd = PermanentMagnetShapeDerivativeBIESP(Gamma,Tdu,Tnu,J,omega_src,Vel,
     cuFilePath = 'PermanentMagnetShapeDerivativeBIESP_CUDA.cu';
 
     % Quadrature to be passed to the GPU
-    order = 10;
+    order = 5;
     [X, W] = quad4D(order);
 
     % Kernel Object

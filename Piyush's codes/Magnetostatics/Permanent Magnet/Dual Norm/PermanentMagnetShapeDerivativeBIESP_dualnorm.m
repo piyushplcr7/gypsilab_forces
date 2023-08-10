@@ -74,7 +74,7 @@ function sd_comb = PermanentMagnetShapeDerivativeBIESP_dualnorm(Gamma,Tdu,Tnu,J,
     cuFilePath = 'PermanentMagnetShapeDerivativeBIESP_dualnorm_GPU.cu';
 
     % Quadrature to be passed to the GPU
-    order = 10;
+    order = 5;
     [X, W] = quad4D(order);
 
     % Kernel Object
