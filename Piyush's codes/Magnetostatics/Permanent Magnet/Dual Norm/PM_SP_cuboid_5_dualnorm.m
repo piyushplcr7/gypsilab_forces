@@ -11,6 +11,34 @@ mu0 = mu;
 vals = 5:13;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
+
+% indices for velocity fields go from 0 to kappa-1
+kappa = 3;
+shape_derivatives_mst = zeros(Nvals,3 * kappa^3);
+shape_derivatives_bem = shape_derivatives_mst;
+
+% Map of velocity field to index
+abc_alpha = zeros(3 * kappa^3,4);
+
+for a = 0:kappa-1
+    for b = 0:kappa-1
+        for c = 0:kappa-1
+            for alpha = 0:2
+                idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
+                abc_alpha(idx,:) = [a b c alpha];
+            end
+        end
+    end
+end
+
+testidx = 1 + kappa * 1 + kappa^2 * 1 + kappa^3 * 0 + 1;
+
+% abc_alpha = [1 1 1 0];
+% abc_alpha = repelem(abc_alpha,4,1);
+
+% Number of fields
+Nfields = size(abc_alpha,1);
+
 forces_bem = forces_mst;
 torques_mst = forces_mst;
 torques_bem = forces_mst;
@@ -88,19 +116,21 @@ for i = 1:Nvals
     avgH = avgHn.*normals + Htan + HJ;
     
     % Computing the surface integral of (M.n) {H}
-    forces_mst(i,:) = mu0 * sum(W.* Mdotn .* avgH,1)
+%     forces_mst(i,:) = mu0 * sum(W.* Mdotn .* avgH,1)
 
-    % Computing force using the simplified expression from BIE based formulation
-    forces_bem(i,:) = mu0 * sum(W.* Mdotn .* HJ)
-
-
-    Xcg = [4 0 0];
-    r = X-Xcg;
-    torques_mst(i,:) = mu0 * sum(W.* Mdotn .* cross(r,avgH,2),1)
+    for fieldID = 1:Nfields
+        a = abc_alpha(fieldID,1);
+        b = abc_alpha(fieldID,2);
+        c = abc_alpha(fieldID,3);
+        alpha = abc_alpha(fieldID,4);
+        [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+        Vels = Vel(X);
+        shape_derivatives_mst(i,fieldID) = sum(W.* Mdotn .* dot(avgH,Vels,2),1);
+    end
 
     % Torque computation
 %     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
     [Vel,DVel] = getCosVelDVel(1,1,1,1);
 
-    tbem1 = PermanentMagnetShapeDerivativeBIESP(Gamma,g,psi,J,omega_src,Vel,DVel,mu0,M);
+    tbem1 = PermanentMagnetShapeDerivativeBIESP_dualnorm(Gamma,g,psi,J,omega_src,mu0,M,abc_alpha);
 end

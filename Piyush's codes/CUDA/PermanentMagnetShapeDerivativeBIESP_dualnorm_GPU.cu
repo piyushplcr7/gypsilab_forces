@@ -33,41 +33,41 @@ __device__ double KV(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
     return 1. / (4 * M_PI) / YmX.norm();
 }
 
-__device__ Eigen::Vector3d Vel(Eigen::Vector3d X)
+__device__ Eigen::Vector3d Vel(int a, int b, int c, int alpha, Eigen::Vector3d X)
 {
-    // return Eigen::Vector3d(1, 0, 0);
-    // return Eigen::Vector3d(X(0) * X(1) * X(2), 0, 0);
-    return Eigen::Vector3d(cos(X(0)) * cos(X(1)) * cos(X(2)), 0, 0);
-}
-
-__device__ Eigen::Matrix3d DVel(Eigen::Vector3d X)
-{
-    Eigen::Matrix3d out;
-    // out << X(1) * X(2), X(0) * X(2), X(0) * X(1), 0, 0, 0, 0, 0, 0;
-    out << -sin(X(0)) * cos(X(1)) * cos(X(2)), -cos(X(0)) * sin(X(1)) * cos(X(2)), -cos(X(0)) * cos(X(1)) * sin(X(2)), 0, 0, 0, 0, 0, 0;
+    Eigen::Vector3d out = Eigen::Vector3d::Zero(3);
+    out(alpha) = cos(a * X(0)) * cos(b * X(1)) * cos(c * X(2));
     return out;
-    // return Eigen::Matrix3d::Zero(3, 3);
 }
 
-__device__ double KernelOld(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
+__device__ Eigen::Matrix3d DVel(int a, int b, int c, int alpha, Eigen::Vector3d X)
+{
+    Eigen::Matrix3d out = Eigen::Matrix3d::Zero(3, 3);
+    out.row(alpha) = -Eigen::Vector3d(a * sin(a * X(0)) * cos(b * X(1)) * cos(c * X(2)),
+                                      b * cos(a * X(0)) * sin(b * X(1)) * cos(c * X(2)),
+                                      c * cos(a * X(0)) * cos(b * X(1)) * sin(c * X(2)));
+    return out;
+}
+
+__device__ double KernelOld(int a, int b, int c, int alpha, Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
 {
     double znorm = YmX.norm();
     // 1/4pi * z.(vel(x) - vel(y))/||z||^3
-    return YmX.dot(Vel(X) - Vel(Y)) / (4 * M_PI) / (znorm * znorm * znorm);
+    return YmX.dot(Vel(a, b, c, alpha, X) - Vel(a, b, c, alpha, Y)) / (4 * M_PI) / (znorm * znorm * znorm);
 }
 
-__device__ Eigen::Vector3d KernelIntegrable(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
+__device__ Eigen::Vector3d KernelIntegrable(int a, int b, int c, int alpha, Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
 {
     double znorm = YmX.norm();
     // 3/4pi * z.(vel(y) - vel(x))/||z||^5  z (.n handled outside)
-    return 3 * YmX.dot(Vel(Y) - Vel(X)) / (4 * M_PI) / pow(znorm, 5) * YmX;
+    return 3 * YmX.dot(Vel(a, b, c, alpha, Y) - Vel(a, b, c, alpha, X)) / (4 * M_PI) / pow(znorm, 5) * YmX;
 }
 
-__device__ Eigen::Vector3d KernelComb(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
+__device__ Eigen::Vector3d KernelComb(int a, int b, int c, int alpha, Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
 {
     double znorm = YmX.norm();
 
-    return 1. / (4 * M_PI) * (-DVel(Y) * YmX + Vel(Y) - Vel(X)) / pow(znorm, 3);
+    return 1. / (4 * M_PI) * (-DVel(a, b, c, alpha, Y) * YmX + Vel(a, b, c, alpha, Y) - Vel(a, b, c, alpha, X)) / pow(znorm, 3);
 }
 
 // Returns Intersection, DiffI, DiffJ
@@ -125,10 +125,20 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        const int *Elements, const double *Vertices, const double *Normals, const double *Areas,
                                        const int *Elt2DofTest, const int *Elt2DofTrial,
                                        int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
-                                       int NRSFTrial, int NRSFTest)
+                                       int NRSFTrial, int NRSFTest,
+                                       const int *abc_alpha, int Nabc_alpha)
 /* double *testout, double *testABCi, double *testABCj,
 int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
+    // shared memory for writing shape derivatives
+    // Need to specify the size beforehand, hard coding Nabc_alpha = 81, blockDim.x = 32
+    __shared__ double localShapeDerivatives[81 * 32];
+    // Initialization of shared memory
+    for (int l = 0; l < Nabc_alpha; ++l)
+    {
+        localShapeDerivatives[l + threadIdx.x * Nabc_alpha] = 0;
+    }
+
     int ThreadID = blockIdx.x * blockDim.x + threadIdx.x;
 
     //*shapeDerivative = 3.145;
@@ -315,11 +325,11 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         Eigen::Vector3d DCVjcol0 = Ejcol0 * Dxyj(0, 0) + Ejcol1 * Dxyj(0, 1);
         Eigen::Vector3d DCVjcol1 = Ejcol0 * Dxyj(1, 0) + Ejcol1 * Dxyj(1, 1);
 
-        Eigen::Matrix3d LocalMatrix_kerneloldmat_nxgradP1_nxgradP1 = Eigen::MatrixX3d::Zero(3, 3);
+        /* Eigen::Matrix3d LocalMatrix_kerneloldmat_nxgradP1_nxgradP1 = Eigen::MatrixX3d::Zero(3, 3);
         Eigen::Matrix3d LocalMatrix_SL_Dvelnxgrad_nxgrad = Eigen::MatrixX3d::Zero(3, 3);
         Eigen::Vector3d LocalMatrix_kernelintegrablemat = Eigen::Vector3d::Zero(3);
         Eigen::Vector3d LocalMatrix_combkernelmat = Eigen::Vector3d::Zero(3);
-        double Local_kerneloldmat_P0_P0 = 0;
+        double Local_kerneloldmat_P0_P0 = 0; */
 
         // Mixed P0XP0, P1XP1, P0XP1
         for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
@@ -331,46 +341,89 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
             Eigen::Vector3d chi_tau = Ai + Eicol0 * X[4 * QudPt] + Eicol1 * X[4 * QudPt + 1];
             Eigen::Vector3d chi_t = Aj + Ejcol0 * X[4 * QudPt + 2] + Ejcol1 * X[4 * QudPt + 3];
 
-            Local_kerneloldmat_P0_P0 += W[QudPt] * Psix_P0 * KernelOld(chi_tau, chi_t, chi_t - chi_tau) * Psiy_P0;
-
-            // Double loop for P1
-            // Trial
-            for (int jj = 0; jj < 3; ++jj)
+            // Looping over different fields
+            for (int fieldIdx = 0; fieldIdx < Nabc_alpha; ++fieldIdx)
             {
-                // no. jj rsf
-                int Psiy_nxgradP1_0 = (3 - jj) % 3 - 1;
-                int Psiy_nxgradP1_1 = jj - 1;
+                double Local_kerneloldmat_P0_P0 = W[QudPt] * Psix_P0 * KernelOld(abc_alpha[4 * fieldIdx],     //
+                                                                                 abc_alpha[4 * fieldIdx + 1], //
+                                                                                 abc_alpha[4 * fieldIdx + 2], //
+                                                                                 abc_alpha[4 * fieldIdx + 3], //
+                                                                                 chi_tau, chi_t, chi_t - chi_tau) *
+                                                  Psiy_P0;
 
-                Eigen::Vector3d Psiy_nxgradP1 = g_t * normaly.cross(DCVjcol0 * Psiy_nxgradP1_0 + DCVjcol1 * Psiy_nxgradP1_1);
+                localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += mu0 * (-Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j])                          // dbv_ds
+                                                                              + mu0 * Tnu[i] * Local_kerneloldmat_P0_P0 * lambda_coeffs[j]                 // l1
+                                                                              + -mu0 / 2 * lambda_coeffs[i] * Local_kerneloldmat_P0_P0 * lambda_coeffs[j]; // r1
 
-                Eigen::Vector3d RSFsY_P1(1 - X[4 * QudPt + 2] - X[4 * QudPt + 3], X[4 * QudPt + 2], X[4 * QudPt + 3]);
-                RSFsY_P1 *= g_t;
-
-                // P0 X ntimes(P1) (test X trial)
-                LocalMatrix_kernelintegrablemat(jj) += W[QudPt] * KernelIntegrable(chi_tau, chi_t, chi_t - chi_tau).dot(normaly) * RSFsY_P1(jj) * Psix_P0;
-
-                LocalMatrix_combkernelmat(jj) += W[QudPt] * KernelComb(chi_tau, chi_t, chi_t - chi_tau).dot(normaly) * RSFsY_P1(jj) * Psix_P0;
-
-                // Test
-                for (int ii = 0; ii < 3; ++ii)
+                // Double loop for P1
+                // Trial
+                for (int jj = 0; jj < 3; ++jj)
                 {
                     // no. jj rsf
-                    int Psix_nxgradP1_0 = (3 - ii) % 3 - 1;
-                    int Psix_nxgradP1_1 = ii - 1;
+                    int Psiy_nxgradP1_0 = (3 - jj) % 3 - 1;
+                    int Psiy_nxgradP1_1 = jj - 1;
 
-                    Eigen::Vector3d Psix_nxgradP1 = g_tau * normalx.cross(DCVicol0 * Psix_nxgradP1_0 + DCVicol1 * Psix_nxgradP1_1);
+                    Eigen::Vector3d Psiy_nxgradP1 = g_t * normaly.cross(DCVjcol0 * Psiy_nxgradP1_0 + DCVjcol1 * Psiy_nxgradP1_1);
 
-                    Eigen::Vector3d RSFsX_P1(1 - X[4 * QudPt] - X[4 * QudPt + 1], X[4 * QudPt], X[4 * QudPt + 1]);
-                    RSFsX_P1 *= g_tau;
+                    Eigen::Vector3d RSFsY_P1(1 - X[4 * QudPt + 2] - X[4 * QudPt + 3], X[4 * QudPt + 2], X[4 * QudPt + 3]);
+                    RSFsY_P1 *= g_t;
 
-                    // KernelOld with nxgradP1 X nxgradP1
-                    LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) += W[QudPt] * KernelOld(chi_tau, chi_t, chi_t - chi_tau) * Psiy_nxgradP1.dot(Psix_nxgradP1);
-                    LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj) += W[QudPt] * KV(chi_tau, chi_t, chi_t - chi_tau) * (DVel(chi_t) * Psiy_nxgradP1).dot(Psix_nxgradP1);
+                    // P0 X ntimes(P1) (test X trial)
+                    double LocalMatrix_kernelintegrablemat_jj = W[QudPt] * KernelIntegrable(abc_alpha[4 * fieldIdx],     //
+                                                                                            abc_alpha[4 * fieldIdx + 1], //
+                                                                                            abc_alpha[4 * fieldIdx + 2], //
+                                                                                            abc_alpha[4 * fieldIdx + 3], //
+                                                                                            chi_tau, chi_t, chi_t - chi_tau)
+                                                                               .dot(normaly) *
+                                                                RSFsY_P1(jj) * Psix_P0;
+
+                    double LocalMatrix_combkernelmat_jj = W[QudPt] * KernelComb(abc_alpha[4 * fieldIdx],     //
+                                                                                abc_alpha[4 * fieldIdx + 1], //
+                                                                                abc_alpha[4 * fieldIdx + 2], //
+                                                                                abc_alpha[4 * fieldIdx + 3], //
+                                                                                chi_tau, chi_t, chi_t - chi_tau)
+                                                                         .dot(normaly) *
+                                                          RSFsY_P1(jj) * Psix_P0;
+
+                    localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += 2 * mu0 * Tnu[i] * (LocalMatrix_kernelintegrablemat_jj - LocalMatrix_combkernelmat_jj) * Tdu[EltJ[jj]]          // dbk_ds
+                                                                                  - mu0 * lambda_coeffs[i] * (LocalMatrix_kernelintegrablemat_jj - LocalMatrix_combkernelmat_jj) * Tdu[EltJ[jj]]; // l2
+
+                    // Test
+                    for (int ii = 0; ii < 3; ++ii)
+                    {
+                        // no. jj rsf
+                        int Psix_nxgradP1_0 = (3 - ii) % 3 - 1;
+                        int Psix_nxgradP1_1 = ii - 1;
+
+                        Eigen::Vector3d Psix_nxgradP1 = g_tau * normalx.cross(DCVicol0 * Psix_nxgradP1_0 + DCVicol1 * Psix_nxgradP1_1);
+
+                        Eigen::Vector3d RSFsX_P1(1 - X[4 * QudPt] - X[4 * QudPt + 1], X[4 * QudPt], X[4 * QudPt + 1]);
+                        RSFsX_P1 *= g_tau;
+
+                        // KernelOld with nxgradP1 X nxgradP1
+                        double LocalMatrix_kerneloldmat_nxgradP1_nxgradP1_ii_jj = W[QudPt] * KernelOld(abc_alpha[4 * fieldIdx],     //
+                                                                                                       abc_alpha[4 * fieldIdx + 1], //
+                                                                                                       abc_alpha[4 * fieldIdx + 2], //
+                                                                                                       abc_alpha[4 * fieldIdx + 3], //
+                                                                                                       chi_tau, chi_t, chi_t - chi_tau) *
+                                                                                  Psiy_nxgradP1.dot(Psix_nxgradP1);
+                        double LocalMatrix_SL_Dvelnxgrad_nxgrad_ii_jj = W[QudPt] * KV(chi_tau, chi_t, chi_t - chi_tau) //
+                                                                        * (DVel(abc_alpha[4 * fieldIdx],               //
+                                                                                abc_alpha[4 * fieldIdx + 1],           //
+                                                                                abc_alpha[4 * fieldIdx + 2],           //
+                                                                                abc_alpha[4 * fieldIdx + 3], chi_t) *
+                                                                           Psiy_nxgradP1)
+                                                                              .dot(Psix_nxgradP1);
+
+                        localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += mu0 * Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1_ii_jj // dbw_ds
+                                                                                                             + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad_ii_jj) *
+                                                                                      Tdu[EltJ[jj]];
+                    }
                 }
             }
         }
 
-        double shapeDerivativeForThisInteraction = 0;
+        /* double shapeDerivativeForThisInteraction = 0;
         // Updating the outputs atomically
         shapeDerivativeForThisInteraction += mu0 * (-Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j])                          // dbv_ds
                                              + mu0 * Tnu[i] * Local_kerneloldmat_P0_P0 * lambda_coeffs[j]                 // l1
@@ -387,34 +440,15 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                                                                             + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) *
                                                      Tdu[EltJ[jj]];
             }
-        }
+        } */
 
-        atomicAdd(shapeDerivative, shapeDerivativeForThisInteraction);
+        /* atomicAdd(shapeDerivative, shapeDerivativeForThisInteraction); */
+    }
 
-        // Updating the outputs atomically
-
-        // dbv_ds = Tnu' * kerneloldmat_P0_P0 * Tnu
-        atomicAdd(dbv_ds, Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]);
-
-        // l1 = Tnu' * kerneloldmat_P0_P0{1} * lambda_coeffs;
-        atomicAdd(l1, Tnu[i] * Local_kerneloldmat_P0_P0 * lambda_coeffs[j]);
-
-        // r1 = -mu0/2 * (lambda_coeffs' * kerneloldmat_P0_P0{1} * lambda_coeffs);
-        atomicAdd(r1, -mu0 / 2 * lambda_coeffs[i] * Local_kerneloldmat_P0_P0 * lambda_coeffs[j]);
-
-        for (int jj = 0; jj < 3; ++jj)
-        {
-            // dbk_ds = Tnu' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu
-            atomicAdd(dbk_ds, Tnu[i] * (LocalMatrix_kernelintegrablemat(jj) - LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
-
-            // l2 = lambda_coeffs' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu;
-            atomicAdd(l2, lambda_coeffs[i] * (LocalMatrix_kernelintegrablemat(jj) - LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
-
-            for (int ii = 0; ii < 3; ++ii)
-            {
-                // dbw_ds = Tdu' * ( kerneloldmat_nxgradP1_nxgradP1{2} + 2 * SL_Dvelnxgrad_nxgrad{5}) * Tdu
-                atomicAdd(dbw_ds, Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) * Tdu[EltJ[jj]]);
-            }
-        }
+    // Writing to global memory
+    for (int l = 0; l < Nabc_alpha; ++l)
+    {
+        atomicAdd(&shapeDerivative[l], localShapeDerivatives[l + threadIdx.x * Nabc_alpha]);
+        // localShapeDerivatives[l + threadIdx.x * Nabc_alpha] = 0;
     }
 }

@@ -1,10 +1,12 @@
-function sd = PermanentMagnetShapeDerivativeBIESP(Gamma,Tdu,Tnu,J,omega_src,Vel,DVel,mu0,M)
+function sd_comb = PermanentMagnetShapeDerivativeBIESP_dualnorm(Gamma,Tdu,Tnu,J,omega_src,mu0,M,abc_alpha)
     % BEM Spaces
     bndmesh = Gamma.msh;
     P0 = fem(bndmesh,'P0');
     P1 = fem(bndmesh,'P1');
     gradP1 = P1.grad;
     nxgradP1 = P1.nxgrad;
+
+    Nfields = size(abc_alpha,1);
 
     Gamma = dom(bndmesh,3);
 
@@ -21,27 +23,21 @@ function sd = PermanentMagnetShapeDerivativeBIESP(Gamma,Tdu,Tnu,J,omega_src,Vel,
     HJ = compute_vecpot_curl(J,omega_src,Xgypsi);
     DHJ = compute_vecpot_D_curl(J,omega_src,Xgypsi);
 
-    % Evaluating the velocity field at quadrature points
-    Vels = Vel(Xgypsi);
-    % Evaluating the Jacobian of the velocity field (row-wise) at qud pts
-    DVel1 = DVel{1}(Xgypsi);
-    DVel2 = DVel{2}(Xgypsi);
-    DVel3 = DVel{3}(Xgypsi);
-    divVel = DVel1(:,1) + DVel2(:,2) + DVel3(:,3);
+    
 
     %% bilinear form
-    Nelt = bndmesh.nelt;
-
-    [ii,jj] = meshgrid(1:Nelt,1:Nelt);
-
-    % Kernel gradxG.vel(x) + gradyG.vel(y), z:= y-x
-    kernelold = @(x,y,z) dot(z,Vel(x) - Vel(y), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
-
-    kernelintegrable = @(x,y,z) 3/(4*pi)* dot(z,Vel(y) - Vel(x),2) .*z ./vecnorm(z,2,2).^5;
-
-    combkernel = @(x,y,z) 1/(4*pi) * ( -[ dot(DVel{1}(y),z,2) dot(DVel{2}(y),z,2) dot(DVel{3}(y),z,2) ] + Vel(y) - Vel(x) )./vecnorm(z,2,2).^3;
-
-    KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
+%     Nelt = bndmesh.nelt;
+% 
+%     [ii,jj] = meshgrid(1:Nelt,1:Nelt);
+% 
+%     % Kernel gradxG.vel(x) + gradyG.vel(y), z:= y-x
+%     kernelold = @(x,y,z) dot(z,Vel(x) - Vel(y), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
+% 
+%     kernelintegrable = @(x,y,z) 3/(4*pi)* dot(z,Vel(y) - Vel(x),2) .*z ./vecnorm(z,2,2).^5;
+% 
+%     combkernel = @(x,y,z) 1/(4*pi) * ( -[ dot(DVel{1}(y),z,2) dot(DVel{2}(y),z,2) dot(DVel{3}(y),z,2) ] + Vel(y) - Vel(x) )./vecnorm(z,2,2).^3;
+% 
+%     KV = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
 
     Mvals = M(Xgypsi);
     Mdotn = dot(Mvals,normals,2);
@@ -74,8 +70,8 @@ function sd = PermanentMagnetShapeDerivativeBIESP(Gamma,Tdu,Tnu,J,omega_src,Vel,
     relation = cast(relation,'int32');
 
     % PTX and CUDA files
-    ptxFilePath = 'PermanentMagnetShapeDerivativeBIESP_CUDA.ptx';
-    cuFilePath = 'PermanentMagnetShapeDerivativeBIESP_CUDA.cu';
+    ptxFilePath = 'PermanentMagnetShapeDerivativeBIESP_dualnorm_GPU.ptx';
+    cuFilePath = 'PermanentMagnetShapeDerivativeBIESP_dualnorm_GPU.cu';
 
     % Quadrature to be passed to the GPU
     order = 10;
@@ -115,7 +111,7 @@ function sd = PermanentMagnetShapeDerivativeBIESP(Gamma,Tdu,Tnu,J,omega_src,Vel,
     l1_gpu = gpuArray.zeros(1,1);
     l2_gpu = gpuArray.zeros(1,1);
     r1_gpu = gpuArray.zeros(1,1);
-    shapeDerivative_gpu = gpuArray.zeros(1,1);
+    shapeDerivative_gpu = gpuArray.zeros(Nfields,1);
 
     % More input variables to GPU
     Tdu_gpu = gpuArray(Tdu);
@@ -132,6 +128,7 @@ function sd = PermanentMagnetShapeDerivativeBIESP(Gamma,Tdu,Tnu,J,omega_src,Vel,
     TestSpace_gpu = 0;
     TrialOperator_gpu = 0;
     TestOperator_gpu = 0;
+    abc_alpha_gpu = gpuArray(cast(abc_alpha','int32'));
 
     % Launching kernel
     [dbv_ds_gpu,dbw_ds_gpu,dbk_ds_reduced_gpu,l1_gpu,l2_gpu,r1_gpu,shapeDerivative_gpu]= feval(kernel,...
@@ -147,66 +144,68 @@ function sd = PermanentMagnetShapeDerivativeBIESP(Gamma,Tdu,Tnu,J,omega_src,Vel,
     Elements_gpu,Vertices_gpu,Normals_gpu,Areas_gpu,...
     elt2dof_gpu,elt2dof_gpu,...
     TrialSpace_gpu,TestSpace_gpu,TrialOperator_gpu,TestOperator_gpu,...
-    size(P1.rsf,1),size(P1.rsf,1)); 
+    size(P1.rsf,1),size(P1.rsf,1),...
+    abc_alpha_gpu,Nfields); 
 
 
     %% CPU
 
-    euler = parcluster('local');
-    euler.NumWorkers = 5;
-    saveProfile(euler);
-
-    pool = euler.parpool(5);
-
-    spmd
-        if spmdIndex==1
-            kerneloldmat_P0_P0 = panel_assembly(bndmesh,kernelold,P0,P0,ii(:),jj(:));
-            % Partial derivative of bv(psi,psi)
-            dbv_ds = Tnu' * kerneloldmat_P0_P0 * Tnu;
-        
-        elseif spmdIndex==2
-            kerneloldmat_nxgradP1_nxgradP1 = panel_assembly(bndmesh,kernelold,nxgradP1,nxgradP1,ii(:),jj(:));
-        
-        elseif spmdIndex==3
-            kernelintegrablemat = panel_assembly(bndmesh,kernelintegrable,ntimes(P1),P0,ii(:),jj(:));
-
-        elseif spmdIndex==4
-            % Combination kernel that cancels singularity
-            combkernelmat = panel_assembly(bndmesh,combkernel,ntimes(P1),P0,ii(:),jj(:));
-
-        elseif spmdIndex==5
-            SL_Dvelnxgrad_nxgrad = panel_assembly_shape_derivative(bndmesh,KV,nxgradP1,nxgradP1,ii(:),jj(:),Vel,DVel);
-        end
-    end
-
-    % partial derivative of bk(g,psi)
-    divVelg = divVel.*g;
-    divVelg_coeffs = proj(divVelg,Gamma,P1);
+%     euler = parcluster('local');
+%     euler.NumWorkers = 5;
+%     saveProfile(euler);
+% 
+%     pool = euler.parpool(5);
+% 
+%     spmd
+%         if spmdIndex==1
+%             kerneloldmat_P0_P0 = panel_assembly(bndmesh,kernelold,P0,P0,ii(:),jj(:));
+%             % Partial derivative of bv(psi,psi)
+%             dbv_ds = Tnu' * kerneloldmat_P0_P0 * Tnu;
+%         
+%         elseif spmdIndex==2
+%             kerneloldmat_nxgradP1_nxgradP1 = panel_assembly(bndmesh,kernelold,nxgradP1,nxgradP1,ii(:),jj(:));
+%         
+%         elseif spmdIndex==3
+%             kernelintegrablemat = panel_assembly(bndmesh,kernelintegrable,ntimes(P1),P0,ii(:),jj(:));
+% 
+%         elseif spmdIndex==4
+%             % Combination kernel that cancels singularity
+%             combkernelmat = panel_assembly(bndmesh,combkernel,ntimes(P1),P0,ii(:),jj(:));
+% 
+%         elseif spmdIndex==5
+%             SL_Dvelnxgrad_nxgrad = panel_assembly_shape_derivative(bndmesh,KV,nxgradP1,nxgradP1,ii(:),jj(:),Vel,DVel);
+%         end
+%     end
+    
     Kmat = double_layer_laplace(Gamma,P0,P1);
 
-    dbk_ds = Tnu' * Kmat * divVelg_coeffs + Tnu' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu;
-    dbk_ds_reduced = Tnu' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu;
-    % Partial derivative of bw(g,g)
-    dbw_ds = Tdu' * ( kerneloldmat_nxgradP1_nxgradP1{2} + 2 * SL_Dvelnxgrad_nxgrad{5}) * Tdu;
+    % Remaining part of shape derivative computed using cpu
+    remaining_parts = zeros(Nfields,1);
 
-    %% Linear form
+    for fieldID = 1:Nfields
+        a = abc_alpha(fieldID,1);
+        b = abc_alpha(fieldID,2);
+        c = abc_alpha(fieldID,3);
+        alpha = abc_alpha(fieldID,4);
+        [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+        % Evaluating the velocity field at quadrature points
+        Vels = Vel(Xgypsi);
+        % Evaluating the Jacobian of the velocity field (row-wise) at qud pts
+        DVel1 = DVel{1}(Xgypsi);
+        DVel2 = DVel{2}(Xgypsi);
+        DVel3 = DVel{3}(Xgypsi);
+        divVel = DVel1(:,1) + DVel2(:,2) + DVel3(:,3);
+        divVelg = divVel.*g;
+        divVelg_coeffs = proj(divVelg,Gamma,P1);
 
-    l1 = Tnu' * kerneloldmat_P0_P0{1} * lambda_coeffs;
+        % partial derivative of bk(g,psi), non gpu part
+        r2 = mu0 * sum(Wgypsi.* Mdotn .* dot(Vels,HJ,2),1);
+        remaining_parts(fieldID) = 2 * mu0 * Tnu' * Kmat * divVelg_coeffs...
+            + r2 - mu0 * lambda_coeffs' * Kmat * divVelg_coeffs;
+    end
     
-    l2reduced = lambda_coeffs' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu;
-    l2reduced = -l2reduced;
-    l2 = lambda_coeffs' * Kmat * divVelg_coeffs + lambda_coeffs' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu;
-    l2 = -l2;
-
-    %% Remaining terms
-
-    r1 = -mu0/2 * (lambda_coeffs' * kerneloldmat_P0_P0{1} * lambda_coeffs);
-    r2 = mu0 * sum(Wgypsi.* Mdotn .* dot(Vels,HJ,2),1);
-
-    sd_reduced = mu0/2 * (-2*dbv_ds{1} + 4 * dbk_ds_reduced +2 * dbw_ds)+ mu0  * (l1 + l2reduced) +r1;
-    sd_comb = shapeDerivative_gpu + 2 * mu0 * Tnu' * Kmat * divVelg_coeffs + r2 - mu0 * lambda_coeffs' * Kmat * divVelg_coeffs;
-    sd = mu0/2 * (-2*dbv_ds{1} + 4 * dbk_ds +2 * dbw_ds)+ mu0  * (l1 + l2) +r1 + r2;
+    sd_comb = shapeDerivative_gpu + remaining_parts;
     
-    pool.delete();
-
+    
+    
 end
