@@ -1,5 +1,5 @@
 % New transmission problem script
-
+delete(gcp('nocreate'));
 addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
@@ -92,7 +92,7 @@ for i = 1:Nvals
 
     forces_bem(i,:) = [nf1 nf2 nf3]
     
-    [Vel,DVel] = getPolyVelDVel(1,1,1,1);
+    [Vel,DVel] = getCosVelDVel(1,1,1,1);
 
     test = SdBemTPVP(bndmesh,Psi_RWG,g,J,omega_src,Vel,DVel,mu0,mu);
 
