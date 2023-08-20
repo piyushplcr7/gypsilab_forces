@@ -36,13 +36,15 @@ __device__ double KV(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
 __device__ Eigen::Vector3d Vel(Eigen::Vector3d X)
 {
     // return Eigen::Vector3d(1, 0, 0);
-    return Eigen::Vector3d(X(0) * X(1) * X(2), 0, 0);
+    // return Eigen::Vector3d(X(0) * X(1) * X(2), 0, 0);
+    return Eigen::Vector3d(cos(X(0)) * cos(X(1)) * cos(X(2)), 0, 0);
 }
 
 __device__ Eigen::Matrix3d DVel(Eigen::Vector3d X)
 {
     Eigen::Matrix3d out;
-    out << X(1) * X(2), X(0) * X(2), X(0) * X(1), 0, 0, 0, 0, 0, 0;
+    // out << X(1) * X(2), X(0) * X(2), X(0) * X(1), 0, 0, 0, 0, 0, 0;
+    out << -sin(X(0)) * cos(X(1)) * cos(X(2)), -cos(X(0)) * sin(X(1)) * cos(X(2)), -cos(X(0)) * cos(X(1)) * sin(X(2)), 0, 0, 0, 0, 0, 0;
     return out;
     // return Eigen::Matrix3d::Zero(3, 3);
 }
@@ -118,6 +120,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        const double *W2, const double *X2, int Nq2,
                                        const double *W3, const double *X3, int Nq3,
                                        double *dbv_ds, double *dbw_ds, double *dbk_ds,
+                                       double *shapeDerivative,
+                                       double mu0, double mu,
                                        const double *Tdu, const double *Tnu,
                                        const int *Elements, const double *Vertices, const double *Normals, const double *Areas,
                                        const int *Elt2DofTest, const int *Elt2DofTrial,
@@ -370,17 +374,20 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         // Updating the outputs atomically
 
         // dbv_ds = Tnu' * kerneloldmat_P0_P0 * Tnu
-        atomicAdd(dbv_ds, Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]);
+        // atomicAdd(dbv_ds, Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]);
+        atomicAdd(shapeDerivative, -(1 + mu0 / mu) * Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]);
 
         for (int jj = 0; jj < 3; ++jj)
         {
             // dbk_ds = Tnu' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu
-            atomicAdd(dbk_ds, Tnu[i] * (LocalMatrix_kernelintegrablemat(jj) - LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
+            // atomicAdd(dbk_ds, Tnu[i] * (LocalMatrix_kernelintegrablemat(jj) - LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
+            atomicAdd(shapeDerivative, 4 * Tnu[i] * (LocalMatrix_kernelintegrablemat(jj) - LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
 
             for (int ii = 0; ii < 3; ++ii)
             {
                 // dbw_ds = Tdu' * ( kerneloldmat_nxgradP1_nxgradP1{2} + 2 * SL_Dvelnxgrad_nxgrad{5}) * Tdu
-                atomicAdd(dbw_ds, Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) * Tdu[EltJ[jj]]);
+                // atomicAdd(dbw_ds, Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) * Tdu[EltJ[jj]]);
+                atomicAdd(shapeDerivative, (1 + mu / mu0) * Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) * Tdu[EltJ[jj]]);
             }
         }
     }
