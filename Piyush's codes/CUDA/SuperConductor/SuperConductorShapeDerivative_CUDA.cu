@@ -128,7 +128,7 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        const double *W1, const double *X1, int Nq1,
                                        const double *W2, const double *X2, int Nq2,
                                        const double *W3, const double *X3, int Nq3,
-                                       double *val1, double *val2,
+                                       double *val1, double *val2, double *shapeDerivative,
                                        const double *TnA,
                                        const int *Elements, const double *Vertices, const double *Normals, const double *Areas,
                                        const int *Elt2DofTest, const int *Elt2DofTrial,
@@ -521,10 +521,14 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                 // Local matrix (ii,jj) contains part of the global element DofsI[permI[ii]] , DofsJ[permJ[jj]]
 
                 // red_remaining = mu/2 * Mxn_coeffs' * A1mat * Mxn_coeffs;
-                atomicAdd(val1, 0.5 * TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]]);
+                // atomicAdd(val1, 0.5 * TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]]);
 
                 // 2 * TnA' * A2mat * TnA
-                atomicAdd(val2, TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]]);
+                // atomicAdd(val2, TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]]);
+
+                atomicAdd(shapeDerivative, TnA[DofsI[permI[ii]]] *                                   //
+                                               (0.5 * LocalMatrixA1(ii, jj) + LocalMatrixA2(ii, jj)) //
+                                               * TnA[DofsJ[permJ[jj]]]);
 
                 //  Atomic update of the galerkin matrix
                 // atomicAdd(&GalerkinMatrix[DofsI[permI[ii]] + TestDim * DofsJ[permJ[jj]]], LocalMatrix(ii, jj));
