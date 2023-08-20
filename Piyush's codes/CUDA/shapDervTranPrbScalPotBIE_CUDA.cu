@@ -122,7 +122,7 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        double *dbv_ds, double *dbw_ds, double *dbk_ds,
                                        double *shapeDerivative,
                                        double mu0, double mu,
-                                       const double *Tdu, const double *Tnu,
+                                       const double *Tdu, const double *Tnu, const double *HJn_coeffs,
                                        const int *Elements, const double *Vertices, const double *Normals, const double *Areas,
                                        const int *Elt2DofTest, const int *Elt2DofTrial,
                                        int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
@@ -375,19 +375,22 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         // dbv_ds = Tnu' * kerneloldmat_P0_P0 * Tnu
         // atomicAdd(dbv_ds, Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]);
-        atomicAdd(shapeDerivative, -(1 + mu0 / mu) * Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]);
+        atomicAdd(shapeDerivative, -mu0 / 2 * (1 + mu0 / mu) * Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]);
+        atomicAdd(shapeDerivative, -mu0 / mu * (mu0 - mu) * Tnu[i] * Local_kerneloldmat_P0_P0 * HJn_coeffs[j]);                   // dl1/ds kerneloldmat_p0_p0 part
+        atomicAdd(shapeDerivative, -(mu0 - mu) * (mu0 - mu) / 2 / mu * HJn_coeffs[i] * Local_kerneloldmat_P0_P0 * HJn_coeffs[j]); // remterms
 
         for (int jj = 0; jj < 3; ++jj)
         {
             // dbk_ds = Tnu' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu
             // atomicAdd(dbk_ds, Tnu[i] * (LocalMatrix_kernelintegrablemat(jj) - LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
-            atomicAdd(shapeDerivative, 4 * Tnu[i] * (LocalMatrix_kernelintegrablemat(jj) - LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
+            atomicAdd(shapeDerivative, mu0 / 2 * 4 * Tnu[i] * (LocalMatrix_kernelintegrablemat(jj) - LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
+            atomicAdd(shapeDerivative, (mu0 - mu) * HJn_coeffs[i] * (LocalMatrix_kernelintegrablemat(jj) - LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]); // dl3/ds
 
             for (int ii = 0; ii < 3; ++ii)
             {
                 // dbw_ds = Tdu' * ( kerneloldmat_nxgradP1_nxgradP1{2} + 2 * SL_Dvelnxgrad_nxgrad{5}) * Tdu
                 // atomicAdd(dbw_ds, Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) * Tdu[EltJ[jj]]);
-                atomicAdd(shapeDerivative, (1 + mu / mu0) * Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) * Tdu[EltJ[jj]]);
+                atomicAdd(shapeDerivative, mu0 / 2 * (1 + mu / mu0) * Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) * Tdu[EltJ[jj]]);
             }
         }
     }
