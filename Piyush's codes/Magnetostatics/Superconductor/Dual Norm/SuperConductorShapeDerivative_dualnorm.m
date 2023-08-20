@@ -1,16 +1,18 @@
 % Superconductor shape derivative for Neumann Trace input lying in RWG
 % Space
 
-function val = SuperConductorShapeDerivative(bndmesh,TnA,Vel,DVel,omega_src,J)
+function val = SuperConductorShapeDerivative_dualnorm(bndmesh,TnA,omega_src,J,abc_alpha)
     
     RWG = fem(bndmesh,'RWG');
+    % Number of fields
+    Nfields = size(abc_alpha,1);
 
     % Kernel, z:= y-x
-    kernelgypsi = @(x,y,z) sum(z.*(Vel(x) - Vel(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
+%     kernelgypsi = @(x,y,z) sum(z.*(Vel(x) - Vel(y)), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
 
-    Nelt = bndmesh.nelt;
+%     Nelt = bndmesh.nelt;
 
-    [ii,jj] = meshgrid(1:Nelt,1:Nelt);
+%     [ii,jj] = meshgrid(1:Nelt,1:Nelt);
     
     %% Dispatching SS computations to GPU
 
@@ -39,8 +41,8 @@ function val = SuperConductorShapeDerivative(bndmesh,TnA,Vel,DVel,omega_src,J)
     relation = cast(relation,'int32');
 
     % PTX and CUDA files
-    ptxFilePath = 'SuperConductorShapeDerivative_CUDA.ptx';
-    cuFilePath = 'SuperConductorShapeDerivative_CUDA.cu';
+    ptxFilePath = 'SuperConductorShapeDerivative_dualnorm_GPU.ptx';
+    cuFilePath = 'SuperConductorShapeDerivative_dualnorm_GPU.cu';
 
     % Quadrature to be passed to the GPU
     order = 5;
@@ -76,7 +78,8 @@ function val = SuperConductorShapeDerivative(bndmesh,TnA,Vel,DVel,omega_src,J)
     % More variables for GPU
     val1_gpu = gpuArray.zeros(1,1);
     val2_gpu = gpuArray.zeros(1,1);
-    
+    shapeDerivative_gpu = gpuArray.zeros(Nfields,1);
+
     TnA_gpu = gpuArray(full(TnA));
     Elements = cast(bndmesh.elt-1,'int32');
     Elements_gpu = gpuArray(Elements');
@@ -89,46 +92,62 @@ function val = SuperConductorShapeDerivative(bndmesh,TnA,Vel,DVel,omega_src,J)
     TestSpace_gpu = 0;
     TrialOperator_gpu = 0;
     TestOperator_gpu = 0;
+    abc_alpha_gpu = gpuArray(cast(abc_alpha','int32'));
 
     % Launching kernel
-    [val1_gpu,val2_gpu]= feval(kernel,...
+    [val1_gpu,val2_gpu,shapeDerivative_gpu]= feval(kernel,...
     RWG.ndof,RWG.ndof,bndmesh.nelt,bndmesh.nvtx,bndmesh.nelt^2,...
     Nthreads,Ivec_gpu,Jvec_gpu,relation_gpu,...
     W0_gpu,X0_gpu,size(X0,1),...
     W1_gpu,X1_gpu,size(X1,1),...
     W2_gpu,X2_gpu,size(X2,1),...
     W3_gpu,X3_gpu,size(X3,1),...
-    val1_gpu,val2_gpu,...
+    val1_gpu,val2_gpu,shapeDerivative_gpu,...
     TnA_gpu,...
     Elements_gpu,Vertices_gpu,Normals_gpu,Areas_gpu,...
     elt2dof_gpu,elt2dof_gpu,...
     TrialSpace_gpu,TestSpace_gpu,TrialOperator_gpu,TestOperator_gpu,...
-    size(RWG.rsf,1),size(RWG.rsf,1)); 
+    size(RWG.rsf,1),size(RWG.rsf,1),...
+    abc_alpha_gpu,Nfields); 
 
     %% CPU
 
-    t1mat = panel_assembly(bndmesh,kernelgypsi,RWG,RWG,ii(:),jj(:));
-    % 1st term
-    val = 0.5 * dot(TnA,t1mat*TnA);
+%     t1mat = panel_assembly(bndmesh,kernelgypsi,RWG,RWG,ii(:),jj(:));
+%     % 1st term
+%     val = 0.5 * dot(TnA,t1mat*TnA);
+% 
+%     % 2nd term 
+%     % Defining the kernel for single layer BIO
+%     % KV = @(x,y,z) 1/norm(z)/4./pi;
+%     KV = @(x,y,z) sqrt(1./ sum(z.^2 ,2) ) /4./pi;
+% 
+%     DVelRWG = RWG;
+%     DVelRWG.opr = 'Dvel[psi]';
+% 
+%     t2mat = panel_assembly_shape_derivative(bndmesh,KV,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
+%     val = val + dot(TnA,t2mat*TnA);
 
-    % 2nd term 
-    % Defining the kernel for single layer BIO
-    % KV = @(x,y,z) 1/norm(z)/4./pi;
-    KV = @(x,y,z) sqrt(1./ sum(z.^2 ,2) ) /4./pi;
+    t3 = zeros(Nfields,1);
+    t4 = zeros(Nfields,1);
 
-    DVelRWG = RWG;
-    DVelRWG.opr = 'Dvel[psi]';
-
-    t2mat = panel_assembly_shape_derivative(bndmesh,KV,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
-    val = val + dot(TnA,t2mat*TnA);
+    for fieldID = 1:Nfields
+        a = abc_alpha(fieldID,1);
+        b = abc_alpha(fieldID,2);
+        c = abc_alpha(fieldID,3);
+        alpha = abc_alpha(fieldID,4);
+        [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+        t3(fieldID) = SuperConductorShapeDerivativeT3(bndmesh,TnA,Vel,omega_src,J);
+        t4(fieldID) = SuperConductorShapeDerivativeT4(bndmesh,TnA,DVel,omega_src,J);
+        
+    end
 
     % 3rd term
-    t3 = SuperConductorShapeDerivativeT3(bndmesh,TnA,Vel,omega_src,J);
+%     t3 = SuperConductorShapeDerivativeT3(bndmesh,TnA,Vel,omega_src,J);
+% 
+%     % 4th term
+%     t4 = SuperConductorShapeDerivativeT4(bndmesh,TnA,DVel,omega_src,J);
 
-    % 4th term
-    t4 = SuperConductorShapeDerivativeT4(bndmesh,TnA,DVel,omega_src,J);
+%     val = val - t3-t4;
 
-    val = val - t3-t4;
-
-    val_gpo
+    val_gpu = shapeDerivative_gpu -t3 -t4;
 end

@@ -14,6 +14,33 @@ torques_sd = forces_mst;
 torques_bem = torques_mst;
 hvals = vals;
 
+% indices for velocity fields go from 0 to kappa-1
+kappa = 3;
+shape_derivatives_mst = zeros(Nvals,3 * kappa^3);
+shape_derivatives_bem = shape_derivatives_mst;
+
+% Map of velocity field to index
+abc_alpha = zeros(3 * kappa^3,4);
+
+for a = 0:kappa-1
+    for b = 0:kappa-1
+        for c = 0:kappa-1
+            for alpha = 0:2
+                idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
+                abc_alpha(idx,:) = [a b c alpha];
+            end
+        end
+    end
+end
+
+testidx = 1 + kappa * 1 + kappa^2 * 1 + kappa^3 * 0 + 1;
+
+% abc_alpha = [1 1 1 0];
+% abc_alpha = repelem(abc_alpha,4,1);
+
+% Number of fields
+Nfields = size(abc_alpha,1);
+
 for i = 1:Nvals
     N = 2^vals(i);
     disp(N)
@@ -88,9 +115,8 @@ for i = 1:Nvals
     Drvels{1} = DVelxr; Drvels{2} = DVelyr; Drvels{3} = DVelzr;
     
 
-%     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
-    [Vel,DVel] = getCosVelDVel(1,1,1,1);
-    ptorque = SuperConductorShapeDerivative(bndmesh,TnA,Vel,DVel,omega_src,J);
+    [Vel,DVel] = getPolyVelDVel(1,1,1,1);
+    ptorque = SuperConductorShapeDerivative_dualnorm(bndmesh,TnA,omega_src,J,abc_alpha);
   
 
 end

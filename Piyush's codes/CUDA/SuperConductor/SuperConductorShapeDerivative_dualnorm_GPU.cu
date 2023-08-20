@@ -33,24 +33,26 @@ __device__ double SLKernel(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d
     return 1. / (4 * M_PI) / YmX.norm();
 }
 
-__device__ Eigen::Vector3d Vel(Eigen::Vector3d X)
+__device__ Eigen::Vector3d Vel(int a, int b, int c, int alpha, Eigen::Vector3d X)
 {
-    // return Eigen::Vector3d(1, 0, 0);
-    return Eigen::Vector3d(X(0) * X(1) * X(2), 0, 0);
-}
-
-__device__ Eigen::Matrix3d DVel(Eigen::Vector3d X)
-{
-    Eigen::Matrix3d out;
-    out << X(1) * X(2), X(0) * X(2), X(0) * X(1), 0, 0, 0, 0, 0, 0;
+    Eigen::Vector3d out = Eigen::Vector3d::Zero(3);
+    out(alpha) = cos(a * X(0)) * cos(b * X(1)) * cos(c * X(2));
     return out;
-    // return Eigen::Matrix3d::Zero(3, 3);
 }
 
-__device__ double KernelA1(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
+__device__ Eigen::Matrix3d DVel(int a, int b, int c, int alpha, Eigen::Vector3d X)
+{
+    Eigen::Matrix3d out = Eigen::Matrix3d::Zero(3, 3);
+    out.row(alpha) = -Eigen::Vector3d(a * sin(a * X(0)) * cos(b * X(1)) * cos(c * X(2)),
+                                      b * cos(a * X(0)) * sin(b * X(1)) * cos(c * X(2)),
+                                      c * cos(a * X(0)) * cos(b * X(1)) * sin(c * X(2)));
+    return out;
+}
+
+__device__ double KernelA1(int a, int b, int c, int alpha, Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
 {
     double znorm = YmX.norm();
-    return YmX.dot(Vel(X) - Vel(Y)) / (4 * M_PI) / (znorm * znorm * znorm);
+    return YmX.dot(Vel(a, b, c, alpha, X) - Vel(a, b, c, alpha, Y)) / (4 * M_PI) / (znorm * znorm * znorm);
 }
 
 __device__ double KernelA2(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
@@ -63,20 +65,6 @@ __device__ Eigen::Vector3d KernelC1(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen:
     // return 1;
     double znorm = YmX.norm();
     return YmX / (4 * M_PI) / (znorm * znorm * znorm);
-}
-
-__device__ Eigen::Vector3d KernelC3(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
-{
-    // return 1;
-    double znorm = YmX.norm();
-    return -3. / (4 * M_PI) * YmX * YmX.dot(Vel(Y) - Vel(X)) / (znorm * znorm * znorm * znorm * znorm) + 1. / (4 * M_PI) * (Vel(Y) - Vel(X)) / (znorm * znorm * znorm);
-}
-
-__device__ Eigen::Vector3d DLKernel(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d YmX)
-{
-    // return 1;
-    double znorm = YmX.norm();
-    return -YmX / (4 * M_PI) / (znorm * znorm * znorm);
 }
 
 // Returns Intersection, DiffI, DiffJ
@@ -133,7 +121,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        const int *Elements, const double *Vertices, const double *Normals, const double *Areas,
                                        const int *Elt2DofTest, const int *Elt2DofTrial,
                                        int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
-                                       int NRSFTrial, int NRSFTest)
+                                       int NRSFTrial, int NRSFTest,
+                                       const int *abc_alpha, int Nabc_alpha)
 /* double *testout, double *testABCi, double *testABCj,
 int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
@@ -467,7 +456,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         } */
 
         // RWG X RWG
-        for (int ii = 0; ii < 3; ++ii)
+        /* for (int ii = 0; ii < 3; ++ii)
         {
             int iip1 = (permI[ii] + 1) % 3;
             int iip2 = (iip1 + 1) % 3;
@@ -485,23 +474,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
                 for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
                 {
-                    /* if (blockIdx.x == 0 && threadIdx.x == 0)
-                    {
-                        printf("Qud pt %d\n", QudPt);
-                    } */
-                    // Reference basis RT0
-                    /* Eigen::MatrixXd RWGX_ref(3, 2); // Rows represent the 3 RSFs
-                    RWGX_ref << X[4 * QudPt], X[4 * QudPt + 1],
-                        X[4 * QudPt] - 1, X[4 * QudPt + 1],
-                        X[4 * QudPt], X[4 * QudPt + 1] - 1;
-
-                    Eigen::MatrixXd RWGY_ref(3, 2); // Rows represent the 3 RSFs
-                    RWGY_ref << X[4 * QudPt + 2], X[4 * QudPt + 3],
-                        X[4 * QudPt + 2] - 1, X[4 * QudPt + 3],
-                        X[4 * QudPt + 2], X[4 * QudPt + 3] - 1;
-
-                    Eigen::Vector3d Psix = fluxI * Ei * RWGX_ref.row(ii).transpose();
-                    Eigen::Vector3d Psiy = fluxJ * Ej * RWGY_ref.row(jj).transpose(); */
 
                     double RWGX_ref_0 = X[4 * QudPt] - ii % 2;
                     double RWGX_ref_1 = X[4 * QudPt + 1] - ii / 2;
@@ -540,6 +512,65 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                 //  Atomic update of the galerkin matrix
                 // atomicAdd(&GalerkinMatrix[DofsI[permI[ii]] + TestDim * DofsJ[permJ[jj]]], LocalMatrix(ii, jj));
             }
+        } */
+
+        ///////
+        for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
+        {
+            for (int ii = 0; ii < 3; ++ii)
+            {
+                int iip1 = (permI[ii] + 1) % 3;
+                int iip2 = (iip1 + 1) % 3;
+                double fluxI = origEltI[iip1] < origEltI[iip2] ? 1. : -1.;
+
+                for (int jj = 0; jj < 3; ++jj)
+                {
+                    int jjp1 = (permJ[jj] + 1) % 3;
+                    int jjp2 = (jjp1 + 1) % 3;
+                    double fluxJ = origEltJ[jjp1] < origEltJ[jjp2] ? 1. : -1.;
+
+                    double RWGX_ref_0 = X[4 * QudPt] - ii % 2;
+                    double RWGX_ref_1 = X[4 * QudPt + 1] - ii / 2;
+
+                    double RWGY_ref_0 = X[4 * QudPt + 2] - jj % 2;
+                    double RWGY_ref_1 = X[4 * QudPt + 3] - jj / 2;
+
+                    Eigen::Vector3d Psix = fluxI * (Ei.col(0) * RWGX_ref_0 + Ei.col(1) * RWGX_ref_1);
+                    Eigen::Vector3d Psiy = fluxJ * (Ej.col(0) * RWGY_ref_0 + Ej.col(1) * RWGY_ref_1);
+
+                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[4 * QudPt] + Ei.col(1) * X[4 * QudPt + 1];
+                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[4 * QudPt + 2] + Ej.col(1) * X[4 * QudPt + 3];
+
+                    for (int fieldIdx = 0; fieldIdx < Nabc_alpha; ++fieldIdx)
+                    {
+                        // A1 with RWG . RWG, t1mat
+                        double LocalMatrixA1_ii_jj = W[QudPt] * KernelA1(__ldg(&abc_alpha[4 * fieldIdx]),     //
+                                                                         __ldg(&abc_alpha[4 * fieldIdx + 1]), //
+                                                                         __ldg(&abc_alpha[4 * fieldIdx + 2]), //
+                                                                         __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_tau, chi_t, chi_t - chi_tau) *
+                                                     Psiy.dot(Psix);
+
+                        // A2 with DVelRWG(y) . RWG(x), t2mat
+                        double LocalMatrixA2_ii_jj = W[QudPt] * KernelA2(chi_tau, chi_t, chi_t - chi_tau) * (DVel(__ldg(&abc_alpha[4 * fieldIdx]),     //
+                                                                                                                  __ldg(&abc_alpha[4 * fieldIdx + 1]), //
+                                                                                                                  __ldg(&abc_alpha[4 * fieldIdx + 2]), //
+                                                                                                                  __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t) *
+                                                                                                             Psiy)
+                                                                                                                .dot(Psix);
+
+                        localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += TnA[DofsI[permI[ii]]] *                           //
+                                                                                      (0.5 * LocalMatrixA1_ii_jj + LocalMatrixA2_ii_jj) //
+                                                                                      * TnA[DofsJ[permJ[jj]]];
+                    }
+                }
+            }
         }
+    }
+
+    // Writing to global memory
+    for (int l = 0; l < Nabc_alpha; ++l)
+    {
+        atomicAdd(&shapeDerivative[l], localShapeDerivatives[l + threadIdx.x * Nabc_alpha]);
+        // localShapeDerivatives[l + threadIdx.x * Nabc_alpha] = 0;
     }
 }

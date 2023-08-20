@@ -36,13 +36,15 @@ __device__ double SLKernel(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen::Vector3d
 __device__ Eigen::Vector3d Vel(Eigen::Vector3d X)
 {
     // return Eigen::Vector3d(1, 0, 0);
-    return Eigen::Vector3d(X(0) * X(1) * X(2), 0, 0);
+    // return Eigen::Vector3d(X(0) * X(1) * X(2), 0, 0);
+    return Eigen::Vector3d(cos(X(0)) * cos(X(1)) * cos(X(2)), 0, 0);
 }
 
 __device__ Eigen::Matrix3d DVel(Eigen::Vector3d X)
 {
     Eigen::Matrix3d out;
-    out << X(1) * X(2), X(0) * X(2), X(0) * X(1), 0, 0, 0, 0, 0, 0;
+    // out << X(1) * X(2), X(0) * X(2), X(0) * X(1), 0, 0, 0, 0, 0, 0;
+    out << -sin(X(0)) * cos(X(1)) * cos(X(2)), -cos(X(0)) * sin(X(1)) * cos(X(2)), -cos(X(0)) * cos(X(1)) * sin(X(2)), 0, 0, 0, 0, 0, 0;
     return out;
     // return Eigen::Matrix3d::Zero(3, 3);
 }
