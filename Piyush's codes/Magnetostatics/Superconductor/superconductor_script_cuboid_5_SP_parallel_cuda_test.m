@@ -1,5 +1,5 @@
 % Superconductor script
-
+delete(gcp('nocreate'));
 addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
@@ -91,7 +91,8 @@ for i = 1:Nvals
 
     forces_bem(i,:) = [fbem1 fbem2 fbem3]
 
-    [Vel,DVel] = getPolyVelDVel(1,1,1,1);
+%     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
+    [Vel,DVel] = getCosVelDVel(1,1,1,1);
 
     %Computing torques
     tbem1 = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel)
