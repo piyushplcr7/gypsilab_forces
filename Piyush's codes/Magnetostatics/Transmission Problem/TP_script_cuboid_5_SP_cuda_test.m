@@ -1,12 +1,12 @@
 % New transmission problem script
-
+delete(gcp('nocreate'))
 addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 7:12;
+vals = 5:12;
 Nvals = size(vals,2);
 forces_vol = zeros(Nvals,3);
 forces_bem = forces_vol;
@@ -74,7 +74,7 @@ for i = 1:Nvals
 
     torques_vol(i,:) = [t1 t2 t3]
 
-    [Vel,DVel] = getPolyVelDVel(1,1,1,1);
+    [Vel,DVel] = getCosVelDVel(1,1,1,1);
 
     % BEM based shape derivative
     fbem1 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel,mu0,mu);
