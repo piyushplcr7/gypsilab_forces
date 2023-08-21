@@ -85,38 +85,18 @@ for i = 1:Nvals
     %% Computing forces
     % Coefficients for zero Dirichlet Trace
     TdA = TnA * 0;
-    forces_mst(i,:) = MstForceFromA(TdA,TnA,Gamma)'
-    
-    % Shape Derivative computation of force
-    % Translation fields
-    Nux = @(X) ones(size(X,1),1)*[1 0 0];
-    Nuy = @(X) ones(size(X,1),1)*[0 1 0];
-    Nuz = @(X) ones(size(X,1),1)*[0 0 1];
-    
-    sd_e1 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nux,omega_src,J);
-    sd_e2 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nuy,omega_src,J);
-    sd_e3 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nuz,omega_src,J);
 
-    forces_sd(i,:) = [sd_e1 sd_e2 sd_e3]
+    for fieldID = 1:Nfields
+        a = abc_alpha(fieldID,1);
+        b = abc_alpha(fieldID,2);
+        c = abc_alpha(fieldID,3);
+        alpha = abc_alpha(fieldID,4);
+        [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+        shape_derivatives_mst(i,fieldID) = MstSDFromA(TdA,TnA,Gamma,Vel);
+        
+    end
     
-    %% Computing torques
-    Xcg = [4 0 0];
-    torques_mst(i,:) = MstTorqueFromA(TdA,TnA,Gamma,Xcg)'
-
-    % Shape Derivative computation of torque
-    % Getting Rotational Vels and DVels
-    [Velxr,DVelxr] = getRotVelDVel([1 0 0],Xcg);
-    [Velyr,DVelyr] = getRotVelDVel([0 1 0],Xcg);
-    [Velzr,DVelzr] = getRotVelDVel([0 0 1],Xcg);
-
-    rvels = cell(3,1);
-    Drvels = cell(3,1);
-    rvels{1} = Velxr; rvels{2} = Velyr; rvels{3} = Velzr;
-    Drvels{1} = DVelxr; Drvels{2} = DVelyr; Drvels{3} = DVelzr;
-    
-
-    [Vel,DVel] = getPolyVelDVel(1,1,1,1);
-    ptorque = SuperConductorShapeDerivative_dualnorm(bndmesh,TnA,omega_src,J,abc_alpha);
+    shape_derivatives_bem(i,:) = SuperConductorShapeDerivative_dualnorm(bndmesh,TnA,omega_src,J,abc_alpha);
   
 
 end
