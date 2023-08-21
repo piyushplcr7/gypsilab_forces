@@ -1,6 +1,6 @@
 % Full shape Derivative
 
-function sd = shapDervTranPrbScalPotBIE_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,mu0,mu,abc_alpha)
+function sd_gpu_full = shapDervTranPrbScalPotBIE_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,mu0,mu,abc_alpha)
     Nfields = size(abc_alpha,1);
     % BEM Spaces
     P0 = fem(bndmesh,'P0');

@@ -93,6 +93,6 @@ for i = 1:Nvals
 %     [Vel,DVel] = getCosVelDVel(1,1,1,1);
 
     % BEM based shape derivative
-    fbem1 = shapDervTranPrbScalPotBIE_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,mu0,mu,abc_alpha);
+    shape_derivatives_bem(i,:) = shapDervTranPrbScalPotBIE_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,mu0,mu,abc_alpha);
 
 end
