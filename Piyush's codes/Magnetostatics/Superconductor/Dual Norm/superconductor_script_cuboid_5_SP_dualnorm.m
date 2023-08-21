@@ -87,40 +87,16 @@ for i = 1:Nvals
     %plot_field(TnA,bndmesh,J,omega_src);
 
     %% Computing the volume based shape derivative
-    % Computing forces
-    [Vel1,DVel1] = getTransVelDVel([1 0 0]);
-    [Vel2,DVel2] = getTransVelDVel([0 1 0]);
-    [Vel3,DVel3] = getTransVelDVel([0 0 1]);
 
-    f1 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Vel1,DVel1);
-    f2 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Vel2,DVel2);
-    f3 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Vel3,DVel3);
+    for fieldID = 1:Nfields
+        a = abc_alpha(fieldID,1);
+        b = abc_alpha(fieldID,2);
+        c = abc_alpha(fieldID,3);
+        alpha = abc_alpha(fieldID,4);
+        [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+        shape_derivatives_mst(i,fieldID) = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Vel,DVel);
+        
+    end
 
-    forces_volume(i,:) = [f1 f2 f3]
-
-    % Computing torques
-    Xcg = [4 0 0];
-    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
-    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
-    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
-
-    t1 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Velr1,DVelr1);
-    t2 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Velr2,DVelr2);
-    t3 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Velr3,DVelr3);
-
-    torques_volume(i,:) = [t1 t2 t3]
-
-    %% Computing BEM based shape derivative
-    % Computing forces
-    fbem1 = ScSdF_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel1);
-    fbem2 = ScSdF_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel2);
-    fbem3 = ScSdF_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Vel3);
-
-    forces_bem(i,:) = [fbem1 fbem2 fbem3]
-
-%     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
-    [Vel,DVel] = getCosVelDVel(1,1,1,1);
-
-    %Computing torques
-    tbem1 = ScSd_SP_BEM_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,abc_alpha)
+    shape_derivatives_bem(i,:) = ScSd_SP_BEM_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,abc_alpha)
 end
