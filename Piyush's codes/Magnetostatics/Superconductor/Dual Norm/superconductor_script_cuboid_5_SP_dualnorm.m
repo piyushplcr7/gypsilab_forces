@@ -1,6 +1,6 @@
 % Superconductor script
 delete(gcp('nocreate'));
-addpath(genpath("../../../"));
+addpath(genpath("../../../../"));
 clear; clc; close all;
 format long;
 mui = 1;
