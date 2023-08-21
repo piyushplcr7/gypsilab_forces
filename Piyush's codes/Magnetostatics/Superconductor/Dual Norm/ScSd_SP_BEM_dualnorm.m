@@ -2,7 +2,7 @@
 % potential formulation of the superconductor
 
 % Super conductor Shape derivative_ Scalar Potential
-function sd = ScSd_SP_BEM_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,abc_alpha)
+function sd_gpu_full = ScSd_SP_BEM_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,abc_alpha)
     Nfields = size(abc_alpha,1);
     % BEM Spaces
     P0 = fem(bndmesh,'P0');
