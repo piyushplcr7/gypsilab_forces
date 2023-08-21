@@ -1,7 +1,7 @@
 % Superconductor shape derivative for Neumann Trace input lying in RWG
 % Space
 
-function val = SuperConductorShapeDerivative_dualnorm(bndmesh,TnA,omega_src,J,abc_alpha)
+function val_gpu = SuperConductorShapeDerivative_dualnorm(bndmesh,TnA,omega_src,J,abc_alpha)
     
     RWG = fem(bndmesh,'RWG');
     % Number of fields
