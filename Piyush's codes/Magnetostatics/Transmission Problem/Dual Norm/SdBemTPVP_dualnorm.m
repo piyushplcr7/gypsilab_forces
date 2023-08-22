@@ -238,4 +238,6 @@ function sd = SdBemTPVP_dualnorm(bndmesh,TnA,TdA,J,omega_src,mu0,mu,abc_alpha)
     %                     -l1 + (l21+l22);
 %     pool.delete();
 
+    sd = 1/(2*mu0) * shapeDerivative_gpu -l1 + (l21+l22);
+
 end

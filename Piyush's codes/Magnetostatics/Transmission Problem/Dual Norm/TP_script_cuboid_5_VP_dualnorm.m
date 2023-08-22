@@ -1,6 +1,6 @@
 % New transmission problem script
 delete(gcp('nocreate'));
-addpath(genpath("../../../"));
+addpath(genpath("../../../../"));
 clear; clc; close all;
 format long;
 % (mui+mue)/(mui-mue)
@@ -125,6 +125,6 @@ for i = 1:Nvals
     
     [Vel,DVel] = getCosVelDVel(1,1,1,1);
 
-    test = SdBemTPVP_dualnorm(bndmesh,Psi_RWG,g,J,omega_src,mu0,mu,abc_alpha);
+    shape_derivatives_bem(i,:) = SdBemTPVP_dualnorm(bndmesh,Psi_RWG,g,J,omega_src,mu0,mu,abc_alpha);
 
 end
