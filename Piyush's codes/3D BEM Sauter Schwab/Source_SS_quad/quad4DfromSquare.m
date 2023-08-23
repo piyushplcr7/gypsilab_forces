@@ -23,6 +23,9 @@ for i1 = 1:nq
           count = count + 1;
     end
 end
+
+% Don't know why I need to scale like this
+W = W * 2;
    
 
 [Xss{1}, Wss{1}] = quad1_bndry(X, W); % identical

@@ -78,7 +78,8 @@ function sd = SdBemTPVP(bndmesh,TnA,TdA,J,omega_src,Vel,DVel,mu0,mu)
 
     % Quadrature to be passed to the GPU
     order = 5;
-    [X, W] = quad4D(order);
+    [X, W] = quad4D(order); 
+    %[X,W] = quad4DfromSquare(@rule30);
     
     % Kernel Object
     kernel = parallel.gpu.CUDAKernel(ptxFilePath, cuFilePath);

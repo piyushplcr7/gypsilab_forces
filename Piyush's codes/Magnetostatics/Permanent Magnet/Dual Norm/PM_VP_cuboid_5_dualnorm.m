@@ -146,6 +146,6 @@ for i = 1:Nvals
 
 %     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
 
-    tbem1 = PermanentMagnetShapeDerivativeBIEVP_dualnorm(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,abc_alpha);
+    shape_derivatives_bem(i,:) = PermanentMagnetShapeDerivativeBIEVP_dualnorm(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,abc_alpha);
     
 end

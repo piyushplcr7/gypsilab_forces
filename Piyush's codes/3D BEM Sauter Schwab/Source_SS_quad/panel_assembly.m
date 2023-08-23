@@ -11,6 +11,7 @@ function M = panel_assembly(mesh,kernel,trial_space,test_space, I, J)
 
     order = 5;
     [X, W] = quad4D(order); 
+%     [X, W] = quad4DfromSquare(@rule09); 
     Xss{1} = X{1}; Wss{1} = W{1};
     Xss{2} = X{2}; Wss{2} = W{2};
     Xss{3} = X{3}; Wss{3} = W{3};
