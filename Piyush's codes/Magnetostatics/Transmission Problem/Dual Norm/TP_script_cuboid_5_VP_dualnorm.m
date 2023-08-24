@@ -126,5 +126,5 @@ for i = 1:Nvals
     [Vel,DVel] = getCosVelDVel(1,1,1,1);
 
     shape_derivatives_bem(i,:) = SdBemTPVP_dualnorm(bndmesh,Psi_RWG,g,J,omega_src,mu0,mu,abc_alpha);
-
+    save("TPVP_Cuboid_5_dualnorm.mat","shape_derivatives_bem","shape_derivatives_mst","hvals");
 end

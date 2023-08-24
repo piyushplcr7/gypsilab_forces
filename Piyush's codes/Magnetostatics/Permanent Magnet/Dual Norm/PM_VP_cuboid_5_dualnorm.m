@@ -147,5 +147,5 @@ for i = 1:Nvals
 %     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
 
     shape_derivatives_bem(i,:) = PermanentMagnetShapeDerivativeBIEVP_dualnorm(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,abc_alpha);
-    
+    save("PMVP_Cuboid_5_dualnorm.mat","shape_derivatives_bem","shape_derivatives_mst","hvals");
 end
