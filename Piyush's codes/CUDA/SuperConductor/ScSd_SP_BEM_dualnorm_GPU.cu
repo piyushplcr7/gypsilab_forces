@@ -70,49 +70,6 @@ __device__ Eigen::Vector3d KernelComb(int a, int b, int c, int alpha, Eigen::Vec
     return 1. / (4 * M_PI) * (-DVel(a, b, c, alpha, Y) * YmX + Vel(a, b, c, alpha, Y) - Vel(a, b, c, alpha, X)) / pow(znorm, 3);
 }
 
-// Returns Intersection, DiffI, DiffJ
-__device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int diffI[], int diffJ[])
-{
-    bool EltITracker[] = {false, false, false};
-    bool EltJTracker[] = {false, false, false};
-
-    for (int i = 0; i < 3; ++i)
-    {
-        for (int j = 0; j < 3; ++j)
-        {
-            if (EltI[i] == EltJ[j])
-            {
-                EltITracker[i] = true;
-                EltJTracker[j] = true;
-            }
-        }
-    }
-
-    int interidx = 0, diffiidx = 0, diffjidx = 0;
-
-    for (int i = 0; i < 3; ++i)
-    {
-        if (EltITracker[i])
-            intersection[interidx++] = EltI[i];
-        else
-            diffI[diffiidx++] = EltI[i];
-
-        if (!EltJTracker[i])
-            diffJ[diffjidx++] = EltJ[i];
-    }
-
-    /* for (int i = 0; i < 3; ++i)
-    {
-        if (EltJTracker[i])
-            intersection[interidx++] = EltJ[i];
-        else
-            diffJ[diffjidx++] = EltJ[i];
-
-        if (!EltITracker[i])
-            diffI[diffiidx++] = EltI[i];
-    } */
-}
-
 __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles, int NVertices, int NInteractions,
                                        int NThreads, const unsigned short int *I, const unsigned short int *J, const int *relation,
                                        const double *W0, const double *X0, int Nq0,
@@ -127,8 +84,6 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        int NRSFTrial, int NRSFTest,
                                        const int *abc_alpha, int Nabc_alpha,
                                        const int *permII, const int *permJJ)
-/* double *testout, double *testABCi, double *testABCj,
-int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
     __shared__ double localShapeDerivatives[81 * 32];
     // Initialization of shared memory
@@ -139,47 +94,20 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
     int ThreadID = blockIdx.x * blockDim.x + threadIdx.x;
 
-    //*shapeDerivative = 3.145;
-
-    // Size of the matrix
-    // int NInteractions = TrialDim * TestDim;
-
-    // Number of element interaction
-    // int NInteractions = NTriangles * NTriangles;
-
     // Matrix size is NTriangles^2. Each entry is assigned to a thread
     // InteractionsPerThread gives the max no.of element interactions assigned
     // to a thread
     int InteractionsPerThread = ceil(double(NInteractions) / double(NThreads));
 
-    /* if (blockIdx.x == 0 && threadIdx.x == 0)
-    {
-        printf("Number of blocks: %d \n ", gridDim.x);
-        printf("Threads per block: %d \n ", blockDim.x);
-        printf("Total interactions: %d , Interactions per thread: %d \n ", NInteractions, InteractionsPerThread);
-    } */
-
     // Looping over all assigned interactions
     for (int idx = 0; idx < InteractionsPerThread; ++idx)
     {
-        /* if (blockIdx.x == 0 && threadIdx.x == 0)
-        {
-            printf("In block 0 thread 0 computing interaction no. : %d \n ", idx);
-        } */
         // The interaction number
-        // int InteractionIdx = ThreadID + NThreads * idx;
         int InteractionIdx = ThreadID * InteractionsPerThread + idx;
 
         // Preparing variables
         Eigen::Vector3d Ai, Bi, Ci, Aj, Bj, Cj;
-        // Eigen::MatrixXd Ei(3, 2), Ej(3, 2);
         Eigen::Vector3d Eicol0, Eicol1, Ejcol0, Ejcol1;
-
-        int intersection[3], diffI[3], diffJ[3];
-
-        /* const double *W = NULL;
-        const double *X = NULL;
-        int NQudPts = 0; */
 
         // Make sure that the last thread stays in limit
         if (InteractionIdx >= NInteractions)
@@ -187,14 +115,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         // The pair of panels
         int i = __ldg(&I[InteractionIdx]), j = __ldg(&J[InteractionIdx]);
-
-        /* printf("Interaction  (%d, %d) \n", i, j); */
-
         double g_tau = 2 * __ldg(&Areas[i]), g_t = 2 * __ldg(&Areas[j]);
-
-        // Obtaining the normals
-        /* Eigen::Vector3d normalx(Normals[i], Normals[i + NTriangles], Normals[i + 2 * NTriangles]);
-        Eigen::Vector3d normaly(Normals[j], Normals[j + NTriangles], Normals[j + 2 * NTriangles]); */
 
         Eigen::Vector3d normalx(__ldg(&Normals[3 * i]), __ldg(&Normals[3 * i + 1]), __ldg(&Normals[3 * i + 2]));
         Eigen::Vector3d normaly(__ldg(&Normals[3 * j]), __ldg(&Normals[3 * j + 1]), __ldg(&Normals[3 * j + 2]));
@@ -225,57 +146,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         const double *X = Points[relation[InteractionIdx]];
         int NQudPts = NumPoints[relation[InteractionIdx]];
 
-        /* if (relation[InteractionIdx] == 0) // No interaction
-        {
-            // Computing Quadrature
-            W = W0;
-            X = X0;
-            NQudPts = Nq0;
-        }
-        else if (relation[InteractionIdx] == 1) // Common vertex
-        {
-            IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
-
-            // Changing EltI into ABCI
-            EltI[0] = intersection[0];
-            EltI[1] = diffI[0];
-            EltI[2] = diffI[1];
-
-            // Changing EltI into ABCJ
-            EltJ[0] = intersection[0];
-            EltJ[1] = diffJ[0];
-            EltJ[2] = diffJ[1];
-
-            // Computing Quadrature
-            W = W1;
-            X = X1;
-            NQudPts = Nq1;
-        }
-        else if (relation[InteractionIdx] == 2) // Common edge
-        {
-            IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
-
-            EltI[0] = intersection[0];
-            EltI[1] = intersection[1];
-            EltI[2] = diffI[0];
-
-            EltJ[0] = intersection[0];
-            EltJ[1] = intersection[1];
-            EltJ[2] = diffJ[0];
-
-            // Computing Quadrature
-            W = W2;
-            X = X2;
-            NQudPts = Nq2;
-        }
-        else // Identical panels, case 3
-        {
-            // Computing Quadrature
-            W = W3;
-            X = X3;
-            NQudPts = Nq3;
-        } */
-
         // EltI and EltJ changed according to permII and permJJ
         for (int k = 0; k < 3; ++k)
         {
@@ -296,13 +166,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         Cj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[2]]), __ldg(&Vertices[3 * EltJ[2] + 1]), __ldg(&Vertices[3 * EltJ[2] + 2]));
 
         // Jacobian Matrices
-
-        /* Ei.col(0) = Bi - Ai;
-        Ei.col(1) = Ci - Ai;
-
-        Ej.col(0) = Bj - Aj;
-        Ej.col(1) = Cj - Aj; */
-
         Eicol0 = Bi - Ai;
         Eicol1 = Ci - Ai;
 
@@ -339,12 +202,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         Eigen::Vector3d DCVjcol0 = Ejcol0 * Dxyj(0, 0) + Ejcol1 * Dxyj(0, 1);
         Eigen::Vector3d DCVjcol1 = Ejcol0 * Dxyj(1, 0) + Ejcol1 * Dxyj(1, 1);
-
-        /* Eigen::Matrix3d LocalMatrix_kerneloldmat_nxgradP1_nxgradP1 = Eigen::MatrixX3d::Zero(3, 3);
-        Eigen::Matrix3d LocalMatrix_SL_Dvelnxgrad_nxgrad = Eigen::MatrixX3d::Zero(3, 3);
-        Eigen::Vector3d LocalMatrix_kernelintegrablemat = Eigen::Vector3d::Zero(3);
-        Eigen::Vector3d LocalMatrix_combkernelmat = Eigen::Vector3d::Zero(3);
-        double Local_kerneloldmat_P0_P0 = 0; */
 
         // Mixed P0XP0, P1XP1, P0XP1
         for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
@@ -426,32 +283,11 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                 }
             }
         }
-
-        // Updating the outputs atomically
-
-        // dbv_ds = Tnu' * kerneloldmat_P0_P0 * Tnu
-        // atomicAdd(t7, -0.5 * HJn_coeffs[i] * Local_kerneloldmat_P0_P0 * HJn_coeffs[j]);
-        /* atomicAdd(shapeDerivative, -0.5 * HJn_coeffs[i] * Local_kerneloldmat_P0_P0 * HJn_coeffs[j]);
-
-        for (int jj = 0; jj < 3; ++jj)
-        {
-            // dbk_ds = Tnu' * (kernelintegrablemat{3} -combkernelmat{4}) * Tdu
-            // atomicAdd(t56nt6, HJn_coeffs[i] * (-LocalMatrix_kernelintegrablemat(jj) + LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
-            atomicAdd(shapeDerivative, HJn_coeffs[i] * (-LocalMatrix_kernelintegrablemat(jj) + LocalMatrix_combkernelmat(jj)) * Tdu[EltJ[jj]]);
-
-            for (int ii = 0; ii < 3; ++ii)
-            {
-                // dbw_ds = Tdu' * ( kerneloldmat_nxgradP1_nxgradP1{2} + 2 * SL_Dvelnxgrad_nxgrad{5}) * Tdu
-                // atomicAdd(t1nt2, Tdu[EltI[ii]] * (0.5 * LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) + LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) * Tdu[EltJ[jj]]);
-                atomicAdd(shapeDerivative, Tdu[EltI[ii]] * (0.5 * LocalMatrix_kerneloldmat_nxgradP1_nxgradP1(ii, jj) + LocalMatrix_SL_Dvelnxgrad_nxgrad(ii, jj)) * Tdu[EltJ[jj]]);
-            }
-        } */
     }
 
     // Writing to global memory
     for (int l = 0; l < Nabc_alpha; ++l)
     {
         atomicAdd(&shapeDerivative[l], localShapeDerivatives[l + threadIdx.x * Nabc_alpha]);
-        // localShapeDerivatives[l + threadIdx.x * Nabc_alpha] = 0;
     }
 }

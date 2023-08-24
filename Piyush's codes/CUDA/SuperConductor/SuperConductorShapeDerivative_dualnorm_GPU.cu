@@ -67,49 +67,6 @@ __device__ Eigen::Vector3d KernelC1(Eigen::Vector3d X, Eigen::Vector3d Y, Eigen:
     return YmX / (4 * M_PI) / (znorm * znorm * znorm);
 }
 
-// Returns Intersection, DiffI, DiffJ
-__device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int diffI[], int diffJ[])
-{
-    bool EltITracker[] = {false, false, false};
-    bool EltJTracker[] = {false, false, false};
-
-    for (int i = 0; i < 3; ++i)
-    {
-        for (int j = 0; j < 3; ++j)
-        {
-            if (EltI[i] == EltJ[j])
-            {
-                EltITracker[i] = true;
-                EltJTracker[j] = true;
-            }
-        }
-    }
-
-    int interidx = 0, diffiidx = 0, diffjidx = 0;
-
-    for (int i = 0; i < 3; ++i)
-    {
-        if (EltITracker[i])
-            intersection[interidx++] = EltI[i];
-        else
-            diffI[diffiidx++] = EltI[i];
-
-        if (!EltJTracker[i])
-            diffJ[diffjidx++] = EltJ[i];
-    }
-
-    /* for (int i = 0; i < 3; ++i)
-    {
-        if (EltJTracker[i])
-            intersection[interidx++] = EltJ[i];
-        else
-            diffJ[diffjidx++] = EltJ[i];
-
-        if (!EltITracker[i])
-            diffI[diffiidx++] = EltI[i];
-    } */
-}
-
 __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles, int NVertices, int NInteractions,
                                        int NThreads, const unsigned short int *I, const unsigned short int *J, const int *relation,
                                        const double *W0, const double *X0, int Nq0,
@@ -124,8 +81,6 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        int NRSFTrial, int NRSFTest,
                                        const int *abc_alpha, int Nabc_alpha,
                                        const int *permII, const int *permJJ)
-/* double *testout, double *testABCi, double *testABCj,
-int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
     int ThreadID = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -136,46 +91,20 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         localShapeDerivatives[l + threadIdx.x * Nabc_alpha] = 0;
     }
 
-    //*shapeDerivative = 3.145;
-
-    // Size of the matrix
-    // int NInteractions = TrialDim * TestDim;
-
-    // Number of element interaction
-    // int NInteractions = NTriangles * NTriangles;
-
     // Matrix size is NTriangles^2. Each entry is assigned to a thread
     // InteractionsPerThread gives the max no.of element interactions assigned
     // to a thread
     int InteractionsPerThread = ceil(double(NInteractions) / double(NThreads));
 
-    /* if (blockIdx.x == 0 && threadIdx.x == 0)
-    {
-        printf("Number of blocks: %d \n ", gridDim.x);
-        printf("Threads per block: %d \n ", blockDim.x);
-        printf("Total interactions: %d , Interactions per thread: %d \n ", NInteractions, InteractionsPerThread);
-    } */
-
     // Looping over all assigned interactions
     for (int idx = 0; idx < InteractionsPerThread; ++idx)
     {
-        /* if (blockIdx.x == 0 && threadIdx.x == 0)
-        {
-            printf("In block 0 thread 0 computing interaction no. : %d \n ", idx);
-        } */
         // The interaction number
-        // int InteractionIdx = ThreadID + NThreads * idx;
         int InteractionIdx = ThreadID * InteractionsPerThread + idx;
 
         // Preparing variables
         Eigen::Vector3d Ai, Bi, Ci, Aj, Bj, Cj;
         Eigen::MatrixXd Ei(3, 2), Ej(3, 2);
-
-        int intersection[3], diffI[3], diffJ[3];
-
-        /* const double *W = NULL;
-        const double *X = NULL;
-        int NQudPts = 0; */
 
         // Make sure that the last thread stays in limit
         if (InteractionIdx >= NInteractions)
@@ -184,24 +113,11 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         // The pair of panels
         int i = __ldg(&I[InteractionIdx]), j = __ldg(&J[InteractionIdx]);
 
-        /* printf("Interaction  (%d, %d) \n", i, j); */
-
         double g_tau = 2 * __ldg(&Areas[i]), g_t = 2 * __ldg(&Areas[j]);
 
         // Obtaining the normals
-        /* Eigen::Vector3d normalx(Normals[i], Normals[i + NTriangles], Normals[i + 2 * NTriangles]);
-        Eigen::Vector3d normaly(Normals[j], Normals[j + NTriangles], Normals[j + 2 * NTriangles]); */
-
         Eigen::Vector3d normalx(__ldg(&Normals[3 * i]), __ldg(&Normals[3 * i + 1]), __ldg(&Normals[3 * i + 2]));
         Eigen::Vector3d normaly(__ldg(&Normals[3 * j]), __ldg(&Normals[3 * j + 1]), __ldg(&Normals[3 * j + 2]));
-
-        /* int EltI[] = {Elements[i],
-                      Elements[i + NTriangles],
-                      Elements[i + 2 * NTriangles]};
-
-        int EltJ[] = {Elements[j],
-                      Elements[j + NTriangles],
-                      Elements[j + 2 * NTriangles]}; */
 
         int EltI[] = {__ldg(&Elements[3 * i]),
                       __ldg(&Elements[3 * i + 1]),
@@ -213,9 +129,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         int origEltI[] = {EltI[0], EltI[1], EltI[2]};
         int origEltJ[] = {EltJ[0], EltJ[1], EltJ[2]};
-
-        /* int DofsI[] = {Elt2DofTest[i], Elt2DofTest[i + NTriangles], Elt2DofTest[i + 2 * NTriangles]};
-        int DofsJ[] = {Elt2DofTrial[j], Elt2DofTrial[j + NTriangles], Elt2DofTrial[j + 2 * NTriangles]}; */
 
         int DofsI[] = {__ldg(&Elt2DofTest[3 * i]), __ldg(&Elt2DofTest[3 * i + 1]), __ldg(&Elt2DofTest[3 * i + 2])};
         int DofsJ[] = {__ldg(&Elt2DofTrial[3 * j]), __ldg(&Elt2DofTrial[3 * j + 1]), __ldg(&Elt2DofTrial[3 * j + 2])};
@@ -231,119 +144,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         const double *W = Weights[relation[InteractionIdx]];
         const double *X = Points[relation[InteractionIdx]];
         int NQudPts = NumPoints[relation[InteractionIdx]];
-
-        /* if (relation[InteractionIdx] == 0) // No interaction
-        {
-            // Computing Quadrature
-            W = W0;
-            X = X0;
-            NQudPts = Nq0;
-        }
-        else if (relation[InteractionIdx] == 1) // Common vertex
-        {
-            IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
-
-            for (int l = 0; l < 3; ++l)
-            {
-                // Permutation for I
-                if (EltI[l] == intersection[0])
-                {
-                    permI[0] = l;
-                }
-                else if (EltI[l] == diffI[0])
-                {
-                    permI[1] = l;
-                }
-                else if (EltI[l] == diffI[1])
-                {
-                    permI[2] = l;
-                }
-
-                // Permutation for J
-                if (EltJ[l] == intersection[0])
-                {
-                    permJ[0] = l;
-                }
-                else if (EltJ[l] == diffJ[0])
-                {
-                    permJ[1] = l;
-                }
-                else if (EltJ[l] == diffJ[1])
-                {
-                    permJ[2] = l;
-                }
-            }
-
-            // Changing EltI into ABCI
-            EltI[0] = intersection[0];
-            EltI[1] = diffI[0];
-            EltI[2] = diffI[1];
-
-            // Changing EltI into ABCJ
-            EltJ[0] = intersection[0];
-            EltJ[1] = diffJ[0];
-            EltJ[2] = diffJ[1];
-
-            // Computing Quadrature
-            W = W1;
-            X = X1;
-            NQudPts = Nq1;
-        }
-        else if (relation[InteractionIdx] == 2) // Common edge
-        {
-            IntersectionDiff(EltI, EltJ, intersection, diffI, diffJ);
-
-            for (int l = 0; l < 3; ++l)
-            {
-                // Permutation for I
-                if (EltI[l] == intersection[0])
-                {
-                    permI[0] = l;
-                }
-                else if (EltI[l] == intersection[1])
-                {
-                    permI[1] = l;
-                }
-                else if (EltI[l] == diffI[0])
-                {
-                    permI[2] = l;
-                }
-
-                // Permutation for J
-                if (EltJ[l] == intersection[0])
-                {
-                    permJ[0] = l;
-                }
-                else if (EltJ[l] == intersection[1])
-                {
-                    permJ[1] = l;
-                }
-                else if (EltJ[l] == diffJ[0])
-                {
-                    permJ[2] = l;
-                }
-            }
-
-            EltI[0] = intersection[0];
-            EltI[1] = intersection[1];
-            EltI[2] = diffI[0];
-
-            EltJ[0] = intersection[0];
-            EltJ[1] = intersection[1];
-            EltJ[2] = diffJ[0];
-
-            // Computing Quadrature
-            W = W2;
-            X = X2;
-            NQudPts = Nq2;
-        }
-        else // Identical panels, case 3
-        {
-            // Computing Quadrature
-            W = W3;
-            X = X3;
-            NQudPts = Nq3;
-        } */
 
         // EltI and EltJ changed according to permII and permJJ
         for (int k = 0; k < 3; ++k)
@@ -398,141 +198,6 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         Eigen::Matrix3d LocalMatrixC3 = Eigen::MatrixX3d::Zero(3, 3);
         Eigen::Matrix3d LocalMatrixN = Eigen::MatrixX3d::Zero(3, 3);
 
-        // P0 X P0
-        /* for (int ii = 0; ii < NRSFTest; ++ii)
-        {
-            double Psix = g_tau;
-            for (int jj = 0; jj < NRSFTrial; ++jj)
-            {
-                double Psiy = g_t;
-                for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
-                {
-                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
-                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
-                    LocalMatrix(ii, jj) += W[QudPt] * Psix * SLKernel(chi_tau, chi_t, chi_t - chi_tau) * Psiy;
-                }
-                GalerkinMatrix[i + TestDim * j] += LocalMatrix(ii, jj);
-
-                // Atomic update of the galerkin matrix
-                // double contribution = LocalMatrix(ii, jj);
-                // atomicAdd(&GalerkinMatrix[i + TestDim * j], contribution);
-            }
-        } */
-
-        // P1 X P1
-        /* for (int ii = 0; ii < NRSFTest; ++ii)
-        {
-
-            for (int jj = 0; jj < NRSFTrial; ++jj)
-            {
-
-                for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
-                {
-                    Eigen::Vector3d RSFsX(1 - X[4 * QudPt] - X[4 * QudPt + 1], X[4 * QudPt], X[4 * QudPt + 1]);
-                    Eigen::Vector3d RSFsY(1 - X[4 * QudPt + 2] - X[4 * QudPt + 3], X[4 * QudPt + 2], X[4 * QudPt + 3]);
-
-                    RSFsX *= g_tau;
-                    RSFsY *= g_t;
-
-                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[4 * QudPt] + Ei.col(1) * X[4 * QudPt + 1];
-                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[4 * QudPt + 2] + Ej.col(1) * X[4 * QudPt + 3];
-
-                    LocalMatrix(ii, jj) += W[QudPt] * RSFsX(ii) * SLKernel(chi_tau, chi_t, chi_t - chi_tau) * RSFsY(jj);
-                }
-                // GalerkinMatrix[EltI[ii] + TestDim * EltJ[jj]] += LocalMatrix(ii, jj);
-
-                //  Atomic update of the galerkin matrix
-                atomicAdd(&GalerkinMatrix[EltI[ii] + TestDim * EltJ[jj]], LocalMatrix(ii, jj));
-            }
-        } */
-
-        // P0 X ntimes(P1)
-        /* for (int ii = 0; ii < NRSFTest; ++ii)
-        {
-            double Psix = g_tau;
-
-            for (int jj = 0; jj < NRSFTrial; ++jj)
-            {
-
-                for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
-                {
-
-                    Eigen::Vector3d RSFsY(1 - X[QudPt + 2 * NQudPts] - X[QudPt + 3 * NQudPts], X[QudPt + 2 * NQudPts], X[QudPt + 3 * NQudPts]);
-
-                    RSFsY *= g_t;
-
-                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[QudPt] + Ei.col(1) * X[QudPt + NQudPts];
-                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[QudPt + 2 * NQudPts] + Ej.col(1) * X[QudPt + 3 * NQudPts];
-
-                    LocalMatrix(ii, jj) += W[QudPt] * Psix * DLKernel(chi_tau, chi_t, chi_t - chi_tau).dot(normaly) * RSFsY(jj);
-                }
-                // GalerkinMatrix[i + TestDim * EltJ[jj]] += LocalMatrix(ii, jj);
-
-                //  Atomic update of the galerkin matrix
-                atomicAdd(&GalerkinMatrix[i + TestDim * EltJ[jj]], LocalMatrix(ii, jj));
-            }
-        } */
-
-        // RWG X RWG
-        /* for (int ii = 0; ii < 3; ++ii)
-        {
-            int iip1 = (permI[ii] + 1) % 3;
-            int iip2 = (iip1 + 1) % 3;
-
-            double fluxI = origEltI[iip1] < origEltI[iip2] ? 1. : -1.;
-            // double RWGX_ref_0 = -ii % 2, RWGX_ref_1 = -ii / 2;
-
-            for (int jj = 0; jj < 3; ++jj)
-            {
-                int jjp1 = (permJ[jj] + 1) % 3;
-                int jjp2 = (jjp1 + 1) % 3;
-
-                double fluxJ = origEltJ[jjp1] < origEltJ[jjp2] ? 1. : -1.;
-                // double RWGY_ref_0 = -jj % 2, RWGY_ref_1 = -jj / 2;
-
-                for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
-                {
-
-                    double RWGX_ref_0 = X[4 * QudPt] - ii % 2;
-                    double RWGX_ref_1 = X[4 * QudPt + 1] - ii / 2;
-
-                    double RWGY_ref_0 = X[4 * QudPt + 2] - jj % 2;
-                    double RWGY_ref_1 = X[4 * QudPt + 3] - jj / 2;
-
-                    // RWG elements
-                    Eigen::Vector3d Psix = fluxI * (Ei.col(0) * RWGX_ref_0 + Ei.col(1) * RWGX_ref_1);
-                    Eigen::Vector3d Psiy = fluxJ * (Ej.col(0) * RWGY_ref_0 + Ej.col(1) * RWGY_ref_1);
-
-                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[4 * QudPt] + Ei.col(1) * X[4 * QudPt + 1];
-                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[4 * QudPt + 2] + Ej.col(1) * X[4 * QudPt + 3];
-
-                    // A1 with RWG . RWG, t1mat
-                    LocalMatrixA1(ii, jj) += W[QudPt] * KernelA1(chi_tau, chi_t, chi_t - chi_tau) * Psiy.dot(Psix);
-
-                    // A2 with DVelRWG(y) . RWG(x), t2mat
-                    LocalMatrixA2(ii, jj) += W[QudPt] * KernelA2(chi_tau, chi_t, chi_t - chi_tau) * (DVel(chi_t) * Psiy).dot(Psix);
-                }
-                // GalerkinMatrix[i + TestDim * EltJ[jj]] += LocalMatrix(ii, jj);
-
-                // Accumulating the shape derivative
-                // Local matrix (ii,jj) contains part of the global element DofsI[permI[ii]] , DofsJ[permJ[jj]]
-
-                // red_remaining = mu/2 * Mxn_coeffs' * A1mat * Mxn_coeffs;
-                // atomicAdd(val1, 0.5 * TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]]);
-
-                // 2 * TnA' * A2mat * TnA
-                // atomicAdd(val2, TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]]);
-
-                atomicAdd(shapeDerivative, TnA[DofsI[permI[ii]]] *                                   //
-                                               (0.5 * LocalMatrixA1(ii, jj) + LocalMatrixA2(ii, jj)) //
-                                               * TnA[DofsJ[permJ[jj]]]);
-
-                //  Atomic update of the galerkin matrix
-                // atomicAdd(&GalerkinMatrix[DofsI[permI[ii]] + TestDim * DofsJ[permJ[jj]]], LocalMatrix(ii, jj));
-            }
-        } */
-
-        ///////
         for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
         {
             for (int ii = 0; ii < 3; ++ii)
@@ -589,6 +254,5 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
     for (int l = 0; l < Nabc_alpha; ++l)
     {
         atomicAdd(&shapeDerivative[l], localShapeDerivatives[l + threadIdx.x * Nabc_alpha]);
-        // localShapeDerivatives[l + threadIdx.x * Nabc_alpha] = 0;
     }
 }
