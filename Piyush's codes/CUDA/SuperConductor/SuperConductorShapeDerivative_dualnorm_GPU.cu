@@ -111,7 +111,7 @@ __device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int d
 }
 
 __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles, int NVertices, int NInteractions,
-                                       int NThreads, const int *I, const int *J, const int *relation,
+                                       int NThreads, const unsigned short int *I, const unsigned short int *J, const int *relation,
                                        const double *W0, const double *X0, int Nq0,
                                        const double *W1, const double *X1, int Nq1,
                                        const double *W2, const double *X2, int Nq2,
@@ -122,7 +122,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        const int *Elt2DofTest, const int *Elt2DofTrial,
                                        int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
                                        int NRSFTrial, int NRSFTest,
-                                       const int *abc_alpha, int Nabc_alpha)
+                                       const int *abc_alpha, int Nabc_alpha,
+                                       const int *permII, const int *permJJ)
 /* double *testout, double *testABCi, double *testABCj,
 int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
@@ -148,20 +149,20 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
     // to a thread
     int InteractionsPerThread = ceil(double(NInteractions) / double(NThreads));
 
-    if (blockIdx.x == 0 && threadIdx.x == 0)
+    /* if (blockIdx.x == 0 && threadIdx.x == 0)
     {
         printf("Number of blocks: %d \n ", gridDim.x);
         printf("Threads per block: %d \n ", blockDim.x);
         printf("Total interactions: %d , Interactions per thread: %d \n ", NInteractions, InteractionsPerThread);
-    }
+    } */
 
     // Looping over all assigned interactions
     for (int idx = 0; idx < InteractionsPerThread; ++idx)
     {
-        if (blockIdx.x == 0 && threadIdx.x == 0)
+        /* if (blockIdx.x == 0 && threadIdx.x == 0)
         {
             printf("In block 0 thread 0 computing interaction no. : %d \n ", idx);
-        }
+        } */
         // The interaction number
         // int InteractionIdx = ThreadID + NThreads * idx;
         int InteractionIdx = ThreadID * InteractionsPerThread + idx;
@@ -172,27 +173,27 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         int intersection[3], diffI[3], diffJ[3];
 
-        const double *W = NULL;
+        /* const double *W = NULL;
         const double *X = NULL;
-        int NQudPts = 0;
+        int NQudPts = 0; */
 
         // Make sure that the last thread stays in limit
         if (InteractionIdx >= NInteractions)
             break;
 
         // The pair of panels
-        int i = I[InteractionIdx], j = J[InteractionIdx];
+        int i = __ldg(&I[InteractionIdx]), j = __ldg(&J[InteractionIdx]);
 
         /* printf("Interaction  (%d, %d) \n", i, j); */
 
-        double g_tau = 2 * Areas[i], g_t = 2 * Areas[j];
+        double g_tau = 2 * __ldg(&Areas[i]), g_t = 2 * __ldg(&Areas[j]);
 
         // Obtaining the normals
         /* Eigen::Vector3d normalx(Normals[i], Normals[i + NTriangles], Normals[i + 2 * NTriangles]);
         Eigen::Vector3d normaly(Normals[j], Normals[j + NTriangles], Normals[j + 2 * NTriangles]); */
 
-        Eigen::Vector3d normalx(Normals[3 * i], Normals[3 * i + 1], Normals[3 * i + 2]);
-        Eigen::Vector3d normaly(Normals[3 * j], Normals[3 * j + 1], Normals[3 * j + 2]);
+        Eigen::Vector3d normalx(__ldg(&Normals[3 * i]), __ldg(&Normals[3 * i + 1]), __ldg(&Normals[3 * i + 2]));
+        Eigen::Vector3d normaly(__ldg(&Normals[3 * j]), __ldg(&Normals[3 * j + 1]), __ldg(&Normals[3 * j + 2]));
 
         /* int EltI[] = {Elements[i],
                       Elements[i + NTriangles],
@@ -202,13 +203,13 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                       Elements[j + NTriangles],
                       Elements[j + 2 * NTriangles]}; */
 
-        int EltI[] = {Elements[3 * i],
-                      Elements[3 * i + 1],
-                      Elements[3 * i + 2]};
+        int EltI[] = {__ldg(&Elements[3 * i]),
+                      __ldg(&Elements[3 * i + 1]),
+                      __ldg(&Elements[3 * i + 2])};
 
-        int EltJ[] = {Elements[3 * j],
-                      Elements[3 * j + 1],
-                      Elements[3 * j + 2]};
+        int EltJ[] = {__ldg(&Elements[3 * j]),
+                      __ldg(&Elements[3 * j + 1]),
+                      __ldg(&Elements[3 * j + 2])};
 
         int origEltI[] = {EltI[0], EltI[1], EltI[2]};
         int origEltJ[] = {EltJ[0], EltJ[1], EltJ[2]};
@@ -216,14 +217,22 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         /* int DofsI[] = {Elt2DofTest[i], Elt2DofTest[i + NTriangles], Elt2DofTest[i + 2 * NTriangles]};
         int DofsJ[] = {Elt2DofTrial[j], Elt2DofTrial[j + NTriangles], Elt2DofTrial[j + 2 * NTriangles]}; */
 
-        int DofsI[] = {Elt2DofTest[3 * i], Elt2DofTest[3 * i + 1], Elt2DofTest[3 * i + 2]};
-        int DofsJ[] = {Elt2DofTrial[3 * j], Elt2DofTrial[3 * j + 1], Elt2DofTrial[3 * j + 2]};
+        int DofsI[] = {__ldg(&Elt2DofTest[3 * i]), __ldg(&Elt2DofTest[3 * i + 1]), __ldg(&Elt2DofTest[3 * i + 2])};
+        int DofsJ[] = {__ldg(&Elt2DofTrial[3 * j]), __ldg(&Elt2DofTrial[3 * j + 1]), __ldg(&Elt2DofTrial[3 * j + 2])};
 
         // Original permutation of elements
         int permI[] = {0, 1, 2};
         int permJ[] = {0, 1, 2};
 
-        if (relation[InteractionIdx] == 0) // No interaction
+        const double *Weights[4] = {W0, W1, W2, W3};
+        const double *Points[4] = {X0, X1, X2, X3};
+        const int NumPoints[4] = {Nq0, Nq1, Nq2, Nq3};
+
+        const double *W = Weights[relation[InteractionIdx]];
+        const double *X = Points[relation[InteractionIdx]];
+        int NQudPts = NumPoints[relation[InteractionIdx]];
+
+        /* if (relation[InteractionIdx] == 0) // No interaction
         {
             // Computing Quadrature
             W = W0;
@@ -334,17 +343,26 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
             W = W3;
             X = X3;
             NQudPts = Nq3;
+        } */
+
+        // EltI and EltJ changed according to permII and permJJ
+        for (int k = 0; k < 3; ++k)
+        {
+            permI[k] = permII[3 * InteractionIdx + k];
+            permJ[k] = permJJ[3 * InteractionIdx + k];
+            EltI[k] = origEltI[permI[k]];
+            EltJ[k] = origEltJ[permJ[k]];
         }
 
         // Vertices of element i
-        Ai = Eigen::Vector3d(Vertices[3 * EltI[0]], Vertices[3 * EltI[0] + 1], Vertices[3 * EltI[0] + 2]);
-        Bi = Eigen::Vector3d(Vertices[3 * EltI[1]], Vertices[3 * EltI[1] + 1], Vertices[3 * EltI[1] + 2]);
-        Ci = Eigen::Vector3d(Vertices[3 * EltI[2]], Vertices[3 * EltI[2] + 1], Vertices[3 * EltI[2] + 2]);
+        Ai = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[0]]), __ldg(&Vertices[3 * EltI[0] + 1]), __ldg(&Vertices[3 * EltI[0] + 2]));
+        Bi = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[1]]), __ldg(&Vertices[3 * EltI[1] + 1]), __ldg(&Vertices[3 * EltI[1] + 2]));
+        Ci = Eigen::Vector3d(__ldg(&Vertices[3 * EltI[2]]), __ldg(&Vertices[3 * EltI[2] + 1]), __ldg(&Vertices[3 * EltI[2] + 2]));
 
         // Vertices of element j
-        Aj = Eigen::Vector3d(Vertices[3 * EltJ[0]], Vertices[3 * EltJ[0] + 1], Vertices[3 * EltJ[0] + 2]);
-        Bj = Eigen::Vector3d(Vertices[3 * EltJ[1]], Vertices[3 * EltJ[1] + 1], Vertices[3 * EltJ[1] + 2]);
-        Cj = Eigen::Vector3d(Vertices[3 * EltJ[2]], Vertices[3 * EltJ[2] + 1], Vertices[3 * EltJ[2] + 2]);
+        Aj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[0]]), __ldg(&Vertices[3 * EltJ[0] + 1]), __ldg(&Vertices[3 * EltJ[0] + 2]));
+        Bj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[1]]), __ldg(&Vertices[3 * EltJ[1] + 1]), __ldg(&Vertices[3 * EltJ[1] + 2]));
+        Cj = Eigen::Vector3d(__ldg(&Vertices[3 * EltJ[2]]), __ldg(&Vertices[3 * EltJ[2] + 1]), __ldg(&Vertices[3 * EltJ[2] + 2]));
 
         // Jacobian Matrices
 
@@ -538,25 +556,25 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                     Eigen::Vector3d Psix = fluxI * (Ei.col(0) * RWGX_ref_0 + Ei.col(1) * RWGX_ref_1);
                     Eigen::Vector3d Psiy = fluxJ * (Ej.col(0) * RWGY_ref_0 + Ej.col(1) * RWGY_ref_1);
 
-                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * X[4 * QudPt] + Ei.col(1) * X[4 * QudPt + 1];
-                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * X[4 * QudPt + 2] + Ej.col(1) * X[4 * QudPt + 3];
+                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * __ldg(&X[4 * QudPt]) + Ei.col(1) * __ldg(&X[4 * QudPt + 1]);
+                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * __ldg(&X[4 * QudPt + 2]) + Ej.col(1) * __ldg(&X[4 * QudPt + 3]);
 
                     for (int fieldIdx = 0; fieldIdx < Nabc_alpha; ++fieldIdx)
                     {
                         // A1 with RWG . RWG, t1mat
-                        double LocalMatrixA1_ii_jj = W[QudPt] * KernelA1(__ldg(&abc_alpha[4 * fieldIdx]),     //
-                                                                         __ldg(&abc_alpha[4 * fieldIdx + 1]), //
-                                                                         __ldg(&abc_alpha[4 * fieldIdx + 2]), //
-                                                                         __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_tau, chi_t, chi_t - chi_tau) *
+                        double LocalMatrixA1_ii_jj = __ldg(&W[QudPt]) * KernelA1(__ldg(&abc_alpha[4 * fieldIdx]),     //
+                                                                                 __ldg(&abc_alpha[4 * fieldIdx + 1]), //
+                                                                                 __ldg(&abc_alpha[4 * fieldIdx + 2]), //
+                                                                                 __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_tau, chi_t, chi_t - chi_tau) *
                                                      Psiy.dot(Psix);
 
                         // A2 with DVelRWG(y) . RWG(x), t2mat
-                        double LocalMatrixA2_ii_jj = W[QudPt] * KernelA2(chi_tau, chi_t, chi_t - chi_tau) * (DVel(__ldg(&abc_alpha[4 * fieldIdx]),     //
-                                                                                                                  __ldg(&abc_alpha[4 * fieldIdx + 1]), //
-                                                                                                                  __ldg(&abc_alpha[4 * fieldIdx + 2]), //
-                                                                                                                  __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t) *
-                                                                                                             Psiy)
-                                                                                                                .dot(Psix);
+                        double LocalMatrixA2_ii_jj = __ldg(&W[QudPt]) * KernelA2(chi_tau, chi_t, chi_t - chi_tau) * (DVel(__ldg(&abc_alpha[4 * fieldIdx]),     //
+                                                                                                                          __ldg(&abc_alpha[4 * fieldIdx + 1]), //
+                                                                                                                          __ldg(&abc_alpha[4 * fieldIdx + 2]), //
+                                                                                                                          __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t) *
+                                                                                                                     Psiy)
+                                                                                                                        .dot(Psix);
 
                         localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += TnA[DofsI[permI[ii]]] *                           //
                                                                                       (0.5 * LocalMatrixA1_ii_jj + LocalMatrixA2_ii_jj) //
