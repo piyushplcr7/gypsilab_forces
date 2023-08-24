@@ -94,5 +94,5 @@ for i = 1:Nvals
 
     % BEM based shape derivative
     shape_derivatives_bem(i,:) = shapDervTranPrbScalPotBIE_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,mu0,mu,abc_alpha);
-
+    save("TPSP_Cuboid_5_dualnorm.mat","shape_derivatives_bem","shape_derivatives_mst","hvals");
 end
