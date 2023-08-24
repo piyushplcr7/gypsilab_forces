@@ -31,14 +31,52 @@ function sd = SdBemTPVP_dualnorm(bndmesh,TnA,TdA,J,omega_src,mu0,mu,abc_alpha)
     [I2,J2] = find(Intmat == 2);
     [I3,J3] = find(Intmat == 3);
     Ivec = [I0;I1;I2;I3]-1;
-    Ivec = cast(Ivec,'int32');
+%     Ivec = cast(Ivec,'int32');
+    Ivec = cast(Ivec,'uint16');
     Jvec = [J0;J1;J2;J3]-1;
-    Jvec = cast(Jvec,'int32');
+%     Jvec = cast(Jvec,'int32');
+    Jvec = cast(Jvec,'uint16');
     relation = [0*ones(size(I0,1),1);...
                 1*ones(size(I1,1),1);...
                 2*ones(size(I2,1),1);...
                 3*ones(size(I3,1),1)];
     relation = cast(relation,'int32');
+
+    % Creating vectors permI and permJ
+
+    % For non-interacting elements, perm is trivial
+    permI0 = repmat([0 1 2],size(I0,1),1);
+    permJ0 = permI0;
+
+    % Elements with interaction == 1
+    eltI1 = bndmesh.elt(I1,:);
+    eltJ1 = bndmesh.elt(J1,:);
+    [intersection1,diffI1,diffJ1] = rowWiseIntersectionDiff(eltI1,eltJ1);
+    assert(size(intersection1,2) == 1);
+    assert(size(diffI1,2) == 2);
+    assert(size(diffJ1,2) == 2);
+    permI1 = findPermVectorized([intersection1 diffI1],eltI1);
+    permJ1 = findPermVectorized([intersection1 diffJ1],eltJ1);
+
+    % Elements with interaction == 2
+    eltI2 = bndmesh.elt(I2,:);
+    eltJ2 = bndmesh.elt(J2,:);
+    [intersection2,diffI2,diffJ2] = rowWiseIntersectionDiff(eltI2,eltJ2);
+    assert(size(intersection2,2) == 2);
+    assert(size(diffI2,2) == 1);
+    assert(size(diffJ2,2) == 1);
+    permI2 = findPermVectorized([intersection2 diffI2],eltI2);
+    permJ2 = findPermVectorized([intersection2 diffJ2],eltJ2);
+
+    % Elements with interaction == 3, perm is trivial
+    permI3 = repmat([0 1 2],size(I3,1),1);
+    permJ3 = permI3;
+
+    permI = [permI0;(permI1-1);(permI2-1);permI3];
+    permJ = [permJ0;(permJ1-1);(permJ2-1);permJ3];
+
+    permI_gpu = gpuArray(cast(permI','int32'));
+    permJ_gpu = gpuArray(cast(permJ','int32'));
 
     % PTX and CUDA files
     ptxFilePath = 'SdBemTPVP_dualnorm_GPU.ptx';
@@ -114,7 +152,8 @@ function sd = SdBemTPVP_dualnorm(bndmesh,TnA,TdA,J,omega_src,mu0,mu,abc_alpha)
     elt2dof_gpu,elt2dof_gpu,...
     TrialSpace_gpu,TestSpace_gpu,TrialOperator_gpu,TestOperator_gpu,...
     size(RWG.rsf,1),size(RWG.rsf,1),...
-    abc_alpha_gpu,Nfields); 
+    abc_alpha_gpu,Nfields,...
+    permI_gpu,permJ_gpu); 
     
     %% non SS computations
 
