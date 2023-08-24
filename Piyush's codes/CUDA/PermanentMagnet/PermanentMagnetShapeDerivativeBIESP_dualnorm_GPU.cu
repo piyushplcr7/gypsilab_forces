@@ -114,7 +114,7 @@ __device__ void IntersectionDiff(int *EltI, int *EltJ, int intersection[], int d
 }
 
 __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles, int NVertices, int NInteractions,
-                                       int NThreads, const int *I, const int *J, const int *relation,
+                                       int NThreads, const unsigned short int *I, const unsigned short int *J, const int *relation,
                                        const double *W0, const double *X0, int Nq0,
                                        const double *W1, const double *X1, int Nq1,
                                        const double *W2, const double *X2, int Nq2,
@@ -126,7 +126,8 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        const int *Elt2DofTest, const int *Elt2DofTrial,
                                        int TrialSpace, int TestSpace, int TrialOperator, int TestOperator,
                                        int NRSFTrial, int NRSFTest,
-                                       const int *abc_alpha, int Nabc_alpha)
+                                       const int *abc_alpha, int Nabc_alpha,
+                                       const int *permII, const int *permJJ)
 /* double *testout, double *testABCi, double *testABCj,
 int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
@@ -154,20 +155,20 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
     // to a thread
     int InteractionsPerThread = ceil(double(NInteractions) / double(NThreads));
 
-    if (blockIdx.x == 0 && threadIdx.x == 0)
+    /* if (blockIdx.x == 0 && threadIdx.x == 0)
     {
         printf("Number of blocks: %d \n ", gridDim.x);
         printf("Threads per block: %d \n ", blockDim.x);
         printf("Total interactions: %d , Interactions per thread: %d \n ", NInteractions, InteractionsPerThread);
-    }
+    } */
 
     // Looping over all assigned interactions
     for (int idx = 0; idx < InteractionsPerThread; ++idx)
     {
-        if (blockIdx.x == 0 && threadIdx.x == 0)
+        /* if (blockIdx.x == 0 && threadIdx.x == 0)
         {
             printf("In block 0 thread 0 computing interaction no. : %d \n ", idx);
-        }
+        } */
         // The interaction number
         // int InteractionIdx = ThreadID + NThreads * idx;
         int InteractionIdx = ThreadID * InteractionsPerThread + idx;
@@ -179,9 +180,9 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 
         int intersection[3], diffI[3], diffJ[3];
 
-        const double *W = NULL;
+        /* const double *W = NULL;
         const double *X = NULL;
-        int NQudPts = 0;
+        int NQudPts = 0; */
 
         // Make sure that the last thread stays in limit
         if (InteractionIdx >= NInteractions)
@@ -219,7 +220,15 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
         int permI[] = {0, 1, 2};
         int permJ[] = {0, 1, 2};
 
-        if (relation[InteractionIdx] == 0) // No interaction
+        const double *Weights[4] = {W0, W1, W2, W3};
+        const double *Points[4] = {X0, X1, X2, X3};
+        const int NumPoints[4] = {Nq0, Nq1, Nq2, Nq3};
+
+        const double *W = Weights[relation[InteractionIdx]];
+        const double *X = Points[relation[InteractionIdx]];
+        int NQudPts = NumPoints[relation[InteractionIdx]];
+
+        /* if (relation[InteractionIdx] == 0) // No interaction
         {
             // Computing Quadrature
             W = W0;
@@ -268,6 +277,15 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
             W = W3;
             X = X3;
             NQudPts = Nq3;
+        } */
+
+        // EltI and EltJ changed according to permII and permJJ
+        for (int k = 0; k < 3; ++k)
+        {
+            permI[k] = permII[3 * InteractionIdx + k];
+            permJ[k] = permJJ[3 * InteractionIdx + k];
+            EltI[k] = origEltI[permI[k]];
+            EltJ[k] = origEltJ[permJ[k]];
         }
 
         // Vertices of element i
