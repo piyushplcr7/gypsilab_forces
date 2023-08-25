@@ -177,7 +177,7 @@ function sd_gpu_full = ScSd_SP_BEM_dualnorm(bndmesh,Tdu,Tnu,J,omega_src,abc_alph
 
     % Kernel Object
     kernel = parallel.gpu.CUDAKernel(ptxFilePath, cuFilePath);
-    gridDim = [150, 1, 1];
+    gridDim = [300, 1, 1];
     blockDim = [32, 1, 1]; % 32 is the SIMD Width or wrap size
     Nthreads = prod(blockDim) * prod(gridDim);
     kernel.GridSize = gridDim;

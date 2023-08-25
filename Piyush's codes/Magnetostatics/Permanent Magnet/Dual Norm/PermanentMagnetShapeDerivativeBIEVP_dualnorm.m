@@ -103,7 +103,7 @@ function sd = PermanentMagnetShapeDerivativeBIEVP_dualnorm(Gamma,TnA,TdA,J,omega
     order = 5;
     [X, W] = quad4D(order);
     
-    gridDim = [150, 1, 1];
+    gridDim = [300, 1, 1];
     blockDim = [32, 1, 1]; % 32 is the SIMD Width or wrap size
     Nthreads = prod(blockDim) * prod(gridDim);
     
