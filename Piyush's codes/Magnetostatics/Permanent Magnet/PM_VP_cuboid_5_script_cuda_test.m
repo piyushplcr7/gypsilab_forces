@@ -18,20 +18,21 @@ for i = 1:Nvals
     disp(N);
     %% SOLUTION DOMAIN
     % Cube size and position
-    L = [3 1 1];
-    T = [2 1 3];
-    
-    % Cube domain
-    %bndmesh = bndmeshCubeTranslated(N,L,T);
-    
-    % Spherical domain
-    % bndmesh = mshSphere(N,1);
-    % bndmesh = bndmesh.translate(T);
-    
-    mesh = mshCube(N,L);
-    mesh = mesh.translate(T);
-%     %mesh = mesh.sub(1);
-    bndmesh = mesh.bnd;
+%     L = [3 1 1];
+%     T = [2 1 3];
+%     
+%     % Cube domain
+%     %bndmesh = bndmeshCubeTranslated(N,L,T);
+%     
+%     % Spherical domain
+%     % bndmesh = mshSphere(N,1);
+%     % bndmesh = bndmesh.translate(T);
+%     
+%     mesh = mshCube(N,L);
+%     mesh = mesh.translate(T);
+% %     %mesh = mesh.sub(1);
+%     bndmesh = mesh.bnd;
+    bndmesh = getMeshSphere(N);
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
@@ -123,7 +124,9 @@ for i = 1:Nvals
     forces_bem(i,:) = [fbem1 fbem2 fbem3]
 
 %     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
-    [Vel,DVel] = getCosVelDVel(1,1,1,1);
+%     [Vel,DVel] = getCosVelDVel(1,1,1,1);
+    [Vel,DVel] = getCosVelDVel(0,1,0,2); % 31th field
+
 
     tbem1 = PermanentMagnetShapeDerivativeBIEVP(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,Vel,DVel);
     
