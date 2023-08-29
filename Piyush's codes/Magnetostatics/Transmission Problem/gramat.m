@@ -15,6 +15,8 @@ omega = dom(mesh,4);
 
 n = 3;
 
+manually_constructed = zeros(n^3,1);
+
 % Compute the gramian matrix. No. of basis functions = 3*n^3
 gramatfull = zeros(3*n^3,3*n^3);
 gramat_small = zeros(n^3,n^3);
@@ -28,6 +30,7 @@ for II = 1:n^3
     j1 = floor((II-1)/n);
     j1 = mod(j1,n)+1;
     %j1 = j1-(k1-1)*n^2+1;
+    manually_constructed(II) = (l/2)^3 * (1 + i1^2 + j1^2 + k1^2);
     %disp(II);
     fprintf("%d Corresponds to basis %d %d %d \n",II,i1,j1,k1);
     for JJ = 1:n^3
@@ -39,8 +42,11 @@ for II = 1:n^3
         j2 = mod(j2,n)+1;
         %j2 = j2-(k2-1)*n^2+1;
 
-        [Vel1,DVel1] = getSinVelDVel(i1,j1,k1,1);
-        [Vel2,DVel2] = getSinVelDVel(i2,j2,k2,1);
+        [Vel1,DVel1] = getCosVelDVel(i1,j1,k1,1);
+        [Vel2,DVel2] = getCosVelDVel(i2,j2,k2,1);
+
+%         [Vel1,DVel1] = getSinVelDVel(i1,j1,k1,1);
+%         [Vel2,DVel2] = getSinVelDVel(i2,j2,k2,1);
 
         [X,W] = omega.qud;
 
