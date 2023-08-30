@@ -23,8 +23,8 @@ function [conv_rate_mst,conv_rate_bem] = processDualNormData(fname,idxmst,idxbem
     Ginv_errs_mst = diagonal.*errs_mst;
     Ginv_errs_bem = diagonal.*errs_bem;
 
-    dualnorm_errs_mst = dot(errs_mst,Ginv_errs_mst,2);
-    dualnorm_errs_bem = dot(errs_bem,Ginv_errs_bem,2);
+    dualnorm_errs_mst = sqrt(dot(errs_mst,Ginv_errs_mst,2));
+    dualnorm_errs_bem = sqrt(dot(errs_bem,Ginv_errs_bem,2));
 
     figure;
 
@@ -45,7 +45,8 @@ function [conv_rate_mst,conv_rate_bem] = processDualNormData(fname,idxmst,idxbem
 
     loglog(hvals(idxmst),err_mst_fitted,'--','Color',[0.7 0.7 0.7]);
     loglog(hvals_small(idxbem),err_bem_fitted,'--','Color',[0.7 0.7 0.7]);
-    legend(["MST","BEM"]);
+    legend(["VOL","BND"]);
+    title(fname, 'Interpreter', 'none');
 
     conv_rate_mst = mst_coeffs(2);
     conv_rate_bem = bem_coeffs(2);
