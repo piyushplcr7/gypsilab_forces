@@ -103,7 +103,7 @@ function [] = PM_VP_torque(meshfunction,vals,M)
         for dir = 1:3
             [Vel,DVel] = getRotVelDVel(get_ek(dir),Xcg);
             Vels = Vel(X);
-            shape_derivatives_mst(dir,1) = sum(W.* dot(Vels,cross(Mxn,avgB,2),2),1);
+            shape_derivatives_mst(i,dir) = sum(W.* dot(Vels,cross(Mxn,avgB,2),2),1);
         end
     
         shape_derivatives_bem(i,:) = PermanentMagnetShapeDerivativeBIEVP_torque(Gamma,TnAJ_RWG+TnAM_RWG,TdAJ+TdAM,J,omega_src,mu,mu,M,Xcg);

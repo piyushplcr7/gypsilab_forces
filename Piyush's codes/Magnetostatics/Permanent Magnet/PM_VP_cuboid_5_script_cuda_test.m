@@ -125,6 +125,7 @@ for i = 1:Nvals
 
 %     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
     [Vel,DVel] = getCosVelDVel(1,1,1,1);
+    [Vel,DVel] = getRotVelDVel([0 1 0 ],Xcg);
     % [Vel,DVel] = getCosVelDVel(0,1,0,2); % 31th field
 
     Vels = Vel(X);

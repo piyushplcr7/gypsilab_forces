@@ -19,7 +19,7 @@ function sd = PermanentMagnetShapeDerivativeBIEVP_torque(Gamma,TnA,TdA,J,omega_s
     % Div conforming space 
     RWG = fem(bndmesh,'RWG');
 
-    % Nfields = size(abc_alpha,1);
+    Nfields = 3;
 
     %% Remaining terms + partial derivative of l_M
     Nelt = bndmesh.nelt;
@@ -363,7 +363,7 @@ function sd = PermanentMagnetShapeDerivativeBIEVP_torque(Gamma,TnA,TdA,J,omega_s
 %     end
 
     %% Shape derivative of linear forms from transmission problem
-    Nfields = 3;
+    
 
     l1 = zeros(Nfields,1);
     l22 = zeros(Nfields,1);
@@ -387,7 +387,7 @@ function sd = PermanentMagnetShapeDerivativeBIEVP_torque(Gamma,TnA,TdA,J,omega_s
     gradxG = 1/(4*pi) * (YY-XX)./vecnorm(XX-YY,2,2).^3;
 
     for fieldID = 1:Nfields
-        [Vel,DVel] = ggetRotVelDVel(get_ek(fieldID),Xcg);
+        [Vel,DVel] = getRotVelDVel(get_ek(fieldID),Xcg);
         % Partial derivative of l1, computed using superconductor shape
         % derivative implementation
         l1(fieldID) = SuperConductorShapeDerivativeT3(bndmesh,TnA,Vel,omega_src,J)...
