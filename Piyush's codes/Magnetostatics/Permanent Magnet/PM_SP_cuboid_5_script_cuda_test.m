@@ -101,6 +101,7 @@ for i = 1:Nvals
     % Torque computation
 %     [Vel,DVel] = getPolyVelDVel(1,1,1,1);
     [Vel,DVel] = getCosVelDVel(1,1,1,1);
+    [Vel,DVel] = getRotVelDVel([0 0 1],Xcg);
 
     tbem1 = PermanentMagnetShapeDerivativeBIESP(Gamma,g,psi,J,omega_src,Vel,DVel,mu0,M);
 end

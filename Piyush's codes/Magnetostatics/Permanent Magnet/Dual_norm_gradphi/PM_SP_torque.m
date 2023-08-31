@@ -1,7 +1,7 @@
 function [] = PM_SP_torque(meshfunction,vals,M)
     funcInfo = functions(meshfunction);
     MfuncInfo = functions(M);
-    disp(['PM SP dualnorm invoked with: ', funcInfo.function, ' ', MfuncInfo.function]);
+    disp(['PM SP torque invoked with: ', funcInfo.function, ' ', MfuncInfo.function]);
     disp("===================================================");
     
     % Script for constant Magnetization
@@ -14,26 +14,8 @@ function [] = PM_SP_torque(meshfunction,vals,M)
     
     % indices for velocity fields go from 0 to kappa-1
     kappa = 3;
-    shape_derivatives_mst = zeros(Nvals,3 * kappa^3);
+    shape_derivatives_mst = zeros(Nvals,3);
     shape_derivatives_bem = shape_derivatives_mst;
-    
-    % Map of velocity field to index
-    abc_alpha = zeros(3 * kappa^3,4);
-    
-    for a = 0:kappa-1
-        for b = 0:kappa-1
-            for c = 0:kappa-1
-                for alpha = 0:2
-                    idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
-                    abc_alpha(idx,:) = [a b c alpha];
-                end
-            end
-        end
-    end
-    
-    
-    % Number of fields
-    Nfields = size(abc_alpha,1);
     
     hvals = 0*vals;
     
@@ -79,6 +61,8 @@ function [] = PM_SP_torque(meshfunction,vals,M)
         [X,W] = Gamma.qud;
         Mvals = M(X);
         Mdotn = dot(Mvals,normals,2);
+
+        Xcg = [4 0 0];
     
         % Obtaining H values on the magnet boundary
         % {H} = {H.n} + Htan
@@ -98,19 +82,15 @@ function [] = PM_SP_torque(meshfunction,vals,M)
         % Computing the surface integral of (M.n) {H}
     %     forces_mst(i,:) = mu0 * sum(W.* Mdotn .* avgH,1)
     
-        for fieldID = 1:Nfields
-            a = abc_alpha(fieldID,1);
-            b = abc_alpha(fieldID,2);
-            c = abc_alpha(fieldID,3);
-            alpha = abc_alpha(fieldID,4);
-            [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+        for fieldID = 1:3
+            [Vel,DVel] = getRotVelDVel(get_ek(fieldID),Xcg);
             Vels = Vel(X);
             shape_derivatives_mst(i,fieldID) = sum(W.* Mdotn .* dot(avgH,Vels,2),1);
         end
     
-        shape_derivatives_bem(i,:) = PermanentMagnetShapeDerivativeBIESP_dualnorm(Gamma,g,psi,J,omega_src,mu0,M,abc_alpha);
+        shape_derivatives_bem(i,:) = PermanentMagnetShapeDerivativeBIESP_torque(Gamma,g,psi,J,omega_src,mu0,M,Xcg);
 
-        fname = "PMSP_dualnorm_" + funcInfo.function + "_" + MfuncInfo.function + ".mat";
+        fname = "PMSP_torque_" + funcInfo.function + "_" + MfuncInfo.function + ".mat";
         save(fname,"shape_derivatives_bem","shape_derivatives_mst","hvals");
     end
 
