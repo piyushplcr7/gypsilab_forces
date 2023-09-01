@@ -47,7 +47,7 @@ function [] = PM_SP_dualnorm_gradphi(meshfunction,vals,M)
         % Mesh size
         hvals(i) = sqrt(mean(bndmesh.ndv,1));
         
-        Gamma = dom(bndmesh,3);
+        Gamma = dom(bndmesh,12);
         normals = Gamma.qudNrm;
     
         % Function to determine the interior of the magnet
