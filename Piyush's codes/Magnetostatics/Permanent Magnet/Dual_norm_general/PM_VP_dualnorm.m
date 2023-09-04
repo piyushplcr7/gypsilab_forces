@@ -110,7 +110,8 @@ function [] = PM_VP_dualnorm(meshfunction,vals)
         Bn = reconstruct(TdAM+TdAJ,Gamma,curl(NED)).*normals;
         % nx curlAxn from the outside
         Btano = cross(normals,reconstruct(TnAJ+TnAM,Gamma,DIV0),2);
-        Btani = Btano + Mxn;
+        % FIXED!!!!!!!!!!!!!!!!!!!!!!!!
+        Btani = Btano + cross(normals,Mxn,2);
         avgB = Bn + 0.5*(Btano + Btani);
         
         % Computing the integral of (Mxn)x{B}
