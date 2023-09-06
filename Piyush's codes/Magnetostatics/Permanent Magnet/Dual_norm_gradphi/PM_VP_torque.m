@@ -29,7 +29,7 @@ function [] = PM_VP_torque(meshfunction,vals,M)
         % Mesh size
         hvals(i) = sqrt(mean(bndmesh.ndv,1));
         
-        Gamma = dom(bndmesh,12);
+        Gamma = dom(bndmesh,3);
         normals = Gamma.qudNrm;
     
         % Function to determine the interior of the magnet
