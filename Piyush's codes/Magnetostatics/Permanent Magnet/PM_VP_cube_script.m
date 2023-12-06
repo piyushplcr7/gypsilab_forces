@@ -101,7 +101,8 @@ for i = 1:Nvals
     Bn = reconstruct(TdAM+TdAJ,Gamma,curl(NED)).*normals;
     % nx curlAxn from the outside
     Btano = cross(normals,reconstruct(TnAJ+TnAM,Gamma,DIV0),2);
-    Btani = Btano + Mxn;
+    % FIXED!!!!!!!!!!!!!!!!!!!!!!!!
+    Btani = Btano + cross(normals,Mxn,2);
     avgB = Bn + 0.5*(Btano + Btani);
     
     % Computing the integral of (Mxn)x{B}
@@ -133,5 +134,5 @@ for i = 1:Nvals
     
     torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
-    save("EQ_cube.mat","forces_mst","torques_bem","torques_mst","forces_bem","hvals");
+    save("PM_VP_cube.mat","forces_mst","torques_bem","torques_mst","forces_bem","hvals");
 end
