@@ -35,9 +35,14 @@ for i = 1:Nvals
     % %mesh = mesh.sub(1);
     % bndmesh = mesh.bnd;
 
-    bndmesh = meshSymTetra;
-    bndmesh = bndmesh.translate([2 1 3]);
-    bndmesh = bndmesh.refine(vals(i));
+    % bndmesh = meshSymTetra;
+    %bndmesh = bndmesh.translate([2 1 3]);
+    % bndmesh = bndmesh.refine(vals(i));
+
+    tetra_function_name = sprintf('tetra%d', i);
+    tetra_function_handle = str2func(tetra_function_name);
+    bndmesh = genMeshFromScript(tetra_function_handle);
+    % bndmesh = bndmesh.translate([2 1 3]);
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
@@ -92,9 +97,9 @@ for i = 1:Nvals
     Drvels{1} = DVelxr; Drvels{2} = DVelyr; Drvels{3} = DVelzr;
     ptorque = zeros(3,1);
 
-    parfor i = 1:3
-        ptorque(i) = SuperConductorShapeDerivative(bndmesh,TnA,rvels{i},Drvels{i},omega_src,J)
-    end
+    % parfor i = 1:3
+    %     ptorque(i) = SuperConductorShapeDerivative(bndmesh,TnA,rvels{i},Drvels{i},omega_src,J)
+    % end
 
 %     sdt_e1 = SuperConductorShapeDerivative(bndmesh,TnA,Velxr,DVelxr,omega_src,J)
 %     sdt_e2 = SuperConductorShapeDerivative(bndmesh,TnA,Velyr,DVelyr,omega_src,J)

@@ -6,7 +6,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 5:12;
+vals = 8:12;
 Nvals = size(vals,2);
 forces_vol = zeros(Nvals,3);
 forces_bem = forces_vol;
@@ -87,7 +87,7 @@ for i = 1:Nvals
 
     torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
-    save('TP_SP_cuboid.mat',"forces_vol","torques_vol","forces_bem","torques_bem","hvals");
+    save('TP_SP_cuboid_5.mat',"forces_vol","torques_vol","forces_bem","torques_bem","hvals");
 
 
 end

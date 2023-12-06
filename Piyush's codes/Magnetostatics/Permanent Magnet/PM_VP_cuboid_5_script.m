@@ -5,7 +5,7 @@ clear; clc; close all;
 format long;
 
 mu = 1;
-vals = 5:13;
+vals = 7:13;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
@@ -101,7 +101,8 @@ for i = 1:Nvals
     Bn = reconstruct(TdAM+TdAJ,Gamma,curl(NED)).*normals;
     % nx curlAxn from the outside
     Btano = cross(normals,reconstruct(TnAJ+TnAM,Gamma,DIV0),2);
-    Btani = Btano + Mxn;
+    % FIXED!!!!!!!!!!!!!!!!!!!!!!!!
+    Btani = Btano + cross(normals,Mxn,2);
     avgB = Bn + 0.5*(Btano + Btani);
     
     % Computing the integral of (Mxn)x{B}
