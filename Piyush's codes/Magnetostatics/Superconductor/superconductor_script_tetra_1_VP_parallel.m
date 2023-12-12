@@ -9,7 +9,7 @@ vals = [1 1/2 1/4 1/7.9 1/15.9];
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 torques_mst = forces_mst;
-forces_sd = forces_mst;
+forces_bem = forces_mst;
 torques_sd = forces_mst; 
 torques_bem = torques_mst;
 hvals = vals;
@@ -36,13 +36,13 @@ for i = 1:Nvals
     % bndmesh = mesh.bnd;
 
     % bndmesh = meshSymTetra;
-    %bndmesh = bndmesh.translate([2 1 3]);
+    % bndmesh = bndmesh.translate([2 1 3]);
     % bndmesh = bndmesh.refine(vals(i));
 
     tetra_function_name = sprintf('tetra%d', i);
     tetra_function_handle = str2func(tetra_function_name);
     bndmesh = genMeshFromScript(tetra_function_handle);
-    % bndmesh = bndmesh.translate([2 1 3]);
+    bndmesh = bndmesh.translate([2 1 3]);
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
@@ -62,7 +62,7 @@ for i = 1:Nvals
     
     %% Plotting the computed B field
     
-    %plot_field(TnA,bndmesh,J,omega_src);
+    % plot_field(TnA,bndmesh,J,omega_src);
     
     %% Computing forces
     % Coefficients for zero Dirichlet Trace
@@ -79,7 +79,7 @@ for i = 1:Nvals
     sd_e2 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nuy,omega_src,J);
     sd_e3 = -SuperConductorShapeDerivativeT3(bndmesh,TnA,Nuz,omega_src,J);
 
-    forces_sd(i,:) = [sd_e1 sd_e2 sd_e3]
+    forces_bem(i,:) = [sd_e1 sd_e2 sd_e3]
     
     %% Computing torques
     Xcg = [4 0 0];
@@ -101,13 +101,13 @@ for i = 1:Nvals
     %     ptorque(i) = SuperConductorShapeDerivative(bndmesh,TnA,rvels{i},Drvels{i},omega_src,J)
     % end
 
-%     sdt_e1 = SuperConductorShapeDerivative(bndmesh,TnA,Velxr,DVelxr,omega_src,J)
-%     sdt_e2 = SuperConductorShapeDerivative(bndmesh,TnA,Velyr,DVelyr,omega_src,J)
-%     sdt_e3 = SuperConductorShapeDerivative(bndmesh,TnA,Velzr,DVelzr,omega_src,J)
+    sdt_e1 = SuperConductorShapeDerivative(bndmesh,TnA,Velxr,DVelxr,omega_src,J)
+    sdt_e2 = SuperConductorShapeDerivative(bndmesh,TnA,Velyr,DVelyr,omega_src,J)
+    sdt_e3 = SuperConductorShapeDerivative(bndmesh,TnA,Velzr,DVelzr,omega_src,J)
 
-%     torques_bem(i,:) = [sdt_e1 sdt_e2 sdt_e3]
+    torques_bem(i,:) = [sdt_e1 sdt_e2 sdt_e3]
      torques_bem(i,:) = ptorque'
 
-    save("SC_VP_tetra_1.mat","forces_mst","forces_sd","torques_mst","torques_bem","hvals");
+    save("SC_VP_tetra_1.mat","forces_mst","forces_bem","torques_mst","torques_bem","hvals");
 
 end
