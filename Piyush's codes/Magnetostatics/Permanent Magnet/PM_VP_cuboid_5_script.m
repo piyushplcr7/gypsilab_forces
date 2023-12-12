@@ -1,11 +1,11 @@
 % Script for constant Magnetization
-
+gpuDevice(2);
 addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 
 mu = 1;
-vals = 7:13;
+vals = 5:13;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
@@ -136,3 +136,4 @@ for i = 1:Nvals
 
     save("PM_VP_cuboid_5.mat","forces_mst","torques_bem","torques_mst","forces_bem","hvals");
 end
+

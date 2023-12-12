@@ -1,5 +1,5 @@
 % Superconductor script
-
+gpuDevice(2);
 addpath(genpath("../../../"));
 clear; clc; close all;
 format long;

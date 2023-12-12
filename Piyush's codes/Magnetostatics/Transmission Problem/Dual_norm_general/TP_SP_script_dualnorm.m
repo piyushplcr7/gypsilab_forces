@@ -2,7 +2,7 @@
 delete(gcp('nocreate'));
 addpath(genpath("../../../../"));
 
-gpuDevice(1);
+gpuDevice(2);
 valsrest = 5:12;
 valstetra = 7:11;
 
