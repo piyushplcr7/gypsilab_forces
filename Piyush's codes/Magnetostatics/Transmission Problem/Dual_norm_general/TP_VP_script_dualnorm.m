@@ -6,7 +6,7 @@ gpuDevice(1);
 valsrest = 7:12;
 valstetra = 7:11;
 
-TP_VP_dualnorm(@getMeshCuboid5,valsrest);
-TP_VP_dualnorm(@getMeshCube,valsrest);
-TP_VP_dualnorm(@getMeshSphere,valsrest);
-TP_VP_dualnorm(@getMeshTetra1,valstetra);
+% TP_VP_dualnorm(@getMeshCuboid5,valsrest);
+% TP_VP_dualnorm(@getMeshCube,valsrest);
+% TP_VP_dualnorm(@getMeshSphere,valsrest);
+TP_VP_dualnorm(@getMeshTetraNew,valstetra);
