@@ -1,7 +1,7 @@
 % Equivalent charge simplified script
 
 % Script for constant Magnetization
-
+gpuDevice(2);
 addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
