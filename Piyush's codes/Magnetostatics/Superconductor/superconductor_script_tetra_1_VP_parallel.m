@@ -106,7 +106,6 @@ for i = 1:Nvals
     sdt_e3 = SuperConductorShapeDerivative(bndmesh,TnA,Velzr,DVelzr,omega_src,J)
 
     torques_bem(i,:) = [sdt_e1 sdt_e2 sdt_e3]
-     torques_bem(i,:) = ptorque'
 
     save("SC_VP_tetra_1.mat","forces_mst","forces_bem","torques_mst","torques_bem","hvals");
 
