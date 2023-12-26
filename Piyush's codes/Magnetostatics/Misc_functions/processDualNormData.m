@@ -31,6 +31,8 @@ function [conv_rate_mst,conv_rate_bem] = processDualNormData(fname,idxmst,idxbem
     loglog(hvals,dualnorm_errs_mst,'-*');
     hold on;
     loglog(hvals(1:N-1),dualnorm_errs_bem,'-+');
+    xlabel('h');
+    ylabel('Dual norm error');
     
     hvals_small = hvals(1:N-1);
 
@@ -45,11 +47,17 @@ function [conv_rate_mst,conv_rate_bem] = processDualNormData(fname,idxmst,idxbem
 
     loglog(hvals(idxmst),err_mst_fitted,'--','Color',[0.7 0.7 0.7]);
     loglog(hvals_small(idxbem),err_bem_fitted,'--','Color',[0.7 0.7 0.7]);
-    legend(["VOL","BND"]);
-    title(fname, 'Interpreter', 'none');
+    
+    title(fname(1:end-4), 'Interpreter', 'none');
 
     conv_rate_mst = mst_coeffs(2);
     conv_rate_bem = bem_coeffs(2);
+    legend1 = ['VOL: ', num2str(conv_rate_mst)];
+    l1 = legend1;
+    legend2 = ['BEM: ', num2str(conv_rate_bem)];
+    l2 = legend2;
+    legend(l1,l2);
+    print([fname(1:end-3), 'eps'], '-depsc2');
 
 end
 
