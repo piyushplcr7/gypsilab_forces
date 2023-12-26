@@ -8,10 +8,10 @@ mu = 4;
 mu0 = 2;
 vals = [1 1/2 1/4 1/7.9 1/15.9];
 Nvals = size(vals,2);
-forces_vol = zeros(Nvals,3);
-forces_bem = forces_vol;
-torques_vol = forces_vol;
-torques_bem = torques_vol;
+forces_mst = zeros(Nvals,3);
+forces_bem = forces_mst;
+torques_mst = forces_mst;
+torques_bem = torques_mst;
 hvals = vals;
 
 for i = 1:Nvals
@@ -33,9 +33,14 @@ for i = 1:Nvals
     % mesh = mesh.translate(T);
     % %mesh = mesh.sub(1);
     % bndmesh = mesh.bnd;
-    bndmesh = meshSymTetra;
+    % bndmesh = meshSymTetra;
+    % bndmesh = bndmesh.translate([2 1 3]);
+    % bndmesh = bndmesh.refine(vals(i));
+
+    tetra_function_name = sprintf('tetra%d', i);
+    tetra_function_handle = str2func(tetra_function_name);
+    bndmesh = genMeshFromScript(tetra_function_handle);
     bndmesh = bndmesh.translate([2 1 3]);
-    bndmesh = bndmesh.refine(vals(i));
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
@@ -64,7 +69,7 @@ for i = 1:Nvals
     f2 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Vel2,DVel2);
     f3 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Vel3,DVel3);
 
-    forces_vol(i,:) = [f1 f2 f3]
+    forces_mst(i,:) = [f1 f2 f3]
 
     Xcg = [4 0 0];
     [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
@@ -75,7 +80,7 @@ for i = 1:Nvals
     t2 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Velr2,DVelr2);
     t3 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Velr3,DVelr3);
 
-    torques_vol(i,:) = [t1 t2 t3]
+    torques_mst(i,:) = [t1 t2 t3]
 
     % BEM based shape derivative
     fbem1 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel1,DVel1,mu0,mu);
@@ -90,7 +95,7 @@ for i = 1:Nvals
 
     torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
-    save('TP_SP_tetra_1.mat',"forces_vol","torques_vol","forces_bem","torques_bem","hvals");
+    save('TP_SP_tetra_1.mat',"forces_mst","torques_mst","forces_bem","torques_bem","hvals");
 
 
 end

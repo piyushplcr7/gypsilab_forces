@@ -33,9 +33,14 @@ for i = 1:Nvals
 % %     %mesh = mesh.sub(1);
 %     bndmesh = mesh.bnd;
 
-    bndmesh = meshSymTetra;
+    % bndmesh = meshSymTetra;
+    % bndmesh = bndmesh.translate([2 1 3]);
+    % bndmesh = bndmesh.refine(vals(i));
+
+    tetra_function_name = sprintf('tetra%d', i);
+    tetra_function_handle = str2func(tetra_function_name);
+    bndmesh = genMeshFromScript(tetra_function_handle);
     bndmesh = bndmesh.translate([2 1 3]);
-    bndmesh = bndmesh.refine(vals(i));
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
@@ -105,7 +110,8 @@ for i = 1:Nvals
     Bn = reconstruct(TdAM+TdAJ,Gamma,curl(NED)).*normals;
     % nx curlAxn from the outside
     Btano = cross(normals,reconstruct(TnAJ+TnAM,Gamma,DIV0),2);
-    Btani = Btano + Mxn;
+    % FIXED!!!!!!!!!!!!!!!!!!!!!!!!
+    Btani = Btano + cross(normals,Mxn,2);
     avgB = Bn + 0.5*(Btano + Btani);
     
     % Computing the integral of (Mxn)x{B}

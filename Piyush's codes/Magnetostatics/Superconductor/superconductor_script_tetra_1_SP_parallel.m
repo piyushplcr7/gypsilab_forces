@@ -7,10 +7,10 @@ mui = 1;
 mue = 1;
 vals = [1 1/2 1/4 1/7.9 1/15.9];
 Nvals = size(vals,2);
-forces_volume = zeros(Nvals,3);
-torques_volume = forces_volume;
-forces_bem = forces_volume;
-torques_bem = forces_volume; 
+forces_mst = zeros(Nvals,3);
+torques_mst = forces_mst;
+forces_bem = forces_mst;
+torques_bem = forces_mst; 
 hvals = 0*vals;
 
 for i = 1:Nvals
@@ -36,9 +36,14 @@ for i = 1:Nvals
     % %mesh = mesh.sub(1);
     % bndmesh = mesh.bnd;
 
-    bndmesh = meshSymTetra;
+    % bndmesh = meshSymTetra;
+    % bndmesh = bndmesh.translate([2 1 3]);
+    % bndmesh = bndmesh.refine(vals(i));
+
+    tetra_function_name = sprintf('tetra%d', i);
+    tetra_function_handle = str2func(tetra_function_name);
+    bndmesh = genMeshFromScript(tetra_function_handle);
     bndmesh = bndmesh.translate([2 1 3]);
-    bndmesh = bndmesh.refine(vals(i));
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
@@ -73,7 +78,7 @@ for i = 1:Nvals
     f2 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Vel2,DVel2);
     f3 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Vel3,DVel3);
 
-    forces_volume(i,:) = [f1 f2 f3]
+    forces_mst(i,:) = [f1 f2 f3]
 
     % Computing torques
     Xcg = [4 0 0];
@@ -85,7 +90,7 @@ for i = 1:Nvals
     t2 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Velr2,DVelr2);
     t3 = ScSd_SP_Vol(bndmesh,Tdu,Tnu,J,omega_src,Velr3,DVelr3);
 
-    torques_volume(i,:) = [t1 t2 t3]
+    torques_mst(i,:) = [t1 t2 t3]
 
     %% Computing BEM based shape derivative
     % Computing forces
@@ -99,8 +104,8 @@ for i = 1:Nvals
     tbem1 = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Velr1,DVelr1)
     tbem2 = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Velr2,DVelr2)
     tbem3 = ScSd_SP_BEM(bndmesh,Tdu,Tnu,J,omega_src,Velr3,DVelr3)
-    
+
     torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
-    save("SC_SP_tetra_1.mat","forces_volume","torques_volume","forces_bem","torques_bem","hvals");
+    save("SC_SP_tetra_1.mat","forces_mst","torques_mst","forces_bem","torques_bem","hvals");
 end

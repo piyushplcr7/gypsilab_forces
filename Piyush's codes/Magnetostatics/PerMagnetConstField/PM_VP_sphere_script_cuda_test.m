@@ -23,8 +23,8 @@ for i = 1:Nvals
     disp(N);
     %% SOLUTION DOMAIN
     % Cube size and position
-    bndmesh = getMeshSphere(N);
-%     bndmesh = getMeshCuboid5(N);
+    % bndmesh = getMeshSphere(N);
+    bndmesh = getMeshCuboid5(N);
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh.ndv,1));
@@ -81,29 +81,29 @@ for i = 1:Nvals
 
 %     Ht = vecnorm(Ht,2,2);
 
-%     [Vel,DVel] = getCosVelDVel(1,2,1,1);
-%     sds(i) = ShapeDervTpVol(Gamma,Bntotal,vecnorm(Httotal,2,2),mu0,mu,Vel)
+    [Vel,DVel] = getCosVelDVel(2,2,1,2);
+    sds(i) = ShapeDervTpVol(Gamma,Bntotal,vecnorm(Httotal,2,2),mu0,mu,Vel)
 
-    forces_mst(i,:) = ForceMstTP(Gamma,Bntotal,vecnorm(Httotal,2,2),mu0,mu)
-    
-    [Vel1,DVel1] = getTransVelDVel([1 0 0]);
-    [Vel2,DVel2] = getTransVelDVel([0 1 0]);
-    [Vel3,DVel3] = getTransVelDVel([0 0 1]);
+    % forces_mst(i,:) = ForceMstTP(Gamma,Bntotal,vecnorm(Httotal,2,2),mu0,mu)
+    % 
+    % [Vel1,DVel1] = getTransVelDVel([1 0 0]);
+    % [Vel2,DVel2] = getTransVelDVel([0 1 0]);
+    % [Vel3,DVel3] = getTransVelDVel([0 0 1]);
 
-%     sdsw(i) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Vel,DVel,TdA)
+    sdsw(i) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Vel,DVel,TdA)
 
-    forces_new(i,1) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Vel1,DVel1,TdA);
-    forces_new(i,2) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Vel2,DVel2,TdA);
-    forces_new(i,3) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Vel3,DVel3,TdA)
+    % forces_new(i,1) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Vel1,DVel1,TdA);
+    % forces_new(i,2) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Vel2,DVel2,TdA);
+    % forces_new(i,3) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Vel3,DVel3,TdA)
 % 
-    Xcg = [4 0 0];
-    torques_mst(i,:) = TorqueMstTP(Gamma,Bntotal,vecnorm(Httotal,2,2),mu0,mu,Xcg)
-    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
-    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
-    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
-
-    torques_new(i,1) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Velr1,DVelr1,TdA);
-    torques_new(i,2) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Velr2,DVelr2,TdA);
-    torques_new(i,3) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Velr3,DVelr3,TdA)
+    % Xcg = [4 0 0];
+    % torques_mst(i,:) = TorqueMstTP(Gamma,Bntotal,vecnorm(Httotal,2,2),mu0,mu,Xcg)
+    % [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
+    % [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
+    % [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+    % 
+    % torques_new(i,1) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Velr1,DVelr1,TdA);
+    % torques_new(i,2) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Velr2,DVelr2,TdA);
+    % torques_new(i,3) = ForceMstTPConstFiend(Gamma,Bn,Ht,mu0,mu,B0,Velr3,DVelr3,TdA)
     
 end

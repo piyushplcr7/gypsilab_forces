@@ -1,5 +1,5 @@
 % Script for constant Magnetization
-
+gpuDevice(2);
 addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
@@ -101,7 +101,8 @@ for i = 1:Nvals
     Bn = reconstruct(TdAM+TdAJ,Gamma,curl(NED)).*normals;
     % nx curlAxn from the outside
     Btano = cross(normals,reconstruct(TnAJ+TnAM,Gamma,DIV0),2);
-    Btani = Btano + Mxn;
+    % FIXED!!!!!!!!!!!!!!!!!!!!!!!!
+    Btani = Btano + cross(normals,Mxn,2);
     avgB = Bn + 0.5*(Btano + Btani);
     
     % Computing the integral of (Mxn)x{B}
@@ -135,3 +136,4 @@ for i = 1:Nvals
 
     save("PM_VP_cuboid_5.mat","forces_mst","torques_bem","torques_mst","forces_bem","hvals");
 end
+

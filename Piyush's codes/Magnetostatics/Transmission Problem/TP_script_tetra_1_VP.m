@@ -1,5 +1,5 @@
 % New transmission problem script
-
+gpuDevice(2);
 addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
@@ -34,9 +34,14 @@ for i = 1:Nvals
 % %     %mesh = mesh.sub(1);
 %     bndmesh = mesh.bnd;
 
-    bndmesh = meshSymTetra;
+    % bndmesh = meshSymTetra;
+    % bndmesh = bndmesh.translate([2 1 3]);
+    % bndmesh = bndmesh.refine(vals(i));
+
+    tetra_function_name = sprintf('tetra%d', i);
+    tetra_function_handle = str2func(tetra_function_name);
+    bndmesh = genMeshFromScript(tetra_function_handle);
     bndmesh = bndmesh.translate([2 1 3]);
-    bndmesh = bndmesh.refine(vals(i));
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh.ndv,1));

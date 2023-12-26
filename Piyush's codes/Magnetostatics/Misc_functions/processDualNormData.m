@@ -28,11 +28,9 @@ function [conv_rate_mst,conv_rate_bem] = processDualNormData(fname,idxmst,idxbem
 
     figure;
 
-    loglog(hvals,dualnorm_errs_mst,'-*');
+    loglog(hvals,dualnorm_errs_mst,'-*', 'LineWidth', 2, 'MarkerSize', 10);
     hold on;
-    loglog(hvals(1:N-1),dualnorm_errs_bem,'-+');
-    xlabel('h');
-    ylabel('Dual norm error');
+    loglog(hvals(1:N-1),dualnorm_errs_bem,'-+', 'LineWidth', 2, 'MarkerSize', 10);
     
     hvals_small = hvals(1:N-1);
 
@@ -48,7 +46,10 @@ function [conv_rate_mst,conv_rate_bem] = processDualNormData(fname,idxmst,idxbem
     loglog(hvals(idxmst),err_mst_fitted,'--','Color',[0.7 0.7 0.7]);
     loglog(hvals_small(idxbem),err_bem_fitted,'--','Color',[0.7 0.7 0.7]);
     
-    title(fname(1:end-4), 'Interpreter', 'none');
+    % title(fname, 'Interpreter', 'none');
+
+    xlabel('meshwidth');
+    ylabel('dual norm error');
 
     conv_rate_mst = mst_coeffs(2);
     conv_rate_bem = bem_coeffs(2);
@@ -58,6 +59,22 @@ function [conv_rate_mst,conv_rate_bem] = processDualNormData(fname,idxmst,idxbem
     l2 = legend2;
     legend(l1,l2);
     print([fname(1:end-3), 'eps'], '-depsc2');
+
+    legend(['Vol: ', num2str(conv_rate_mst)],['BEM: ',num2str(conv_rate_bem)],'Location','southeast');
+    % legend(["MST","BEM"],'Location','southeast');
+
+    fprintf("conv_rate_mst: %f\n",conv_rate_mst);
+    fprintf("conv_rate_bem: %f\n",conv_rate_bem);
+
+    print([fname(1:end-3),'eps'],'-depsc2');
+
+    legend(['Vol: ', num2str(conv_rate_mst)],['BEM: ',num2str(conv_rate_bem)],'Location','southeast');
+    % legend(["MST","BEM"],'Location','southeast');
+
+    fprintf("conv_rate_mst: %f\n",conv_rate_mst);
+    fprintf("conv_rate_bem: %f\n",conv_rate_bem);
+
+    print([fname(1:end-3),'eps'],'-depsc2');
 
 end
 
