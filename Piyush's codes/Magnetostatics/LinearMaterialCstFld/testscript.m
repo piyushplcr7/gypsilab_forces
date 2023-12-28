@@ -6,7 +6,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 5:12;
+vals = 5:10;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
@@ -20,22 +20,25 @@ for i = 1:Nvals
     %% SOLUTION DOMAIN
     % Cube size and position
     L = 2*[1 1 1];
-    T = [1 0 0];
+    T = 0*[1 0.5 2];
     
     % Bounding box
     bndmesh_e = mshSphere(N,5);
 
     % Spherical domain
-    bndmesh_i = mshSphere(N,1);
-    bndmesh_i = bndmesh_i.translate(T);
+%     bndmesh_i = mshSphere(N,1);
+%     bndmesh_i = bndmesh_i.translate(T);
     
-%     mesh = mshCube(N,L);
-%     mesh = mesh.translate(T);
-%     %mesh = mesh.sub(1);
-%     bndmesh = mesh.bnd;
+    mesh = mshCube(N,L);
+    mesh = mesh.translate(T);
+    %mesh = mesh.sub(1);
+    bndmesh_i = mesh.bnd;
     
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
+
+    % Visualize with outer mesh translucent
+    %customPlot(bndmesh_i,bndmesh_e);
     
     Gamma_i = dom(bndmesh_i,3);
     normals_i = Gamma_i.qudNrm;

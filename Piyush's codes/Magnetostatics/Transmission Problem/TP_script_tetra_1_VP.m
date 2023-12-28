@@ -1,5 +1,5 @@
 % New transmission problem script
-gpuDevice(2);
+gpuDevice(1);
 addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
