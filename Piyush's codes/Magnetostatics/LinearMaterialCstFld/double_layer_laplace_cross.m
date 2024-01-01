@@ -1,16 +1,11 @@
-% Double layer cross
-% nx NED = RWG!!!!
-
-function MK = double_layer_magnetostatics_cross(Gamma_test, Gamma_trial,test,trial)
+function MK = double_layer_laplace_cross(Gamma_test, Gamma_trial,test,trial)
     kernel = cell(3,1);
     kernel{1} = @(X,Y)femGreenKernel(X,Y,'grady[1/r]1',0);
     kernel{2} = @(X,Y)femGreenKernel(X,Y,'grady[1/r]2',0);
     kernel{3} = @(X,Y)femGreenKernel(X,Y,'grady[1/r]3',0);
 
     % One more sign change due to flipped trial and test
-    MK = 1/4/pi*integral(Gamma_test,Gamma_trial,test,kernel,trial);
-%     MK = MK + 1/4/pi*regularize(Gamma_test,Gamma_test,test,'grady[1/r]',trial);
-    MK = -MK;
+    MK = 1/4/pi*integral(Gamma_test,Gamma_trial,test,kernel,ntimes(trial));
 
     % Alternative computation (explicitly)
 
@@ -24,24 +19,26 @@ function MK = double_layer_magnetostatics_cross(Gamma_test, Gamma_trial,test,tri
 % 
 %         W = repelem(W_test,N_trial,1).*repmat(W_trial,N_test,1);
 % 
-%         kernel = 1/4/pi * (YY-XX)./vecnorm(XX-YY,2,2).^3;
+%         kernel = 1/4/pi * (XX-YY)./vecnorm(XX-YY,2,2).^3;
 % 
 %         % Assuming vectorial test and trial spaces for this case
-%         uqm_cell_trial = trial.uqm(Gamma_trial);
+%         uqm_trial = trial.uqm(Gamma_trial);
 % 
-%         uqm_cell_test = test.uqm(Gamma_test);
+%         uqm_test = test.uqm(Gamma_test);
 %         Ndof_trial = trial.ndof;
 %         Ndof_test = test.ndof;
+% 
+%         normals_trial = Gamma_trial.qudNrm;
 % 
 %         mat = zeros(Ndof_test,Ndof_trial);
 % 
 %         for i = 1:Ndof_test
-%             beta_i = [uqm_cell_test{1}(:,i) uqm_cell_test{2}(:,i) uqm_cell_test{3}(:,i)];
+%             beta_i = uqm_test(:,i);
 %             betaiXX = repelem(beta_i,N_trial,1);
 %             for j = 1:Ndof_trial
-%                 b_j = [uqm_cell_trial{1}(:,j) uqm_cell_trial{2}(:,j) uqm_cell_trial{3}(:,j)];
+%                 b_j = uqm_trial(:,j).*normals_trial;
 %                 bjYY = repmat(b_j,N_test,1);
-%                 mat(i,j) = sum(W.*dot(betaiXX,cross(kernel,bjYY,2),2),1);
+%                 mat(i,j) = sum(W.*dot(kernel,bjYY,2).*betaiXX,1);
 %             end
 % 
 %         end

@@ -83,4 +83,20 @@ function [Psi_i,g_i,Psi_e] = solveTPConstantFld(bndmesh_i,bndmesh_e,mu,mu_0,B_0)
     g_i = sol(P1_i.ndof+1:P1_i.ndof+DIV_i.ndof);
     Psi_e = sol(P1_i.ndof+DIV_i.ndof+1: P1_i.ndof+DIV_i.ndof + P1_e.ndof);
 
+    %% Verification of the solution via BIEs
+
+    % (5.2.4)
+%     err1 = -Aii * Psi_i - Aei * Psi_e - Cii * g_i + 0.5 * mass_matrix(Gamma_i,DIV0_i,NED_i) * g_i;
+    err1 = (1+mu/mu_0) * Aii * Psi_i + Aei * Psi_e +2 *  Cii * g_i - mu * jumpMuInv * Aii * B_0xn_coeffs;
+
+
+    % (5.2.5)
+%     err2 = Bii * Psi_i + Cie' * Psi_e + Nii * g_i + 0.5 * mass_matrix(Gamma_i,NED_i,DIV0_i) * Psi_i; 
+    err2 = -2*Bii * Psi_i -(1+mu_0/mu)* Nii * g_i - Cie' * Psi_e + mu_0 * jumpMuInv * Bii * B_0xn_coeffs - 0.5 * mu_0 * jumpMuInv * massmat * B_0xn_coeffs; 
+
+    % (5.2.6)
+    err3 = -Aei' * Psi_i - Aee * Psi_e - Cie * g_i;
+
+    % (5.2.7) 
+    %err4 = -C
 end

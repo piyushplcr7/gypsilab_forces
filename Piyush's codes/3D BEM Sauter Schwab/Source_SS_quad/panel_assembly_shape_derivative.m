@@ -603,6 +603,62 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                         M(dofs_i(perm_i), dofs_j(perm_j)) = M(dofs_i(perm_i), dofs_j(perm_j)) + ...
                                           local_matrix;
 
+              case 'NONE' % Special case
+                  local_vector = zeros(Qts,1);
+                  M = zeros(test_space.ndof,1);
+                  assert(strcmp(ts_typ,'RWG'));
+                  volsi = vols(i);
+                    volsj = vols(j);
+                    
+                    elti  = mesh.elt(i, :);
+                    eltj  = mesh.elt(j, :);
+
+                    for ii = 1:Qts % Looping over test functions
+
+                        ip1 = mod(perm_i(ii),3)+1;
+                        ip2 = mod(ip1,3)+1;
+                        
+                        % Flux through the face
+                        flux = (2*(elti(ip1) < elti(ip2))-1);
+                        
+                        dPsi1i = rsf_ts{ii}{1}(Xh);
+                        dPsi2i = rsf_ts{ii}{2}(Xh);
+                        
+                        diP  = flux * [dPsi1i dPsi2i]'; % RT0 reference element
+                        
+                        diP = g_tau * (Ei * diP)' / (2 * volsi);
+                        
+                        % No BEM space needed for integration over y
+                        % Quadrature points mapped to panel for y
+                        Yh_panel = chi_t(Yh'); % Size 3 X N
+                        % DVi gives a matrix of size N X 3
+                        % evaluating the ith row of DVel at the N
+                        % quadrature points
+                        DV1 = DVel{1}(Yh_panel');
+                        DV2 = DVel{2}(Yh_panel');
+                        DV3 = DVel{3}(Yh_panel');
+
+                        divV = DV1(:,1)+DV2(:,2)+DV3(:,3);
+                        normals = repmat(nrm,size(DV1,1),1);
+
+                        % Computing DVel^T * nrm
+                        DVelTnrm = nrm(1) * DV1 + nrm(2) * DV2 + nrm(3) * DV3;
+
+                        % Y integrand
+                        yintegrand = divV * nrm - DVelTnrm;
+                        B0 = trial_space.dir;
+                        yintegrand = g_t * cross(repmat(B0,size(DV1,1),1),yintegrand,2) ;
+
+                        if size(Ker,2) == 1 % Scalar kernel
+                            local_vector(ii) = sum(Wh.*Ker.*dot(yintegrand,diP,2),1);
+
+                        elseif size(Ker,2) == 3 % vector kernel
+                            local_vector(ii) = sum(Wh.* dot (cross(Ker,yintegrand,2),diP,2),1);
+                        end
+                    
+                    end
+                    % Check local2global map
+                    M(dofs_i(perm_i)) = M(dofs_i(perm_i)) + local_vector;
                 end
           end % End switch over tr_typ
     end % End loop over panel pairs

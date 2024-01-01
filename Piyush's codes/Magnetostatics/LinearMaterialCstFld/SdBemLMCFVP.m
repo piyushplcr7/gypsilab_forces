@@ -1,4 +1,5 @@
 function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0)
+    jumpMuInv = 1/mu0-1/mu;
     % Integration domain
     Gamma_i = dom(bndmesh_i,3);
     Gamma_e = dom(bndmesh_e,3);
@@ -14,7 +15,7 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
     RWG_e = fem(bndmesh_e,'RWG');
 
     Psi_i_vals = reconstruct(Psi_i,Gamma_i,RWG_i);
-    Psi_e_vals = reconstruct(Psi_e,Gamme_e,RWG_e);
+    Psi_e_vals = reconstruct(Psi_e,Gamma_e,RWG_e);
     nxgvals_i = reconstruct(g_i,Gamma_i,RWG_i);
 
     % Projecting B0xn to RWG_i space
@@ -48,7 +49,7 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
     DVel3XX = DVel{3}(XX);
     
     Psi_iXX = repmat(Psi_i_vals,NY,1);
-    Psi_eYY = repelem(Psi_e_vals,Nx,1);
+    Psi_eYY = repelem(Psi_e_vals,NX,1);
     DVelPsi_iXX = [dot(DVel1XX,Psi_iXX,2) dot(DVel2XX,Psi_iXX,2) dot(DVel3XX,Psi_iXX,2)];
     Aei2 = 1/4/pi * sum(W.*(dot(Psi_eYY,DVelPsi_iXX,2)./(vecnorm(XX-YY,2,2))),1);
 
@@ -79,17 +80,16 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
     Ciekernel2 = 1/4/pi * (YY-XX)./vecnorm(YY-XX,2,2).^3;
     Cie2 = sum(W.*dot(Psi_eXX,cross(Ciekernel2,DVelnxgvals_iYY,2) ,2) ,1);
 
-    % Linear form
-
 
     %% SS computations
 
     kernelA1 = @(x,y,z) dot(z,Vel(x) - Vel(y), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
 
     kernelA2 = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
-    % z := y-x
+    % z := y-x, kernel is gradx G(x,y)
     kernelC1 = @(x,y,z) 1/(4*pi) * z./vecnorm(z,2,2).^3;
-
+    
+    % kernel for d/ds grad_xG(Ts(xh),Ts(yh))|_{s=0}
     kernelC3 = @(x,y,z) -3/(4*pi) * z .* dot(z,Vel(y)-Vel(x),2)./vecnorm(z,2,2).^5 + 1/(4*pi)*(Vel(y)-Vel(x))./vecnorm(z,2,2).^3;
 
     kernelN = kernelA1;
@@ -107,38 +107,76 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
     spmd
         if spmdIndex==1
             % partial derivative of b_A 
-            A1mat_ii = panel_assembly(bndmesh_i,kernelA1,RWG,RWG,ii(:),jj(:));
+            A1mat_ii = panel_assembly(bndmesh_i,kernelA1,RWG_i,RWG_i,ii(:),jj(:));
             A1_ii = Psi_i' * A1mat_ii * Psi_i;
 
         elseif spmdIndex==2
             %g
-            DVelRWG = RWG;
+            DVelRWG = RWG_i;
             DVelRWG.opr = 'Dvel[psi]';
-            A2mat_ii = panel_assembly_shape_derivative(bndmesh_i,kernelA2,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
+            A2mat_ii = panel_assembly_shape_derivative(bndmesh_i,kernelA2,DVelRWG,RWG_i,ii(:),jj(:),Vel,DVel);
             A2_ii = 2* Psi_i' * A2mat_ii * Psi_i;
 
         elseif spmdIndex==3
-            DVelRWG = RWG;
+            DVelRWG = RWG_i;
             DVelRWG.opr = 'Dvel[psi]';
             % Partial derivative of b_C
-            C1mat_ii = panel_assembly_shape_derivative(bndmesh_i,kernelC1,DVelRWG,RWG,ii(:),jj(:),Vel,DVel);
-            C1_ii = Psi_i' * C1mat_ii * g_i
-            C2_ii = g_i' * C1mat_ii * Psi_i % = C1?
+            C1mat_ii = panel_assembly_shape_derivative(bndmesh_i,kernelC1,DVelRWG,RWG_i,ii(:),jj(:),Vel,DVel);
+            C1_ii = Psi_i' * C1mat_ii * g_i;
+            C2_ii = g_i' * C1mat_ii * Psi_i ;% = C1?
 
         elseif spmdIndex==4
             % C3 (Is this way of evaluation okay?), z:= y-x
-            C3mat_ii = panel_assembly(bndmesh_i,kernelC3,RWG,RWG,ii(:),jj(:));
-            C3_ii = Psi_i' * C3mat_ii * g_i
+            C3mat_ii = panel_assembly(bndmesh_i,kernelC3,RWG_i,RWG_i,ii(:),jj(:));
+            C3_ii = Psi_i' * C3mat_ii * g_i;
 
         elseif spmdIndex==5
             % Partial derivative of b_N
-            Nmat_ii = panel_assembly_shape_derivative(bndmesh_i,kernelN,RWG.div,RWG.div,ii(:),jj(:),Vel,DVel);
+            Nmat_ii = panel_assembly_shape_derivative(bndmesh_i,kernelN,RWG_i.div,RWG_i.div,ii(:),jj(:),Vel,DVel);
             N_ii = -g_i' * Nmat_ii * g_i;
 
         end
     end
+    
+    % SS Based linear forms
+    l1 = mu * jumpMuInv * Psi_i' * A1mat_ii{1} * B0xn_coeffs;
 
+    NONEBEMSpace = RWG_i;
+    NONEBEMSpace.opr = 'NONE';
+    NONEBEMSpace.dir = B0;
+    l2vec = panel_assembly_shape_derivative(bndmesh_i,kernelA2,NONEBEMSpace,RWG_i,ii(:),jj(:),Vel,DVel);
+    l2 = mu * jumpMuInv * dot(l2vec,Psi_i);
+
+    l3 = mu * jumpMuInv * B0xn_coeffs' * A2mat_ii{2} * Psi_i;
+
+    l4 = mu0 * jumpMuInv * B0xn_coeffs' * C3mat_ii{4} * g_i;
+
+    l5 = mu0 * jumpMuInv * B0xn_coeffs' * C1mat_ii{3} * g_i;
+
+    l6vec = panel_assembly_shape_derivative(bndmesh_i,kernelC1,NONEBEMSpace,RWG_i,ii(:),jj(:),Vel,DVel);
+    l6 = mu0 * jumpMuInv * dot(l6vec,g_i);
+
+    [X_i,W_i] = Gamma_i.qud;
+    DVelnxgvals_i = [dot(DVel{1}(X_i),nxgvals_i,2)  dot(DVel{2}(X_i),nxgvals_i,2) dot(DVel{3}(X_i),nxgvals_i,2)];
+    l7integral = sum(W_i.* DVelnxgvals_i,1);
+    l7 = -mu0 * jumpMuInv/2 * dot(B0,l7integral);
+
+    r1 = -mu * jumpMuInv^2 /2 * B0xn_coeffs' * A1mat_ii{1} * B0xn_coeffs;
+    r2 = -mu * jumpMuInv^2 /2 * dot(l2vec,B0xn_coeffs);
+    r3 = r2;
+    
+    Vel_i = Vel(X_i);
+    Veldotn_i = dot(Vel_i,normals_i,2);
+    r4integral = sum(W_i.*Veldotn_i,1);
+    r4 = -jumpMuInv/2 * norm(B0,2)^2 * r4integral;
+    
     sd = -1/(2*mu0) * ( (1+mu/mu0) * (A1_ii{1}+A2_ii{2})...
                         +4 * (C1_ii{3}+C2_ii{3}+C3_ii{4})...
-                        +(1+mu0/mu) * (N_ii{5}) )...
+                        +(1+mu0/mu) * (N_ii{5}) ...
+                        + 2 * (Aei1+Aei2)...
+                        + 2 * (Cie1+Cie2))...
+         +1/mu0 * (l1+l2+l3+l4+l5+l6+l7)...
+         + r1 + r2 + r3 + r4;
+
+    pool.delete();
 end
