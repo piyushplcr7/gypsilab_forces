@@ -11,9 +11,10 @@ mu0 = 2;
 vals = 5:9;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
-forces_mst1 = forces_mst;
+forces_mst_recon = forces_mst;
 forces_bem = forces_mst;
 torques_mst = forces_mst;
+torques_mst_recon = torques_mst;
 torques_bem = forces_mst;
 hvals = 0*vals;
 
@@ -51,8 +52,10 @@ for i = 1:Nvals
     
     %% Solving the transmission problem
 
-    H0 = [1 1 1]/sqrt(3);
-    [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0);
+    H0 = [1 0 0];%[1 1 1]/sqrt(3);
+
+    % Match for H0 = 0 1 0
+    [psi_i,g_i,psi_e,psi_I_recon,g_i_recon] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0);
 
     %% Computing the force using MST formula
     % Reconstructing Bn and Ht
@@ -68,6 +71,17 @@ for i = 1:Nvals
 
     Xcg = [4 0 0];
     torques_mst(i,:) = TorqueMstTP(Gamma_i,Bn,vecnorm(Ht,2,2),mu0,mu,Xcg)
+
+    %% Computing the force using MST formula (reconstructed traces)
+    % Reconstructing Bn and Ht
+    % Ht = reconstruct(g_i_recon,Gamma_i,P1_i.grad) + H0t;
+    % 
+    % Bn = mu * reconstruct(psi_I_recon,Gamma_i,P0_i) + mu0 * dot(H0extended,normals_i,2);
+    % 
+    % forces_mst_recon(i,:) = ForceMstTP(Gamma_i,Bn,vecnorm(Ht,2,2),mu0,mu)
+    % 
+    % Xcg = [4 0 0];
+    % torques_mst_recon(i,:) = TorqueMstTP(Gamma_i,Bn,vecnorm(Ht,2,2),mu0,mu,Xcg)
 
     %% Computing force using BEM formula
 

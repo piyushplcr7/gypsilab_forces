@@ -1,4 +1,4 @@
-function [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0)
+function [psi_i,g_i,psi_e,psi_I_recon,g_i_recon] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0)
     % BEM Spaces
     P1_i = fem(bndmesh_i,'P1');
 %     P1_e = fem(bndmesh_e,'P1');
@@ -49,6 +49,18 @@ function [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0)
     psi_i = sol(1:P0_i.ndof);
     g_i = sol(P0_i.ndof+1:P0_i.ndof+P1_i.ndof);
     psi_e = sol(P0_i.ndof+P1_i.ndof+1:P0_i.ndof+P1_i.ndof+P0_e.ndof);
+
+    %% Finding the traces of the solution 
+
+    g_I_star = g_i;
+    psi_I_star = jumpMu/mu * H0dotncoeffs - mu0/mu * psi_i;
+
+    M01 = mass_matrix(Gamma_i,P0_i,P1_i);
+    M10 = M01';
+    
+    g_i_recon = M01\(Vii * psi_I_star + 0.5 * M01 * g_I_star - Kii * g_I_star);
+
+    psi_I_recon = M10\(0.5 * M10 * psi_I_star + Kii' * psi_I_star + Wii * g_I_star);
 
     
 end
