@@ -14,7 +14,13 @@ function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,m
     g_i_vals = reconstruct(g_i,Gamma_i,P1_i);
     psi_e_vals = reconstruct(psi_e,Gamma_e,P0_e);
     normals_i = Gamma_i.qudNrm;
+    normals_e = Gamma_e.qudNrm;
     grad_g_i_vals = reconstruct(g_i,Gamma_i,P1_i.grad);
+
+    % Dirichlet trace at the outer boundary
+    [X_e,~] = Gamma_e.qud;
+    g_e_vals = X_e * H0';
+    g_e_coeffs = proj(g_e_vals,Gamma_e,P1_e);
 
     %% Non SS Computations
     % Evaluating the Jacobian of the velocity field (row-wise) at gamma_i qud pts
@@ -63,7 +69,13 @@ function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,m
     
     % dsl3 explicit computation
     kerneldsl3 = 1/4/pi./vecnorm(XX-YY,2,2);
-    grad_g_i_vals_YY = 
+    % grad_g_i_vals_YY = repmat(grad_g_i_vals,NX,1);
+    normals_e_XX = repelem(normals_e,NY,1);
+    H0XX = repelem(H0,size(normals_e_XX,1),1);
+    nxH0XX = cross(normals_e_XX,H0XX,2);
+    nxgradgiYY = repmat(cross(normals_i,grad_g_i_vals,2),NX,1);
+    DVelnxgradgiYY = [dot(DVel1YY,nxgradgiYY,2) dot(DVel2YY,nxgradgiYY,2) dot(DVel3YY,nxgradgiYY,2)];
+    dsl3 = -sum(W.*kerneldsl3.*dot(DVelnxgradgiYY,nxH0XX,2),1);
 
     % Vee = single_layer(Gamma_e,P0_e,P0_e);
 
@@ -135,7 +147,7 @@ function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,m
 
     sd = -mu0/2*( (1+mu0/mu) * dbv_dsii{1} + 4 * dbk_dsii -(1+mu/mu0) * dbw_dsii...
                   + 2 * psi_i' * dsVei * psi_e + 2 * psi_e' * dsKie1 * g_i + 2 * dsKie2)...
-         +mu0 * (psi_i' * dsl1 * g_e_coeffs + g_i' * dsl2 * g_e_coeffs);
+         +mu0 * (psi_i' * dsl1 * g_e_coeffs + g_i' * dsl2 * g_e_coeffs + dsl3);
 
     pool.delete();
 end
