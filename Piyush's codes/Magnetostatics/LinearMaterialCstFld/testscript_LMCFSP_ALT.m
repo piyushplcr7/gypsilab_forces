@@ -8,7 +8,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 2;
 mu0 = 1;
-vals = 5:9;
+vals = 5:13;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_mst_recon = forces_mst;
@@ -73,16 +73,16 @@ for i = 1:Nvals
     % psi_e = proj(expl_psi_e_vals,Gamma_e,P0_e);
 
     %% Checking solution for mu = mu0 using the field
-    grad_g_i_vals = reconstruct(g_i,Gamma_i,grad(P1_i));
-    psi_i_vals = reconstruct(psi_i,Gamma_i,P0_i);
-    
-    % reconstructed field at the interface 
-    field = -psi_i_vals .* normals_i + grad_g_i_vals;
-
-    fielderr = field-H0;
-
-    [X_i,W_i] = Gamma_i.qud;
-    l2fielderr = sum(W_i.*vecnorm(fielderr,2,2).^2)
+%     grad_g_i_vals = reconstruct(g_i,Gamma_i,grad(P1_i));
+%     psi_i_vals = reconstruct(psi_i,Gamma_i,P0_i);
+%     
+%     % reconstructed field at the interface 
+%     field = -psi_i_vals .* normals_i + grad_g_i_vals;
+% 
+%     fielderr = field-H0;
+% 
+%     [X_i,W_i] = Gamma_i.qud;
+%     l2fielderr = sum(W_i.*vecnorm(fielderr,2,2).^2)
 
     % norm(field-H0,2,2)
     % field = full(field);
