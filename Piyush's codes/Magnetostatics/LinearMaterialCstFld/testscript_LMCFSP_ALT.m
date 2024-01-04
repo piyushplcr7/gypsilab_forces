@@ -6,7 +6,7 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 % (mui+mue)/(mui-mue)
-mu = 2;
+mu = 1;
 mu0 = 1;
 vals = 5:9;
 Nvals = size(vals,2);
@@ -64,13 +64,13 @@ for i = 1:Nvals
     P1_i = fem(bndmesh_i,'P1');
     P0_i = fem(bndmesh_i,'P0');
     P0_e = fem(bndmesh_e,'P0');
-    % expl_psi_i_vals = -normals_i * H0';
-    % psi_i = proj(expl_psi_i_vals,Gamma_i,P0_i);
-    % [X_i,~] = Gamma_i.qud;
-    % expl_g_i_vals = X_i * H0';
-    % g_i = proj(expl_g_i_vals,Gamma_i,P1_i);
-    % expl_psi_e_vals = normals_e * H0';
-    % psi_e = proj(expl_psi_e_vals,Gamma_e,P0_e);
+     expl_psi_i_vals = -normals_i * H0';
+     psi_i = proj(expl_psi_i_vals,Gamma_i,P0_i);
+     [X_i,~] = Gamma_i.qud;
+     expl_g_i_vals = X_i * H0';
+     g_i = proj(expl_g_i_vals,Gamma_i,P1_i);
+     expl_psi_e_vals = normals_e * H0';
+     psi_e = proj(expl_psi_e_vals,Gamma_e,P0_e);
 
     %% Checking something 
     % [X_i,W_i] = Gamma_i.qud;
