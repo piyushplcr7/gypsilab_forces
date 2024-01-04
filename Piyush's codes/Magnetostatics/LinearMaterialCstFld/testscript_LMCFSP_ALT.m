@@ -8,7 +8,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 1;
 mu0 = 1;
-vals = 5:9;
+vals = 5:13;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_mst_recon = forces_mst;
@@ -18,8 +18,8 @@ torques_mst_recon = torques_mst;
 torques_bem = forces_mst;
 hvals = 0*vals;
 
-rng(32);
-H0 = rand(1,3);
+% rng(32);
+% H0 = rand(1,3);
 
 for i = 1:Nvals
     N = 2^vals(i);
@@ -55,7 +55,7 @@ for i = 1:Nvals
     normals_e = Gamma_e.qudNrm;
     
     %% Solving the transmission problem
-    %H0 = [1 1 1]/sqrt(3);
+    H0 = [1 1 1]/sqrt(3);
 
     % Match for H0 = 0 1 0
     [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0);
@@ -71,6 +71,26 @@ for i = 1:Nvals
      g_i = proj(expl_g_i_vals,Gamma_i,P1_i);
      expl_psi_e_vals = normals_e * H0';
      psi_e = proj(expl_psi_e_vals,Gamma_e,P0_e);
+
+    %% Checking solution for mu = mu0 using the field
+%     grad_g_i_vals = reconstruct(g_i,Gamma_i,grad(P1_i));
+%     psi_i_vals = reconstruct(psi_i,Gamma_i,P0_i);
+%     
+%     % reconstructed field at the interface 
+%     field = -psi_i_vals .* normals_i + grad_g_i_vals;
+% 
+%     fielderr = field-H0;
+% 
+%     [X_i,W_i] = Gamma_i.qud;
+%     l2fielderr = sum(W_i.*vecnorm(fielderr,2,2).^2)
+
+    % norm(field-H0,2,2)
+    % field = full(field);
+
+    % customPlot(bndmesh_i,bndmesh_e);
+    % hold on;
+    % [X_i,~] = Gamma_i.qud;
+    % quiver3wrapper(X_i,field,'red');
 
     %% Checking something 
     % [X_i,W_i] = Gamma_i.qud;
@@ -95,36 +115,36 @@ for i = 1:Nvals
     % disp(energy_exact);
     %% Computing the force using MST formula
 
-    Ht = reconstruct(g_i,Gamma_i,P1_i.grad);
-
-    Bn = -mu0 * reconstruct(psi_i,Gamma_i,P0_i);
-
-    forces_mst(i,:) = ForceMstTP(Gamma_i,Bn,vecnorm(Ht,2,2),mu0,mu)
+    % Ht = reconstruct(g_i,Gamma_i,P1_i.grad);
     % 
-    Xcg = [4 0 0];
-    torques_mst(i,:) = TorqueMstTP(Gamma_i,Bn,vecnorm(Ht,2,2),mu0,mu,Xcg)
+    % Bn = -mu0 * reconstruct(psi_i,Gamma_i,P0_i);
+    % 
+    % forces_mst(i,:) = ForceMstTP(Gamma_i,Bn,vecnorm(Ht,2,2),mu0,mu)
+    % % 
+    % Xcg = [4 0 0];
+    % torques_mst(i,:) = TorqueMstTP(Gamma_i,Bn,vecnorm(Ht,2,2),mu0,mu,Xcg)
 
     %% Computing force using BEM formula
 
-    [Vel1,DVel1] = getTransVelDVelCutoff([1 0 0],cutoff_rad);
-    [Vel2,DVel2] = getTransVelDVelCutoff([0 1 0],cutoff_rad);
-    [Vel3,DVel3] = getTransVelDVelCutoff([0 0 1],cutoff_rad);
-
-    f1 = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel1,DVel1,mu0,mu,H0);
-    f2 = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel2,DVel2,mu0,mu,H0);
-    f3 = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel3,DVel3,mu0,mu,H0);
-
-    forces_bem(i,:) = [f1 f2 f3]
-
-    [Velr1,DVelr1] = getRotVelDVelCutoff([1 0 0],Xcg,cutoff_rad);
-    [Velr2,DVelr2] = getRotVelDVelCutoff([0 1 0],Xcg,cutoff_rad);
-    [Velr3,DVelr3] = getRotVelDVelCutoff([0 0 1],Xcg,cutoff_rad);
-
-    t1 = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Velr1,DVelr1,mu0,mu,H0);
-    t2 = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Velr2,DVelr2,mu0,mu,H0);
-    t3 = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Velr3,DVelr3,mu0,mu,H0);
-
-    torques_bem(i,:) = [t1 t2 t3]
+    % [Vel1,DVel1] = getTransVelDVelCutoff([1 0 0],cutoff_rad);
+    % [Vel2,DVel2] = getTransVelDVelCutoff([0 1 0],cutoff_rad);
+    % [Vel3,DVel3] = getTransVelDVelCutoff([0 0 1],cutoff_rad);
+    % 
+    % f1 = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel1,DVel1,mu0,mu,H0);
+    % f2 = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel2,DVel2,mu0,mu,H0);
+    % f3 = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel3,DVel3,mu0,mu,H0);
+    % 
+    % forces_bem(i,:) = [f1 f2 f3]
+    % 
+    % [Velr1,DVelr1] = getRotVelDVelCutoff([1 0 0],Xcg,cutoff_rad);
+    % [Velr2,DVelr2] = getRotVelDVelCutoff([0 1 0],Xcg,cutoff_rad);
+    % [Velr3,DVelr3] = getRotVelDVelCutoff([0 0 1],Xcg,cutoff_rad);
+    % 
+    % t1 = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Velr1,DVelr1,mu0,mu,H0);
+    % t2 = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Velr2,DVelr2,mu0,mu,H0);
+    % t3 = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Velr3,DVelr3,mu0,mu,H0);
+    % 
+    % torques_bem(i,:) = [t1 t2 t3]
     
 
 end

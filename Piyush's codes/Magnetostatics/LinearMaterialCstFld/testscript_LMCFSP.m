@@ -6,8 +6,8 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 % (mui+mue)/(mui-mue)
-mu = 4;
-mu0 = 2;
+mu = 2;
+mu0 = 1;
 vals = 5:9;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
@@ -17,6 +17,9 @@ torques_mst = forces_mst;
 torques_mst_recon = torques_mst;
 torques_bem = forces_mst;
 hvals = 0*vals;
+
+rng(32);
+H0 = rand(1,3);
 
 for i = 1:Nvals
     N = 2^vals(i);
@@ -52,7 +55,7 @@ for i = 1:Nvals
     
     %% Solving the transmission problem
 
-    H0 = [1 0 0];%[1 1 1]/sqrt(3);
+%     H0 = [1 0 0];%[1 1 1]/sqrt(3);
 
     % Match for H0 = 0 1 0
     [psi_i,g_i,psi_e,psi_I_recon,g_i_recon] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0);
