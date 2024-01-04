@@ -6,7 +6,7 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 % (mui+mue)/(mui-mue)
-mu = 2;
+mu = 1;
 mu0 = 1;
 vals = 5:9;
 Nvals = size(vals,2);
@@ -22,6 +22,7 @@ rng(32);
 H0 = rand(1,3);
 
 for i = 1:Nvals
+    
     N = 2^vals(i);
     disp(N);
     %% SOLUTION DOMAIN

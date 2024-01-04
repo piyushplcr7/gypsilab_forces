@@ -78,8 +78,8 @@ function [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0)
     tested_g_i_exact = M01i * g_i_exact;
     tested_psi_I_exact = -mu0/mu * M01i' * psi_i_exact;
 
-    fprintf("Err_g, max = %f, norm = %f \n",max(abs(tested_g_i_exact-tested_g_I)),norm((tested_g_i_exact-tested_g_I)));
-    fprintf("Err_psi, max = %f, norm = %f \n",max(abs(tested_psi_I_exact-tested_psi_I)),norm(tested_psi_I_exact-tested_psi_I));
+    fprintf("Err_g, max = %f, norm = %f \n",max(abs(tested_g_i_exact-tested_g_I)),norm(tested_g_i_exact-tested_g_I)/size(tested_g_I,1));
+    fprintf("Err_psi, max = %f, norm = %f \n",max(abs(tested_psi_I_exact-tested_psi_I)),norm(tested_psi_I_exact-tested_psi_I)/size(tested_psi_I,1));
 
     % disp(sol(end));
 end

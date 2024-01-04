@@ -8,7 +8,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 2;
 mu0 = 1;
-vals = 5:13;
+vals = 5:9;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_mst_recon = forces_mst;
