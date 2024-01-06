@@ -3,7 +3,7 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 % (mui+mue)/(mui-mue)
-epsilon = 2;
+epsilon = 1;
 epsilon0 = 1;
 vals = 5:9;
 Nvals = size(vals,2);
@@ -38,9 +38,10 @@ for i = 1:Nvals
     %customPlot(bndmesh_i,bndmesh_e);
 
     %% Source
-    bndmesh_src = mshSphere(N,1);
-    bndmesh_src = bndmesh_src.translate([3 3 3]);
-    omega_src = dom(bndmesh_src,3);
+    % mesh_src = mshSphere(N,1);
+    mesh_src = mshCube(N,L);
+    mesh_src = mesh_src.translate([3 3 3]);
+    omega_src = dom(mesh_src,4);
     % Constant surface charge density
     rho = @(X) ones(size(X,1),1);
     

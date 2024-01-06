@@ -4,7 +4,7 @@ function sd = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_
 
     Gamma = dom(bndmesh,3);
     normals = Gamma.qudNrm;
-    normals_src = omega_src.qudNrm;
+    % normals_src = omega_src.qudNrm;
 
     psi_vals = reconstruct(Tnu,Gamma,P0);
     g_vals = reconstruct(Tdu,Gamma,P1);
@@ -26,9 +26,11 @@ function sd = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_
 
     t1 = - sum(W.* gradxGdotvelx.*rhoYY.*psiXX ,1);
 
-    normals_src_YY = repmat(normals_src,NX,1);
+    normals_XX = repelem(normals,NY,1);
+    % normals_src_YY = repmat(normals_src,NX,1);
 
-    t2kernel = 3/4/pi * dot(XX-YY,normals_src_YY,2).*dot(XX-YY,Vel(XX),2)./vecnorm(XX-YY,2,2).^5 - 1/4/pi * dot(Vel(XX),normals_src_YY,2)./vecnorm(XX-YY,2,2).^3;
+    % t2kernel = 3/4/pi * dot(XX-YY,normals_src_YY,2).*dot(XX-YY,Vel(XX),2)./vecnorm(XX-YY,2,2).^5 - 1/4/pi * dot(Vel(XX),normals_src_YY,2)./vecnorm(XX-YY,2,2).^3;
+    t2kernel = 3/4/pi * dot(XX-YY,normals_XX,2).*dot(XX-YY,Vel(XX),2)./vecnorm(XX-YY,2,2).^5 - 1/4/pi * dot(Vel(XX),normals_XX,2)./vecnorm(XX-YY,2,2).^3;
     t2 = sum(W.*t2kernel.*rhoYY.*gXX,1);
 
     sd = t1 + t2;

@@ -12,23 +12,10 @@ function [Tnu,Tdu] = solveTpDielSourceCharge(bndmesh,epsilon,epsilon0,rho,omega_
     Vec = integral(Gamma,P1);
     
     % Computing the potential due to source charge at points of bndmesh
-    [X_bndmesh,~] = Gamma.qud;
-    [Y_src,Wsrc] = omega_src.qud;
-    normals_X_bndmesh = Gamma.qudNrm;
-    NX = size(X_bndmesh,1);
-    NY = size(Y_src,1);
-    YY = repmat(Y_src,NX,1);
-    XX = repelem(X_bndmesh,NY,1);
-    G = 1/4/pi./vecnorm(XX-YY,2,2);
-    G = reshape(G,NY,NX);
-    gradxG = 1/4/pi * (YY-XX)./vecnorm(XX-YY,2,2).^3;
-    normals_XX = repelem(normals_X_bndmesh,NY,1);
-    gradxGdotnormalsXX = dot(gradxG,normals_XX,2);
-    gradxGdotnormalsXX = reshape(gradxGdotnormalsXX,NY,NX);
-    rho = rho(Y_src);
-    
-    TdNrho = sum(Wsrc.* rho .* G,1)';
-    TnNrho = sum(Wsrc.* rho.* gradxGdotnormalsXX,1)';
+    [X,~] = Gamma.qud;
+    normals = Gamma.qudNrm;
+    [TdNrho,gradxNrho] = computeNewtonPotentialAndGrad(X,omega_src,rho);
+    TnNrho = dot(gradxNrho,normals,2);
 
     % Projecting these computed traces to appropriate spaces
     TdNrho_coeffs = proj(TdNrho,Gamma,P1);
