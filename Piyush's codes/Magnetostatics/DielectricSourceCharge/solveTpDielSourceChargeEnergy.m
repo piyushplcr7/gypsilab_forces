@@ -1,4 +1,4 @@
-function [Tnu,Tdu] = solveTpDielSourceCharge(bndmesh,epsilon,epsilon0,rho,omega_src)
+function [Tnu,Tdu,energy] = solveTpDielSourceChargeEnergy(bndmesh,epsilon,epsilon0,rho,omega_src)
     % BEM spaces
     P1 = fem(bndmesh,'P1');
     P0 = fem(bndmesh,'P0');
@@ -25,24 +25,25 @@ function [Tnu,Tdu] = solveTpDielSourceCharge(bndmesh,epsilon,epsilon0,rho,omega_
     NP1 = P1.ndof;
     NP0 = P0.ndof;
     % LHS matrix
-    % blockmat = [(1+epsilon0/epsilon)*V -2*K zeros(NP0,1);
-    %             2*K' (1+epsilon/epsilon0)*W Vec;
-    %             zeros(1,NP0) Vec' 0];
-
-    blockmat = [(1+epsilon0/epsilon)*V -2*K;
-                2*K' (1+epsilon/epsilon0)*W];
+    blockmat = [(1+epsilon0/epsilon)*V -2*K zeros(NP0,1);
+                2*K' (1+epsilon/epsilon0)*W Vec;
+                zeros(1,NP0) Vec' 0];
 
     % RHS
     M01 = mass_matrix(Gamma,P0,P1);
     rhs1 = 1/epsilon0 * M01 * TdNrho_coeffs;
     rhs2 = 1/epsilon0 * M01' * TnNrho_coeffs;
-    % rhs = [rhs1;rhs2;0];
-    rhs = [rhs1;rhs2];
+    rhs = [rhs1;rhs2;0];
 
     sol= blockmat\rhs;
 
     Tnu = sol(1:NP0);
     Tdu = sol(NP0+1:NP0+NP1);
+
+    %% Computing energy
+    e1 = -Tnu' * M01 * TdNrho_coeffs
+    e2 = Tdu' * M01' * TnNrho_coeffs
+    energy = 0.5 * (e1+e2);
 
 
 end

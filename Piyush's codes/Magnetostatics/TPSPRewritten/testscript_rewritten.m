@@ -4,7 +4,7 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 % (mui+mue)/(mui-mue)
-mu = 4;
+mu = 2;
 mu0 = 2;
 vals = 5:9;
 Nvals = size(vals,2);

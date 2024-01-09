@@ -57,11 +57,11 @@ for i = 1:Nvals
     [Vel2,DVel2] = getTransVelDVel([0 1 0]);
     [Vel3,DVel3] = getTransVelDVel([0 0 1]);
 
-%     f1 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Vel1,DVel1);
-%     f2 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Vel2,DVel2);
-%     f3 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Vel3,DVel3);
-% 
-%     forces_vol(i,:) = [f1 f2 f3]
+    f1 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Vel1,DVel1);
+    f2 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Vel2,DVel2);
+    f3 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Vel3,DVel3);
+
+    forces_vol(i,:) = [f1 f2 f3]
 % 
 %     Xcg = [4 0 0];
 %     [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);

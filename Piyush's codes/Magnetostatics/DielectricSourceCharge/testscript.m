@@ -3,9 +3,9 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 % (mui+mue)/(mui-mue)
-epsilon = 1;
-epsilon0 = 1;
-vals = 5:9;
+epsilon =4;
+epsilon0 = 2;
+vals = 5:11;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_mst_recon = forces_mst;
@@ -38,10 +38,10 @@ for i = 1:Nvals
     %customPlot(bndmesh_i,bndmesh_e);
 
     %% Source
-    % mesh_src = mshSphere(N,1);
-    mesh_src = mshCube(N,L);
+    mesh_src = mshSphere(N,1);
+    % mesh_src = mshCube(N,L);
     mesh_src = mesh_src.translate([3 3 3]);
-    omega_src = dom(mesh_src,4);
+    omega_src = dom(mesh_src,3);
     % Constant surface charge density
     rho = @(X) ones(size(X,1),1);
     
@@ -78,5 +78,15 @@ for i = 1:Nvals
     f3 = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel3,DVel3);
 
     forces_bem(i,:)= [f1 f2 f3]
+
+    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
+    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
+    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+
+    t1 = sdBEMTpDielSC(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Velr1,DVelr1);
+    t2 = sdBEMTpDielSC(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Velr2,DVelr2);
+    t3 = sdBEMTpDielSC(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Velr3,DVelr3);
+
+    torques_bem(i,:) = [t1 t2 t3]
     
 end
