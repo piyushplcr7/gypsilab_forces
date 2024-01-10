@@ -22,13 +22,13 @@ for i = 1:Nvals
     % Cube size and position
     L = 2*[1 1 1];
 %     T = [1 0.5 2];
-    % T = [1 1.5 0.5];
+    T = 0*[1 1.5 0.5];
     
-%     mesh = mshCube(N,L);
-%     mesh = mesh.translate(T);
-%     bndmesh = mesh.bnd;
+    mesh = mshCube(N,L);
+    mesh = mesh.translate(T);
+    bndmesh = mesh.bnd;
 
-    bndmesh = mshSphere(N,1);
+    % bndmesh = mshSphere(N,1);
     % bndmesh = bndmesh_i.translate([2 0 0]);
 
     % Mesh size

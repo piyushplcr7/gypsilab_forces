@@ -23,19 +23,19 @@ function sd = SdBEMLMCFSP_ConstVEL(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,
     dsVei = integral(Gamma_i,Gamma_e,P0_i,dsVeiKernel,P0_e);
 
     % dsVei Explicit Computation
-    [X_i,W_i] = Gamma_i.qud;
-    [Y_e,W_e] = Gamma_e.qud;
-    NX = size(X_i,1);
-    NY = size(Y_e,1);
-
-    XX = repelem(X_i,NY,1); psi_i_XX = repelem(psi_i_vals,NY,1);
-    YY = repmat(Y_e,NX,1); psi_e_YY = repmat(psi_e_vals,NX,1);
-
-    W = repelem(W_i,NY,1).*repmat(W_e,NX,1);
-
-    kernel = 1/4/pi * dot(YY-XX,Vel(XX),2)./vecnorm(XX-YY,2,2).^3;
-
-    testyo = sum(W.*kernel.*psi_e_YY.*psi_i_XX ,1);
+    % [X_i,W_i] = Gamma_i.qud;
+    % [Y_e,W_e] = Gamma_e.qud;
+    % NX = size(X_i,1);
+    % NY = size(Y_e,1);
+    % 
+    % XX = repelem(X_i,NY,1); psi_i_XX = repelem(psi_i_vals,NY,1);
+    % YY = repmat(Y_e,NX,1); psi_e_YY = repmat(psi_e_vals,NX,1);
+    % 
+    % W = repelem(W_i,NY,1).*repmat(W_e,NX,1);
+    % 
+    % kernel = 1/4/pi * dot(YY-XX,Vel(XX),2)./vecnorm(XX-YY,2,2).^3;
+    % 
+    % testyo = sum(W.*kernel.*psi_e_YY.*psi_i_XX ,1);
 
     % grady grady G(x,y) vel(y)
     dsKie1kernel = cell(3,1);
@@ -46,21 +46,21 @@ function sd = SdBEMLMCFSP_ConstVEL(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,
     dsKie = integral(Gamma_e,Gamma_i,P0_e,dsKie1kernel,ntimes(P1_i));
 
     % dsKie explicit computation
-    [Y,WY] = Gamma_i.qud;
-    [X,WX] = Gamma_e.qud;
-
-    NX = size(X,1); NY = size(Y,1);
-
-    XX = repelem(X,NY,1); YY = repmat(Y,NX,1);
-    W = repelem(WX,NY,1).*repmat(WY,NX,1);
-
-    g_i_vals_YY = repmat(g_i_vals,NX,1);
-    psi_e_XX = repelem(psi_e_vals,NY,1);
-    normals_yy = repmat(normals_i,NX,1);
-
-    kernel = 3/4/pi * (XX-YY).*dot(XX-YY,Vel(YY),2)./vecnorm(XX-YY,2,2).^5 - 1/4/pi * Vel(YY)./vecnorm(XX-YY,2,2).^3;
-
-    testa = sum(W.* dot(kernel,normals_yy,2) .* g_i_vals_YY.*psi_e_XX ,1);
+    % [Y,WY] = Gamma_i.qud;
+    % [X,WX] = Gamma_e.qud;
+    % 
+    % NX = size(X,1); NY = size(Y,1);
+    % 
+    % XX = repelem(X,NY,1); YY = repmat(Y,NX,1);
+    % W = repelem(WX,NY,1).*repmat(WY,NX,1);
+    % 
+    % g_i_vals_YY = repmat(g_i_vals,NX,1);
+    % psi_e_XX = repelem(psi_e_vals,NY,1);
+    % normals_yy = repmat(normals_i,NX,1);
+    % 
+    % kernel = 3/4/pi * (XX-YY).*dot(XX-YY,Vel(YY),2)./vecnorm(XX-YY,2,2).^5 - 1/4/pi * Vel(YY)./vecnorm(XX-YY,2,2).^3;
+    % 
+    % testa = sum(W.* dot(kernel,normals_yy,2) .* g_i_vals_YY.*psi_e_XX ,1);
 
 
     sd = -mu0/2*( 2 * psi_i' * dsVei * psi_e + 2 * psi_e' * dsKie * g_i);
