@@ -293,6 +293,4 @@ function sd = sdBEMTpDielSC_dualnorm(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_
 
     %% Final SD
     sd = shapeDerivative_gpu+ missing_blf + l1 + l2 + l3;
-
-    pool.delete();
 end
