@@ -120,9 +120,9 @@ function sd = sdBEMTpDielSC_dualnorm(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_
     X3_gpu = gpuArray(X3');
 
     % Output variables GPU
-    dbv_ds_gpu = gpuArray.zeros(1,1);
-    dbw_ds_gpu = gpuArray.zeros(1,1);
-    dbk_ds_reduced_gpu = gpuArray.zeros(1,1); % excludes the Kmat part which is computed by the CPU
+    dbv_ds_gpu = gpuArray.zeros(Nfields,1);
+    dbw_ds_gpu = gpuArray.zeros(Nfields,1);
+    dbk_ds_reduced_gpu = gpuArray.zeros(Nfields,1); % excludes the Kmat part which is computed by the CPU
     shapeDerivative_gpu = gpuArray.zeros(Nfields,1);
     
     % More input variables to GPU
@@ -292,7 +292,7 @@ function sd = sdBEMTpDielSC_dualnorm(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_
 
 
     %% Final SD
-    sd = shapeDerivative_gpu+l1 + l2 + l3;
+    sd = shapeDerivative_gpu+ missing_blf + l1 + l2 + l3;
 
     pool.delete();
 end

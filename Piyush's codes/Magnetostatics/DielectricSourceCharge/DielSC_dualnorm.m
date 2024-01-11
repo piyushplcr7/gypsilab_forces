@@ -52,7 +52,7 @@ function [] = DielSC_dualnorm(meshfunction,vals)
         %% Source
         mesh_src = mshSphere(N,1);
         % mesh_src = mshCube(N,L);
-        mesh_src = mesh_src.translate([5 4 3]);
+%         mesh_src = mesh_src.translate([5 4 3]);
         omega_src = dom(mesh_src,3);
         % Constant surface charge density
         rho = @(X) ones(size(X,1),1);

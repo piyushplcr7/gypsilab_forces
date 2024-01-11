@@ -28,6 +28,9 @@ for i = 1:Nvals
     mesh = mesh.translate(T);
     bndmesh = mesh.bnd;
 
+%     bndmesh = getMeshTetraNew(N);
+    bndmesh = getMeshSphere(N);
+
     % bndmesh = mshSphere(N,1);
     % bndmesh = bndmesh_i.translate([2 0 0]);
 
@@ -40,7 +43,7 @@ for i = 1:Nvals
     %% Source
     mesh_src = mshSphere(N,1);
     % mesh_src = mshCube(N,L);
-    mesh_src = mesh_src.translate([3 3 3]);
+%     mesh_src = mesh_src.translate([5 4 3]);
     omega_src = dom(mesh_src,3);
     % Constant surface charge density
     rho = @(X) ones(size(X,1),1);
@@ -49,33 +52,39 @@ for i = 1:Nvals
     [Tnu,Tdu] = solveTpDielSourceCharge(bndmesh,epsilon,epsilon0,rho,omega_src);
     
     %% Computing force and torque using MST
-    Gamma = dom(bndmesh,3);
-    P0 = fem(bndmesh,'P0');
-    P1 = fem(bndmesh,'P1');
-
-    jumpepsilon = epsilon0 - epsilon;
-    jumpInvepsilon = 1/epsilon0 - 1/epsilon;
-
-    grad_g_vals = reconstruct(Tdu,Gamma,grad(P1));
-    alpha_vals = epsilon0 * reconstruct(Tnu,Gamma,P0);
-    [X,W] = Gamma.qud;
-    normals = Gamma.qudNrm;
-
-    fdensity = 0.5 * (jumpepsilon * vecnorm(grad_g_vals,2,2).^2 - jumpInvepsilon * alpha_vals.^2 ) .* normals;
-    Xcg = [4 0 0];
-    r = X-Xcg;
-
-    forces_mst(i,:) = sum(W.*fdensity,1)
-    torques_mst(i,:) = sum(W.* cross(r,fdensity,2),1)
+%     Gamma = dom(bndmesh,3);
+%     P0 = fem(bndmesh,'P0');
+%     P1 = fem(bndmesh,'P1');
+% 
+%     jumpepsilon = epsilon0 - epsilon;
+%     jumpInvepsilon = 1/epsilon0 - 1/epsilon;
+% 
+%     grad_g_vals = reconstruct(Tdu,Gamma,grad(P1));
+%     alpha_vals = epsilon0 * reconstruct(Tnu,Gamma,P0);
+%     [X,W] = Gamma.qud;
+%     normals = Gamma.qudNrm;
+% 
+%     fdensity = 0.5 * (jumpepsilon * vecnorm(grad_g_vals,2,2).^2 - jumpInvepsilon * alpha_vals.^2 ) .* normals;
+%     Xcg = [4 0 0];
+%     r = X-Xcg;
+% 
+%     forces_mst(i,:) = sum(W.*fdensity,1)
+%     torques_mst(i,:) = sum(W.* cross(r,fdensity,2),1)
 
     %% Computing force and torque using BEM SD
-    [Vel1,DVel1] = getTransVelDVel([1 0 0]);
-    [Vel2,DVel2] = getTransVelDVel([0 1 0]);
-    [Vel3,DVel3] = getTransVelDVel([0 0 1]);
+%     [Vel1,DVel1] = getTransVelDVel([1 0 0]);
+%     [Vel2,DVel2] = getTransVelDVel([0 1 0]);
+%     [Vel3,DVel3] = getTransVelDVel([0 0 1]);
+% 
+%     f1 = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel1,DVel1);
+%     f2 = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel2,DVel2);
+%     f3 = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel3,DVel3);
+    
+    a = 1; b = 1; c = 1; alpha = 0; kappa = 3;
+    idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
+    [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
 
-    f1 = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel1,DVel1);
-    f2 = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel2,DVel2);
-    f3 = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel3,DVel3);
+    testsd = sdBEMTpDielSC(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel,DVel);
 
     forces_bem(i,:)= [f1 f2 f3]
 
