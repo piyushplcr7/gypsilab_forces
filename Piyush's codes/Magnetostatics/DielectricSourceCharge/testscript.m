@@ -46,7 +46,7 @@ for i = 1:Nvals
 %     mesh_src = mesh_src.translate([5 4 3]);
     omega_src = dom(mesh_src,3);
     % Constant surface charge density
-    rho = @(X) ones(size(X,1),1);
+    rho = @(X) 15 * ones(size(X,1),1);
     
     %% Solving the transmission problem
     [Tnu,Tdu] = solveTpDielSourceCharge(bndmesh,epsilon,epsilon0,rho,omega_src);
