@@ -14,6 +14,8 @@ function sd = SdBEMLMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0
     g_i_vals = reconstruct(g_i,Gamma_i,P1_i);
     psi_e_vals = reconstruct(psi_e,Gamma_e,P0_e);
 
+    normals_i = Gamma_i.qudNrm;
+
     %% Non SS Computations
     % Evaluating the Jacobian of the velocity field (row-wise) at gamma_i qud pts
     [X_i,W_i] = Gamma_i.qud;
@@ -29,12 +31,40 @@ function sd = SdBEMLMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0
     Vii = single_layer(Gamma_i,P0_i,P0_i);
 
     % Cross matrices
-    Vei = single_layer_cross(Gamma_i,Gamma_e,P0_i,P0_e);
-    Kie = double_layer_laplace_cross(Gamma_e,Gamma_i,P0_e,P1_i);
-    Vee = single_layer(Gamma_e,P0_e,P0_e);
+    dsVeiKernel = @(X,Y) 1/4/pi.* dot(Y-X,Vel(X),2) ./vecnorm(Y-X,2,2).^3;
+    dsVei = integral(Gamma_i,Gamma_e,P0_i,dsVeiKernel,P0_e);
+
+    dsKie1kernel = cell(3,1);
+    dsKie1kernel{1} = @(X,Y) 3/4/pi * (X(:,1)-Y(1)) .* ((X-Y) * Vel(Y)')./vecnorm(X-Y,2,2).^5 - 1/4/pi * getFirstElem(Vel,Y,1) ./vecnorm(X-Y,2,2).^3;
+    dsKie1kernel{2} = @(X,Y) 3/4/pi * (X(:,2)-Y(2)) .* ((X-Y) * Vel(Y)')./vecnorm(X-Y,2,2).^5 - 1/4/pi * getFirstElem(Vel,Y,2) ./vecnorm(X-Y,2,2).^3;
+    dsKie1kernel{3} = @(X,Y) 3/4/pi * (X(:,3)-Y(3)) .* ((X-Y) * Vel(Y)')./vecnorm(X-Y,2,2).^5 - 1/4/pi * getFirstElem(Vel,Y,3) ./vecnorm(X-Y,2,2).^3;
+    
+    dsKie1 = integral(Gamma_e,Gamma_i,P0_e,dsKie1kernel,ntimes(P1_i));
+
+    % dsKie2 computation explicit
+    [Y,WY] = Gamma_i.qud;
+    [X,WX] = Gamma_e.qud;
+
+    NX = size(X,1); NY = size(Y,1);
+
+    XX = repelem(X,NY,1); YY = repmat(Y,NX,1);
+    W = repelem(WX,NY,1).*repmat(WY,NX,1);
+
+    g_i_vals_YY = repmat(g_i_vals,NX,1);
+    psi_e_XX = repelem(psi_e_vals,NY,1);
+    normalsi_YY = repmat(normals_i,NX,1);
+    DVel1iYY = repmat(DVel1i,NX,1);
+    DVel2iYY = repmat(DVel2i,NX,1);
+    DVel3iYY = repmat(DVel3i,NX,1);
+    divVeliYY = repmat(divVeli,NX,1);
+
+    gradyGXXYY = 1/4/pi * (XX-YY)./vecnorm(XX-YY,2,2).^3;
+    DVelgradyGXXYY = [dot(DVel1iYY,gradyGXXYY,2) dot(DVel2iYY,gradyGXXYY,2) dot(DVel3iYY,gradyGXXYY,2)];
+
+    dskie2kernel = divVeliYY.*dot(gradyGXXYY,normalsi_YY,2) - dot(normalsi_YY,DVelgradyGXXYY,2);
+    dsKie2 = sum(W.*dskie2kernel.*g_i_vals_YY.*psi_e_XX,1);
 
     % H0.n coefficients
-    normals_i = Gamma_i.qudNrm;
     H0extended = repmat(H0,size(normals_i,1),1);
     H0dotn_vals = dot(H0extended,normals_i,2);
     H0dotn_coeffs = proj(H0dotn_vals,Gamma_i,P0_i);
@@ -104,8 +134,7 @@ function sd = SdBEMLMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0
 
 
     sd = -mu0/2*( (1+mu0/mu) * dbv_dsii{1} + 4 * dbk_dsii -(1+mu/mu0) * dbw_dsii...
-                  + 2 * psi_i' * Vei * psi_e + 2 * psi_e' * Kie * g_i...
-                  + psi_e' * Vee * psi_e)...
+                  + 2 * psi_i' * dsVei * psi_e + 2 * psi_e' * dsKie1 * g_i + 2 * dsKie2)...
          +mu0 * (l1+l2+l3+l45+l6)...
          + r1 + r2 + r3 + r4;
 
