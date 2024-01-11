@@ -80,7 +80,7 @@ for i = 1:Nvals
 %     f2 = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel2,DVel2);
 %     f3 = sdBEMTpDielSC_ConstVel(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_src,Vel3,DVel3);
     
-    a = 1; b = 1; c = 1; alpha = 0; kappa = 3;
+    a = 1; b = 2; c = 1; alpha = 1; kappa = 3;
     idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
     [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
 

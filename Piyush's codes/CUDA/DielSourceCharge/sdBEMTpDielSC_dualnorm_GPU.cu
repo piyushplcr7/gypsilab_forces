@@ -369,6 +369,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                                                   Psiy_P0;
 
                 localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += epsilon0 / 2 * (1 + epsilon0 / epsilon) * Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]; // dbv_ds
+                // atomicAdd(&dbv_ds[fieldIdx], Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]);
 
                 // Double loop for P1
                 // Trial
@@ -400,7 +401,8 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                                                                                  .dot(normaly) *
                                                           RSFsY_P1(jj) * Psix_P0;
 
-                    localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] -= epsilon0 / 2 * 4 * Tnu[i] * (LocalMatrix_kernelintegrablemat_jj - LocalMatrix_combkernelmat_jj) * Tdu[EltJ[jj]]; // dbk_ds
+                    localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += epsilon0 / 2 * -4 * Tnu[i] * (LocalMatrix_kernelintegrablemat_jj - LocalMatrix_combkernelmat_jj) * Tdu[EltJ[jj]]; // dbk_ds
+                    // atomicAdd(&dbk_ds[fieldIdx], Tnu[i] * (LocalMatrix_kernelintegrablemat_jj - LocalMatrix_combkernelmat_jj) * Tdu[EltJ[jj]]);
 
                     // Test
                     for (int ii = 0; ii < 3; ++ii)
@@ -429,7 +431,8 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                                                                            Psiy_nxgradP1)
                                                                               .dot(Psix_nxgradP1);
 
-                        localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] -= epsilon0 / 2 * (1 + epsilon / epsilon0) * Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1_ii_jj + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad_ii_jj) * Tdu[EltJ[jj]]; // dbw_ds
+                        localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += epsilon0 / 2 * -(1 + epsilon / epsilon0) * Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1_ii_jj + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad_ii_jj) * Tdu[EltJ[jj]]; // dbw_ds
+                        // atomicAdd(&dbw_ds[fieldIdx], Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1_ii_jj + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad_ii_jj) * Tdu[EltJ[jj]]);
                     }
                 }
             }
