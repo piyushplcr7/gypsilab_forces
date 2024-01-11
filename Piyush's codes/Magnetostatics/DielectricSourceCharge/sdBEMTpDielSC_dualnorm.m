@@ -256,7 +256,7 @@ function sd = sdBEMTpDielSC_dualnorm(bndmesh,epsilon,epsilon0,Tnu,Tdu,rho,omega_
         divVelg_coeffs = proj(divVelg,Gamma,P1);
 
         % Missing part of dbk_ds in the gpu computed shape derivative
-        missing_blf(fieldID) = epsilon/2 * (-4 * Tnu' * Kmat * divVelg_coeffs);
+        missing_blf(fieldID) = epsilon0/2 * (-4 * Tnu' * Kmat * divVelg_coeffs);
         divVeln = divVel.*normals;
 
         t21kernel = 3/4/pi * dot(XX-YY,normals_XX,2).*dot(XX-YY,Vel(XX),2)./vecnorm(XX-YY,2,2).^5 - 1/4/pi * dot(Vel(XX),normals_XX,2)./vecnorm(XX-YY,2,2).^3;

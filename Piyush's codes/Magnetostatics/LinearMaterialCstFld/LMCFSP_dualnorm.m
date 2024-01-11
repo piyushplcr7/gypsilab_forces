@@ -44,6 +44,7 @@ function [] = LMCFSP_dualnorm(meshfunction,vals)
 
         % Bounding box
         bndmesh_e = mshSphere(N,9);
+        bndmesh_e = bndmesh_e.translate([2 2 2]);
         
         % Mesh size
         hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
@@ -53,7 +54,7 @@ function [] = LMCFSP_dualnorm(meshfunction,vals)
         normals_i = Gamma_i.qudNrm;
         
         %% Solving the transmission problem
-        H0 = [1 0 0];
+        H0 = [10 3 1];
         [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0);
 
         % Reconstructing Bn and Ht

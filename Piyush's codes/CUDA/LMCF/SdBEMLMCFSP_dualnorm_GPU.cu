@@ -368,7 +368,8 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                                                                                          chi_tau, chi_t, chi_t - chi_tau) *
                                                   Psiy_P0;
 
-                localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += -mu0 / 2 * (1 + mu0 / mu) * Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j];                       // dbv_ds
+                localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += -mu0 / 2 * (1 + mu0 / mu) * Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]; // dbv_ds
+                // atomicAdd(dbv_ds, -mu0 / 2 * (1 + mu0 / mu) * Tnu[i] * Local_kerneloldmat_P0_P0 * Tnu[j]);                                                                  // dbv_ds
                 localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += mu0 / mu * (mu0 - mu) * Tnu[i] * Local_kerneloldmat_P0_P0 * H0n_coeffs[j];                    // l1
                 localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += -(mu0 - mu) * (mu0 - mu) / 2 / mu * H0n_coeffs[i] * Local_kerneloldmat_P0_P0 * H0n_coeffs[j]; // remterms
 
@@ -402,7 +403,8 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                                                                                  .dot(normaly) *
                                                           RSFsY_P1(jj) * Psix_P0;
 
-                    localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += -mu0 / 2 * 4 * Tnu[i] * (LocalMatrix_kernelintegrablemat_jj - LocalMatrix_combkernelmat_jj) * Tdu[EltJ[jj]];      // dbk_ds
+                    localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += -mu0 / 2 * 4 * Tnu[i] * (LocalMatrix_kernelintegrablemat_jj - LocalMatrix_combkernelmat_jj) * Tdu[EltJ[jj]]; // dbk_ds
+                    // atomicAdd(dbk_ds, -mu0 / 2 * 4 * Tnu[i] * (LocalMatrix_kernelintegrablemat_jj - LocalMatrix_combkernelmat_jj) * Tdu[EltJ[jj]]);
                     localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += (mu0 - mu) * H0n_coeffs[i] * (LocalMatrix_kernelintegrablemat_jj - LocalMatrix_combkernelmat_jj) * Tdu[EltJ[jj]]; // l45
 
                     // Test
@@ -433,6 +435,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                                                                               .dot(Psix_nxgradP1);
 
                         localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += mu0 / 2 * (1 + mu / mu0) * Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1_ii_jj + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad_ii_jj) * Tdu[EltJ[jj]]; // dbw_ds
+                        // atomicAdd(dbw_ds, mu0 / 2 * (1 + mu / mu0) * Tdu[EltI[ii]] * (LocalMatrix_kerneloldmat_nxgradP1_nxgradP1_ii_jj + 2 * LocalMatrix_SL_Dvelnxgrad_nxgrad_ii_jj) * Tdu[EltJ[jj]]);
                     }
                 }
             }

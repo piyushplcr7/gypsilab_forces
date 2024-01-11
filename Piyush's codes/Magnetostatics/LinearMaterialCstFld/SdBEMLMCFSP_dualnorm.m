@@ -245,5 +245,4 @@ function sdnongpu = SdBEMLMCFSP_dualnorm(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,mu0
 
     sd = sdnongpu + shapeDerivative_gpu;
 
-    pool.delete();
 end
