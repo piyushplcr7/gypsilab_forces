@@ -1,5 +1,5 @@
 function [] = DielSC_forcesNtorques(meshfunction,vals)
-    
+    delete(gcp('nocreate'));
     funcInfo = functions(meshfunction);
     disp(['DielSC forces and torques invoked with: ', funcInfo.function]);
     disp("===================================================");

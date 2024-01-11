@@ -1,5 +1,5 @@
 function [] = LMCFSP_forcesNtorques(meshfunction,vals)
-    
+    delete(gcp('nocreate'));
     funcInfo = functions(meshfunction);
     disp(['LMCFSP forces and torques invoked with: ', funcInfo.function]);
     disp("===================================================");
