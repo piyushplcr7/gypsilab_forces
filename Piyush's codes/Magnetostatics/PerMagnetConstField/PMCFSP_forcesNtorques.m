@@ -69,7 +69,7 @@ function [] = PMCFSP_forcesNtorques(meshfunction,vals)
         [Vel1,DVel1] = getTransVelDVel([1 0 0]);
         [Vel2,DVel2] = getTransVelDVel([0 1 0]);
         [Vel3,DVel3] = getTransVelDVel([0 0 1]);
-    
+        
         f1 = SdBEMPMCFSP_ConstVEL(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel1,DVel1,mu0);
         f2 = SdBEMPMCFSP_ConstVEL(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel2,DVel2,mu0);
         f3 = SdBEMPMCFSP_ConstVEL(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel3,DVel3,mu0);
@@ -79,7 +79,7 @@ function [] = PMCFSP_forcesNtorques(meshfunction,vals)
         [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
         [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
         [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
-
+        
         t1 = SdBEMPMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Velr1,DVelr1,mu0,H0,M);
         t2 = SdBEMPMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Velr2,DVelr2,mu0,H0,M);
         t3 = SdBEMPMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Velr3,DVelr3,mu0,H0,M);
