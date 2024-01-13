@@ -63,6 +63,7 @@ function [] = LMCFSP_dualnorm(meshfunction,vals)
         H0extended = repmat(H0,size(normals_i,1),1);
         H0t = cross(normals_i,cross(H0extended,normals_i,2),2);
         Ht = reconstruct(g_i,Gamma_i,P1_i.grad) + H0t;
+        Ht = vecnorm(Ht,2,2);
     
         Bn = -mu0 * reconstruct(psi_i,Gamma_i,P0_i) + mu0 * dot(H0extended,normals_i,2);
         jump_mu_inv = 1/mu0 - 1/mu;
