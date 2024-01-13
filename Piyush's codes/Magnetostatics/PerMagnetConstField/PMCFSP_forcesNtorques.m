@@ -26,7 +26,7 @@ function [] = PMCFSP_forcesNtorques(meshfunction,vals)
         % Bounding box
         bndmesh_e = mshSphere(N,9);
         bndmesh_e = bndmesh_e.translate([2 2 2]);
-        
+        assert(vecnorm(bndmesh_i.vtx-[2 2 2],2,2)<9);
         % Mesh size
         hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
         
