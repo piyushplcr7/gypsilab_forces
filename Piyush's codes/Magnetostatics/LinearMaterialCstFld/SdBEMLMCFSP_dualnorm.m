@@ -1,4 +1,4 @@
-function sdnongpu = SdBEMLMCFSP_dualnorm(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,mu0,mu,H0,abc_alpha)
+function sd = SdBEMLMCFSP_dualnorm(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,mu0,mu,H0,abc_alpha)
     Nfields = size(abc_alpha,1);
     Gamma_i = dom(bndmesh_i,3);
     Gamma_e = dom(bndmesh_e,3);
