@@ -230,10 +230,11 @@ function sd = SdBEMPMCFSP_dualnorm(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,mu0,H0,M,
         l23 = -Mdotncoeffs' * Kmatii * divVelgi_coeffs;
 
         % Remaining terms
-        DVelMi = [dot(DVel1i,Mvals,2) dot(DVel2i,Mvals,2) dot(DVel3i,Mvals,2)];
-        DVelMidotH0 = DVelMi * H0';
-        r1 = mu0 * sum(W_i.*DVelMidotH0,1);
-        
+        % DVelMi = [dot(DVel1i,Mvals,2) dot(DVel2i,Mvals,2) dot(DVel3i,Mvals,2)];
+        % DVelMidotH0 = DVelMi * H0';
+        % r1 = mu0 * sum(W_i.*DVelMidotH0,1);
+        r1 = mu0 * sum(W_i.*Mdotn.*(Veli * H0'),1);
+
         % Computed on GPU
 %         r2 = -mu0/2 * Mdotncoeffs' * kerneloldmat_P0_P0_ii{1} * Mdotncoeffs;
         
