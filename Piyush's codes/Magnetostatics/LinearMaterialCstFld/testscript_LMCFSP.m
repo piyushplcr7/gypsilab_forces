@@ -17,6 +17,8 @@ torques_mst = forces_mst;
 torques_mst_recon = torques_mst;
 torques_bem = forces_mst;
 hvals = 0*vals;
+testsdbem = hvals;
+testsdmst = testsdbem;
 
 %rng(32);
 H0 = [10 3 1];
@@ -106,11 +108,27 @@ for i = 1:Nvals
 
 %     forces_bem(i,:) = [f1 f2 f3]
 
-    a = 1; b = 0; c = 1; alpha = 2; kappa = 3;
+    % Reconstructing Bn and Ht
+        P1_i = fem(bndmesh_i,'P1');
+        P0_i = fem(bndmesh_i,'P0');
+        H0extended = repmat(H0,size(normals_i,1),1);
+        H0t = cross(normals_i,cross(H0extended,normals_i,2),2);
+        Ht = reconstruct(g_i,Gamma_i,P1_i.grad) + H0t;
+        Ht = vecnorm(Ht,2,2);
+    
+        Bn = -mu0 * reconstruct(psi_i,Gamma_i,P0_i) + mu0 * dot(H0extended,normals_i,2);
+        jump_mu_inv = 1/mu0 - 1/mu;
+        jump_mu = mu0 - mu;
+        [X_i,W_i] = Gamma_i.qud;
+        fdensity = 0.5 * ((Bn).^2*jump_mu_inv - (Ht).^2*jump_mu).* normals_i;
+
+    a = 1; b = 2; c = 2; alpha = 1; kappa = 3;
     idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
     [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+    Vels = Vel(X_i);
 
-    testsd = SdBEMLMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0);
+    testsdmst(i) = sum(W_i.*dot(fdensity,Vels,2),1)
+    testsdbem(i) = SdBEMLMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
 
 %     [Velr1,DVelr1] = getRotVelDVelCutoff([1 0 0],Xcg,cutoff_rad);
 %     [Velr2,DVelr2] = getRotVelDVelCutoff([0 1 0],Xcg,cutoff_rad);

@@ -19,7 +19,7 @@ function sd = SdBEMPMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,H0,M)
     Mdotn = dot(Mvals,normals_i,2);
     Mdotncoeffs = proj(Mdotn,Gamma_i,P0_i);
 
-    % Veli = Vel(X_i);
+    Veli = Vel(X_i);
     DVel1i = DVel{1}(X_i);
     DVel2i = DVel{2}(X_i);
     DVel3i = DVel{3}(X_i);
@@ -114,9 +114,10 @@ function sd = SdBEMPMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,H0,M)
     l23 = -(Mdotncoeffs' * Kmatii * divVelgi_coeffs + Mdotncoeffs' * (kernelintegrablematii{3} -combkernelmatii{4}) * g_i);
 
     % Remaining terms
-    DVelMi = [dot(DVel1i,Mvals,2) dot(DVel2i,Mvals,2) dot(DVel3i,Mvals,2)];
-    DVelMidotH0 = DVelMi * H0';
-    r1 = mu0 * sum(W_i.*DVelMidotH0,1);
+    % DVelMi = [dot(DVel1i,Mvals,2) dot(DVel2i,Mvals,2) dot(DVel3i,Mvals,2)];
+    % DVelMidotH0 = DVelMi * H0';
+    % r1 = mu0 * sum(W_i.*DVelMidotH0,1);
+    r1 = mu0 * sum(W_i.*Mdotn.*(Veli * H0'),1);
     r2 = -mu0/2 * Mdotncoeffs' * kerneloldmat_P0_P0_ii{1} * Mdotncoeffs;
 
 

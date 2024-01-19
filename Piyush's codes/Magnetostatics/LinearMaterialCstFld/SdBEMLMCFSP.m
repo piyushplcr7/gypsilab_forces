@@ -138,5 +138,19 @@ function sd = SdBEMLMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0
          +mu0 * (l1+l2+l3+l45+l6)...
          + r1 + r2 + r3 + r4;
 
+    % part of shape derivative that is computed on the GPU
+    dbk_dsii_reduced = psi_i' * (kernelintegrablematii{3} -combkernelmatii{4}) * g_i;
+    l45_reduced = jumpMu/mu0 * (H0dotn_coeffs' * (kernelintegrablematii{3} -combkernelmatii{4}) * g_i);
+    sdonGPU = -mu0/2*( (1+mu0/mu) * dbv_dsii{1} + 4 * dbk_dsii_reduced -(1+mu/mu0) * dbw_dsii)...
+         +mu0 * (l1+l45_reduced)...
+         + r1;
+    
+    dbk_dsii_nongpu = psi_i' * Kmatii * divVelgi_coeffs;
+    l45_nongpu = jumpMu/mu0 * (H0dotn_coeffs' * Kmatii * divVelgi_coeffs);
+    sdnonGPU = -mu0/2*(  4 * dbk_dsii_nongpu ...
+                  + 2 * psi_i' * dsVei * psi_e + 2 * psi_e' * dsKie1 * g_i + 2 * dsKie2)...
+         +mu0 * (l2+l3+l45_nongpu+l6)...
+         + r2 + r3 + r4;
+
     pool.delete();
 end
