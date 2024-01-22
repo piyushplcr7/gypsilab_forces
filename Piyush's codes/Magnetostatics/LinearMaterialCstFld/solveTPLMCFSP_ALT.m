@@ -45,16 +45,24 @@ function [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0)
 
     %% Linear system
 
-    blockopr = [(1+mu0/mu)*Vii, 2*Kii, Vei, zeros(P0_i.ndof,1);
-                -2*Kii', (1+mu/mu0)*Wii, -Kie', Vec;
-                Vei', Kie, Vee, zeros(P0_e.ndof,1);
-                zeros(1,P0_i.ndof), Vec', zeros(1,P0_e.ndof), 0];
+    % blockopr = [(1+mu0/mu)*Vii, 2*Kii, Vei, zeros(P0_i.ndof,1);
+    %             -2*Kii', (1+mu/mu0)*Wii, -Kie', Vec;
+    %             Vei', Kie, Vee, zeros(P0_e.ndof,1);
+    %             zeros(1,P0_i.ndof), Vec', zeros(1,P0_e.ndof), 0];
+
+    blockopr = [(1+mu0/mu)*Vii, 2*Kii, Vei;
+                -2*Kii', (1+mu/mu0)*Wii, -Kie';
+                Vei', Kie, Vee];
     % cond(blockopr)
+
+%     rhs = [Kei * g_e_coeffs;
+%            Wei * g_e_coeffs;
+%            Kee * g_e_coeffs + 0.5 * M01e * g_e_coeffs;
+%             0];
 
     rhs = [Kei * g_e_coeffs;
            Wei * g_e_coeffs;
-           Kee * g_e_coeffs + 0.5 * M01e * g_e_coeffs;
-            0];
+           Kee * g_e_coeffs + 0.5 * M01e * g_e_coeffs];
 
     sol = blockopr\rhs;
 
@@ -63,23 +71,23 @@ function [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0)
     psi_e = sol(P0_i.ndof+P1_i.ndof+1:P0_i.ndof+P1_i.ndof+P0_e.ndof);
 
     %% Testing reconstructed traces of Interior Rep. Formula at interface
-    M01i = mass_matrix(Gamma_i,P0_i,P1_i);
-    tested_g_I = -mu0/mu * Vii * psi_i + 0.5 * M01i * g_i - Kii * g_i;
-    tested_psi_I = -mu0/2/mu * M01i' * psi_i - mu0/mu * Kii' * psi_i + Wii * g_i;
-
-    % Exact traces for mu = mu0
-    expl_psi_i_vals = -normals_i * H0';
-    psi_i_exact = proj(expl_psi_i_vals,Gamma_i,P0_i);
-    [X_i,~] = Gamma_i.qud;
-    expl_g_i_vals = X_i * H0';
-    g_i_exact = proj(expl_g_i_vals,Gamma_i,P1_i);
-
-    % Comparing
-    tested_g_i_exact = M01i * g_i_exact;
-    tested_psi_I_exact = -mu0/mu * M01i' * psi_i_exact;
-
-    fprintf("Err_g, max = %f, norm = %f \n",max(abs(tested_g_i_exact-tested_g_I)),norm(tested_g_i_exact-tested_g_I)/size(tested_g_I,1));
-    fprintf("Err_psi, max = %f, norm = %f \n",max(abs(tested_psi_I_exact-tested_psi_I)),norm(tested_psi_I_exact-tested_psi_I)/size(tested_psi_I,1));
+%     M01i = mass_matrix(Gamma_i,P0_i,P1_i);
+%     tested_g_I = -mu0/mu * Vii * psi_i + 0.5 * M01i * g_i - Kii * g_i;
+%     tested_psi_I = -mu0/2/mu * M01i' * psi_i - mu0/mu * Kii' * psi_i + Wii * g_i;
+% 
+%     % Exact traces for mu = mu0
+%     expl_psi_i_vals = -normals_i * H0';
+%     psi_i_exact = proj(expl_psi_i_vals,Gamma_i,P0_i);
+%     [X_i,~] = Gamma_i.qud;
+%     expl_g_i_vals = X_i * H0';
+%     g_i_exact = proj(expl_g_i_vals,Gamma_i,P1_i);
+% 
+%     % Comparing
+%     tested_g_i_exact = M01i * g_i_exact;
+%     tested_psi_I_exact = -mu0/mu * M01i' * psi_i_exact;
+% 
+%     fprintf("Err_g, max = %f, norm = %f \n",max(abs(tested_g_i_exact-tested_g_I)),norm(tested_g_i_exact-tested_g_I)/size(tested_g_I,1));
+%     fprintf("Err_psi, max = %f, norm = %f \n",max(abs(tested_psi_I_exact-tested_psi_I)),norm(tested_psi_I_exact-tested_psi_I)/size(tested_psi_I,1));
 
     % disp(sol(end));
 end

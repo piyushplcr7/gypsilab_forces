@@ -8,7 +8,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 5:9;
+vals = 5:12;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_mst_recon = forces_mst;
@@ -122,9 +122,10 @@ for i = 1:Nvals
         [X_i,W_i] = Gamma_i.qud;
         fdensity = 0.5 * ((Bn).^2*jump_mu_inv - (Ht).^2*jump_mu).* normals_i;
 
-    a = 1; b = 2; c = 2; alpha = 1; kappa = 3;
-    idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
-    [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+%     a = 0; b = 1; c = 0; alpha = 0; kappa = 3;
+%     idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
+%     [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+    [Vel,DVel] = getRotVelDVel([1 0 0],[5 5 3]);
     Vels = Vel(X_i);
 
     testsdmst(i) = sum(W_i.*dot(fdensity,Vels,2),1)
