@@ -55,7 +55,7 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
         
         area_i = vols(i);
         
-        nrm = normals(j,:);
+        nrmy = normals(j,:);
         
         nrmx = normals(i,:);
         % The Jacobian of transformation from the panel in 3D to reference
@@ -354,9 +354,9 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                                 
                                 % Components for nx grad b, grad b is
                                 % constant
-                                PY1 = nrm(2) * Psiy3 - nrm(3) * Psiy2;
-                                PY2 = nrm(3) * Psiy1 - nrm(1) * Psiy3;
-                                PY3 = nrm(1) * Psiy2 - nrm(2) * Psiy1;
+                                PY1 = nrmy(2) * Psiy3 - nrmy(3) * Psiy2;
+                                PY2 = nrmy(3) * Psiy1 - nrmy(1) * Psiy3;
+                                PY3 = nrmy(1) * Psiy2 - nrmy(2) * Psiy1;
 
                                 % Evaluating DVel at the quadrature points
                                 Yh_panel = chi_t(Yh'); % Size 3 X N
@@ -389,7 +389,7 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                               
                               case '[psi]'  % Trial: ntimes(P1), Test: P0
                                   
-                                  dKer = Ker{1} * nrm(1) + Ker{2} * nrm(2) + Ker{3} * nrm(3);
+                                  dKer = Ker{1} * nrmy(1) + Ker{2} * nrmy(2) + Ker{3} * nrmy(3);
                                   for ii = 1:Qts
                                       Psix = rsf_ts{ii}(Xh) .* g_tau;
 
@@ -407,7 +407,7 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                                   
                               case 'n*[psi]'  % Trial: ntimes(P1), Test: ntimes(P1)
                                   
-                                  ndotn = nrmx(1)*nrm(1) + nrmx(2)*nrm(2) + nrmx(3)*nrm(3);
+                                  ndotn = nrmx(1)*nrmy(1) + nrmx(2)*nrmy(2) + nrmx(3)*nrmy(3);
                                   for ii = 1:Qts
                                       Psix = rsf_ts{ii}(Xh) .* g_tau;
 
@@ -639,13 +639,13 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                         DV3 = DVel{3}(Yh_panel');
 
                         divV = DV1(:,1)+DV2(:,2)+DV3(:,3);
-                        normals = repmat(nrm,size(DV1,1),1);
+                        normals = repmat(nrmy,size(DV1,1),1);
 
                         % Computing DVel^T * nrm
-                        DVelTnrm = nrm(1) * DV1 + nrm(2) * DV2 + nrm(3) * DV3;
+                        DVelTnrm = nrmy(1) * DV1 + nrmy(2) * DV2 + nrmy(3) * DV3;
 
                         % Y integrand
-                        yintegrand = divV * nrm - DVelTnrm;
+                        yintegrand = divV * nrmy - DVelTnrm;
                         B0 = trial_space.dir;
                         yintegrand = g_t * cross(repmat(B0,size(DV1,1),1),yintegrand,2) ;
 

@@ -27,13 +27,11 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
 
     %% Non SS Computations 
     % Cross bilinear forms
-    % grady G(x,y) . Vel(y)
-    gradyGdotVely = @(x,y) 1/4/pi * (x-y)./vecnorm(x-y,2,2).^3 * (Vel(y))';
-    gradxGdotVelx = @(x,y) -1/4/pi ./vecnorm(x-y,2,2).^3 .* dot(x-y,Vel(x),2);
-    Gxy = @(x,y) 1/4/pi ./vecnorm(x-y,2,2);
+    gradxGdotVelx = @(x,y) 1/4/pi ./vecnorm(x-y,2,2).^3 .* dot(y-x,Vel(x),2);
 
     % ei partial derivative computation
     Aei1mat = integral(Gamma_i,Gamma_e,RWG_i,gradxGdotVelx,RWG_e);
+    % int_{Gamma_i} int_{\Gamma_e} gradxG(x,y).vel(x) psi_e(y).zeta_i(x) 
     Aei1 = Psi_i' * Aei1mat * Psi_e;
 
     [Y_e,WY_e] = Gamma_e.qud;
@@ -65,8 +63,12 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
 
     nxgvals_iYY = repelem(nxgvals_i,NX,1);
     Psi_eXX = repmat(Psi_e_vals,NY,1);
-    Ciekernel1 = 3/4/pi * (XX-YY).*dot(XX-YY,Vel(XX)-Vel(YY),2)./vecnorm(XX-YY,2,2).^5 ...
-                -1/4/pi * (Vel(XX)-Vel(YY))./vecnorm(XX-YY,2,2).^3;
+    % Ciekernel1 = 3/4/pi * (XX-YY).*dot(XX-YY,Vel(XX)-Vel(YY),2)./vecnorm(XX-YY,2,2).^5 ...
+    %             -1/4/pi * (Vel(XX)-Vel(YY))./vecnorm(XX-YY,2,2).^3;
+
+    % Manually putting vel(x) = 0
+    Ciekernel1 = 3/4/pi * (XX-YY).*dot(XX-YY,-Vel(YY),2)./vecnorm(XX-YY,2,2).^5 ...
+                -1/4/pi * (-Vel(YY))./vecnorm(XX-YY,2,2).^3;
 
     Cie1 = sum(W.*dot(Psi_eXX,cross(Ciekernel1,nxgvals_iYY,2),2) ,1);
 
