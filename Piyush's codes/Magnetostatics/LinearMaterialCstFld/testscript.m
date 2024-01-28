@@ -23,20 +23,18 @@ for i = 1:Nvals
     T = [1 0.5 2];
     
     % Bounding box
-    bndmesh_e = mshSphere(N,5);
+    bndmesh_e = mshSphere(N,9);
+    bndmesh_e = bndmesh_e.translate([2 2 2]);
     
-    mesh = mshCube(N,L);
-    mesh = mesh.translate(T);
-    %mesh = mesh.sub(1);
-    bndmesh_i = mesh.bnd;
+    bndmesh_i = getMeshSphere(N);
 
 
 %     bndmesh_i = mshSphere(N,1);
 %     bndmesh_i = bndmesh_i.translate([2 0 0]);
 
-    cutoff_rad = 3.95;
-    assert(max(vecnorm(bndmesh_i.vtx,2,2))<cutoff_rad);
-    assert(min(vecnorm(bndmesh_e.vtx,2,2))>cutoff_rad);
+%     cutoff_rad = 3.95;
+%     assert(max(vecnorm(bndmesh_i.vtx,2,2))<cutoff_rad);
+%     assert(min(vecnorm(bndmesh_e.vtx,2,2))>cutoff_rad);
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
 

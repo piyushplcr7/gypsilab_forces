@@ -17,7 +17,8 @@ for i = 1:Nvals
     N = 2^vals(i);
     disp(N);
     %% SOLUTION DOMAIN
-    bndmesh_i = getMeshSphere(N);
+%     bndmesh_i = getMeshSphere(N);
+    bndmesh_i = getMeshCube(N);
 
     % Bounding box
     bndmesh_e = mshSphere(N,9);
@@ -61,6 +62,8 @@ for i = 1:Nvals
     idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
 
     [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
+    Xcg = [4 0 0];
+    [Vel,DVel] = getRotVelDVel([0 1 0],Xcg);
     Vels = Vel(X_i);
 
     testsdmst(i) = mu0 * sum(W_i.*dot(fdensity,Vels,2),1)
