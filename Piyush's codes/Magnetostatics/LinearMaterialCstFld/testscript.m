@@ -6,7 +6,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 5:9;
+vals = 5:12;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
@@ -48,7 +48,7 @@ for i = 1:Nvals
     %% Solving the transmission problem
     % These are traces from the exterior
     B_0 = [1 0 0];
-    [Psi_i,g_i,Psi_e] = solveTPConstantFld(bndmesh_i,bndmesh_e,mu,mu0,B_0);
+    [Psi_i,g_i,Psi_e] = solveTPLMCFVP(bndmesh_i,bndmesh_e,mu,mu0,B_0);
     
     %% MST Based force and torque on bndmesh_i
     % Force computation
@@ -88,13 +88,11 @@ for i = 1:Nvals
     Psie_RWG = proj(Psivals_e,Gamma_e,RWG_e);
     Psii_RWG = proj(Psivals_i,Gamma_i,RWG_i);
 
-    [Vel1,DVel1] = getTransVelDVelCutoff([1 0 0],cutoff_rad);
-    [Vel2,DVel2] = getTransVelDVelCutoff([0 1 0],cutoff_rad);
-    [Vel3,DVel3] = getTransVelDVelCutoff([0 0 1],cutoff_rad);
+    [Vel1,DVel1] = getTransVelDVel([1 0 0]);
+    [Vel2,DVel2] = getTransVelDVel([0 1 0]);
+    [Vel3,DVel3] = getTransVelDVel([0 0 1]);
     
-    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
-    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
-    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+    
     
     ff1 = SdBemLMCFVP_ConstVel(bndmesh_i,bndmesh_e,Psii_RWG,g_i,Psie_RWG,Vel1,DVel1,mu0,mu,B_0);
 %     f1 = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psii_RWG,g_i,Psie_RWG,Vel1,DVel1,mu0,mu,B_0)
@@ -106,5 +104,15 @@ for i = 1:Nvals
 %     f3 = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psii_RWG,g_i,Psie_RWG,Vel3,DVel3,mu0,mu,B_0)
 
     forces_bem(i,:) = [ff1 ff2 ff3]
+
+    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
+    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
+    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+
+    t1 = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psii_RWG,g_i,Psie_RWG,Velr1,DVelr1,mu0,mu,B_0);
+    t2 = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psii_RWG,g_i,Psie_RWG,Velr2,DVelr2,mu0,mu,B_0);
+    t3 = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psii_RWG,g_i,Psie_RWG,Velr3,DVelr3,mu0,mu,B_0);
+
+    torques_bem(i,:) = [t1 t2 t3]
 
 end
