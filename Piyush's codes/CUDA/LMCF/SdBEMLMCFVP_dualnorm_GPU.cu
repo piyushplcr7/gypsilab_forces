@@ -131,7 +131,9 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
                                        const double *W2, const double *X2, int Nq2,
                                        const double *W3, const double *X3, int Nq3,
                                        double *A1, double *A2, double *C1, double *C2, double *C3, double *N,
-                                       double *shapeDerivative,
+                                       double *l1, double *l2, double *l3, double *l4, double *l5, double *l6,
+                                       double *r1, double *r2r3,
+                                       double *shapeDerivative, double *l2vec,
                                        double mu0, double mu,
                                        const double *TdA, const double *TnA, const double *B0xn_coeffs,
                                        const double *B0,
@@ -144,6 +146,7 @@ __global__ void computeShapeDerivative(int TrialDim, int TestDim, int NTriangles
 /* double *testout, double *testABCi, double *testABCj,
 int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
 {
+    double jumpMuInv = (1 / mu0 - 1 / mu);
     // shared memory for writing shape derivatives
     // Need to specify the size beforehand, hard coding Nabc_alpha = 81, blockDim.x = 32
     __shared__ double localShapeDerivatives[81 * 32];
@@ -422,13 +425,62 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
             Eigen::Matrix3d LocalMatrixN = Eigen::MatrixX3d::Zero(3, 3);
             Eigen::Vector3d LocalL2Vec = Eigen::Vector3d::Zero(3);
             Eigen::Vector3d LocalL6Vec = Eigen::Vector3d::Zero(3);
+
             for (int ii = 0; ii < 3; ++ii)
             {
                 int iip1 = (permI[ii] + 1) % 3;
                 int iip2 = (iip1 + 1) % 3;
 
                 double fluxI = origEltI[iip1] < origEltI[iip2] ? 1. : -1.;
-                // double RWGX_ref_0 = -ii % 2, RWGX_ref_1 = -ii / 2;
+
+                /* for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
+                {
+                    double RWGX_ref_0 = __ldg(&X[4 * QudPt]) - ii % 2;
+                    double RWGX_ref_1 = __ldg(&X[4 * QudPt + 1]) - ii / 2;
+
+                    // RWG elements
+                    Eigen::Vector3d Psix = fluxI * (Ei.col(0) * RWGX_ref_0 + Ei.col(1) * RWGX_ref_1);
+                    Eigen::Vector3d chi_t = Aj + Ej.col(0) * __ldg(&X[4 * QudPt + 2]) + Ej.col(1) * __ldg(&X[4 * QudPt + 3]);
+                    Eigen::Vector3d chi_tau = Ai + Ei.col(0) * __ldg(&X[4 * QudPt]) + Ei.col(1) * __ldg(&X[4 * QudPt + 1]);
+
+                    LocalL2Vec(ii) += __ldg(&W[QudPt]) * KernelA2(chi_tau, chi_t, chi_t - chi_tau) * Psix.dot(B0vec.cross(DVel(__ldg(&abc_alpha[4 * fieldIdx]),     //
+                                                                                                                               __ldg(&abc_alpha[4 * fieldIdx + 1]), //
+                                                                                                                               __ldg(&abc_alpha[4 * fieldIdx + 2]), //
+                                                                                                                               __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t)
+                                                                                                                                  .trace() *
+                                                                                                                              normaly -
+                                                                                                                          DVel(__ldg(&abc_alpha[4 * fieldIdx]),     //
+                                                                                                                               __ldg(&abc_alpha[4 * fieldIdx + 1]), //
+                                                                                                                               __ldg(&abc_alpha[4 * fieldIdx + 2]), //
+                                                                                                                               __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t)
+                                                                                                                                  .transpose() *
+                                                                                                                              normaly)) *
+                                      g_t;
+
+                    LocalL6Vec(ii) += __ldg(&W[QudPt]) * KernelC1(chi_tau, chi_t, chi_t - chi_tau).cross(B0vec.cross(DVel(__ldg(&abc_alpha[4 * fieldIdx]),     //
+                                                                                                                          __ldg(&abc_alpha[4 * fieldIdx + 1]), //
+                                                                                                                          __ldg(&abc_alpha[4 * fieldIdx + 2]), //
+                                                                                                                          __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t)
+                                                                                                                             .trace() *
+                                                                                                                         normaly -
+                                                                                                                     DVel(__ldg(&abc_alpha[4 * fieldIdx]),     //
+                                                                                                                          __ldg(&abc_alpha[4 * fieldIdx + 1]), //
+                                                                                                                          __ldg(&abc_alpha[4 * fieldIdx + 2]), //
+                                                                                                                          __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t)
+                                                                                                                             .transpose() *
+                                                                                                                         normaly))
+                                                             .dot(Psix) *
+                                      g_t;
+
+                } // end loop over qud pts
+
+                atomicAdd(&l2[fieldIdx], mu * (1 / mu0 - 1 / mu) * TnA[DofsI[permI[ii]]] * LocalL2Vec(ii));
+                atomicAdd(&l6[fieldIdx], mu0 * (1 / mu0 - 1 / mu) * TdA[DofsI[permI[ii]]] * LocalL6Vec(ii));
+
+                if (fieldIdx == 13)
+                {
+                    atomicAdd(&l2vec[DofsI[permI[ii]]], LocalL2Vec(ii));
+                } */
 
                 for (int jj = 0; jj < 3; ++jj)
                 {
@@ -436,30 +488,9 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                     int jjp2 = (jjp1 + 1) % 3;
 
                     double fluxJ = origEltJ[jjp1] < origEltJ[jjp2] ? 1. : -1.;
-                    // double RWGY_ref_0 = -jj % 2, RWGY_ref_1 = -jj / 2;
-
-                    // trick to compute l2vec. Since we don't want use trial functions, we set contribution of j != 0 to zero
-                    double tricky = (double)(j == 0);
 
                     for (int QudPt = 0; QudPt < NQudPts; ++QudPt)
                     {
-                        /* if (blockIdx.x == 0 && threadIdx.x == 0)
-                        {
-                            printf("Qud pt %d\n", QudPt);
-                        } */
-                        // Reference basis RT0
-                        /* Eigen::MatrixXd RWGX_ref(3, 2); // Rows represent the 3 RSFs
-                        RWGX_ref << X[4 * QudPt], X[4 * QudPt + 1],
-                            X[4 * QudPt] - 1, X[4 * QudPt + 1],
-                            X[4 * QudPt], X[4 * QudPt + 1] - 1;
-
-                        Eigen::MatrixXd RWGY_ref(3, 2); // Rows represent the 3 RSFs
-                        RWGY_ref << X[4 * QudPt + 2], X[4 * QudPt + 3],
-                            X[4 * QudPt + 2] - 1, X[4 * QudPt + 3],
-                            X[4 * QudPt + 2], X[4 * QudPt + 3] - 1;
-
-                        Eigen::Vector3d Psix = fluxI * Ei * RWGX_ref.row(ii).transpose();
-                        Eigen::Vector3d Psiy = fluxJ * Ej * RWGY_ref.row(jj).transpose(); */
 
                         double RWGX_ref_0 = __ldg(&X[4 * QudPt]) - ii % 2;
                         double RWGX_ref_1 = __ldg(&X[4 * QudPt + 1]) - ii / 2;
@@ -524,7 +555,7 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                                                                                                                                    __ldg(&abc_alpha[4 * fieldIdx + 3]), chi_t)
                                                                                                                                       .transpose() *
                                                                                                                                   normaly)) *
-                                          g_t * tricky;
+                                          g_t / 3; // 1/3 scaling to get the right value since ii computations are independent of jj and thus happen 3 times than intended
 
                         LocalL6Vec(ii) += __ldg(&W[QudPt]) * KernelC1(chi_tau, chi_t, chi_t - chi_tau).cross(B0vec.cross(DVel(__ldg(&abc_alpha[4 * fieldIdx]),     //
                                                                                                                               __ldg(&abc_alpha[4 * fieldIdx + 1]), //
@@ -539,43 +570,63 @@ int *orig_elti, int *orig_eltj, int *modif_elti, int *modif_eltj) */
                                                                                                                                  .transpose() *
                                                                                                                              normaly))
                                                                  .dot(Psix) *
-                                          g_t * tricky;
-                    }
+                                          g_t / 3; // 1/3 scaling to get the right value since ii computations are independent of jj and thus happen 3 times than intended
+                    }                              // loop over quadrature points ends
 
-                    localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += -1 / 2 / mu0 * ((1 + mu / mu0) * (                                                                               //
-                                                                                                                       TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]]       // A1
-                                                                                                                       + 2 * TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]] // A2
-                                                                                                                       )                                                                           //
-                                                                                                  + 4 * (                                                                                          //
-                                                                                                            TnA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]]                  // C1
-                                                                                                            + TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TnA[DofsJ[permJ[jj]]]                // C2
-                                                                                                            + TnA[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]]                // C3
-                                                                                                            )                                                                                      //
-                                                                                                  + (1 + mu0 / mu) * TdA[DofsI[permI[ii]]] * LocalMatrixN(ii, jj) * TdA[DofsJ[permJ[jj]]]) +
-                                                                                  1 / mu0 * (mu * (1 / mu0 - 1 / mu) * TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * B0xn_coeffs[DofsJ[permJ[jj]]]    // l1
-                                                                                             + mu * (1 / mu0 - 1 / mu) * TnA[DofsI[permI[ii]]] * LocalL2Vec(ii)                                         // l2
-                                                                                             + mu * (1 / mu0 - 1 / mu) * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]]  // l3
-                                                                                             + mu0 * (1 / mu0 - 1 / mu) * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]] // l4
-                                                                                             + mu0 * (1 / mu0 - 1 / mu) * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]] // l5
-                                                                                             + mu0 * (1 / mu0 - 1 / mu) * TdA[DofsI[permI[ii]]] * LocalL6Vec(ii)                                        // l6
-                                                                                             ) -
-                                                                                  mu * (1 / mu0 - 1 / mu) * (1 / mu0 - 1 / mu) / 2 * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * B0xn_coeffs[DofsJ[permJ[jj]]] // r1
-                                                                                  - 2 * mu * (1 / mu0 - 1 / mu) * (1 / mu0 - 1 / mu) / 2 * B0xn_coeffs[DofsI[permI[ii]]] * LocalL2Vec(ii)                                  // r2+r3
-                        ;
-                    // GalerkinMatrix[i + TestDim * EltJ[jj]] += LocalMatrix(ii, jj);
-                    /* atomicAdd(shapeDerivative, (1 + mu / mu0) * (                                                                               //
-                                                                    TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]]       // A1
-                                                                    + 2 * TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]] // A2
-                                                                    )                                                                           //
-                                                   - 4 * (                                                                                      //
-                                                             TnA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]]              // C1
-                                                             + TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TnA[DofsJ[permJ[jj]]]            // C2
-                                                             + TnA[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]]            // C3
-                                                             )                                                                                  //
-                                                   + (1 + mu0 / mu) * -TdA[DofsI[permI[ii]]] * LocalMatrixN(ii, jj) * TdA[DofsJ[permJ[jj]]]     // N
-                    ); */
-                }
-            }
+                    /* double a1 = TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]];
+                    double a2 = 2 * TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]];
+                    double c1 = TnA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]];
+                    double c2 = TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TnA[DofsJ[permJ[jj]]];
+                    double c3 = TnA[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]];
+                    double n = TdA[DofsI[permI[ii]]] * LocalMatrixN(ii, jj) * TdA[DofsJ[permJ[jj]]];
+
+                    double ll1 = mu * jumpMuInv * TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * B0xn_coeffs[DofsJ[permJ[jj]]];
+                    double ll3 = mu * jumpMuInv * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]];
+                    double ll4 = mu0 * jumpMuInv * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]];
+                    double ll5 = mu0 * jumpMuInv * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]];
+                    double rr1 = -mu * jumpMuInv * jumpMuInv / 2 * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * B0xn_coeffs[DofsJ[permJ[jj]]]; */
+
+                    localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += -1. / 2. / mu0 * (
+                        (1. + mu / mu0) * (TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * TnA[DofsJ[permJ[jj]]] 
+                        + 2 * TnA[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]]) 
+                        + 4. * (TnA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]] 
+                        + TdA[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TnA[DofsJ[permJ[jj]]] 
+                        + TnA[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]]) 
+                        + (1. + mu0 / mu) * TdA[DofsI[permI[ii]]] * LocalMatrixN(ii, jj) * TdA[DofsJ[permJ[jj]]]) 
+                        + 1. / mu0 * (
+                            mu * jumpMuInv * TnA[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * B0xn_coeffs[DofsJ[permJ[jj]]] 
+                            + mu * jumpMuInv * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixA2(ii, jj) * TnA[DofsJ[permJ[jj]]] 
+                            + mu0 * jumpMuInv * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixC3(ii, jj) * TdA[DofsJ[permJ[jj]]] 
+                            + mu0 * jumpMuInv * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixC1(ii, jj) * TdA[DofsJ[permJ[jj]]]) 
+                        + -mu * jumpMuInv * jumpMuInv / 2 * B0xn_coeffs[DofsI[permI[ii]]] * LocalMatrixA1(ii, jj) * B0xn_coeffs[DofsJ[permJ[jj]]];
+
+                    /* atomicAdd(&A1[fieldIdx], a1);
+                    atomicAdd(&A2[fieldIdx], a2);
+                    atomicAdd(&C1[fieldIdx], c1);
+                    atomicAdd(&C2[fieldIdx], c2);
+                    atomicAdd(&C3[fieldIdx], c3);
+                    atomicAdd(&N[fieldIdx], n);
+                    atomicAdd(&l1[fieldIdx], ll1);
+
+                    atomicAdd(&l3[fieldIdx], ll3);
+                    atomicAdd(&l4[fieldIdx], ll4);
+                    atomicAdd(&l5[fieldIdx], ll5);
+
+                    atomicAdd(&r1[fieldIdx], rr1); */
+                } // jj loop over trial functions ends
+
+                /* double ll2 = mu * jumpMuInv * TnA[DofsI[permI[ii]]] * LocalL2Vec(ii);
+                double ll6 = mu0 * jumpMuInv * TdA[DofsI[permI[ii]]] * LocalL6Vec(ii);
+                double rr2rr3 = -2 * mu * jumpMuInv * jumpMuInv / 2 * B0xn_coeffs[DofsI[permI[ii]]] * LocalL2Vec(ii); */
+
+                localShapeDerivatives[fieldIdx + threadIdx.x * Nabc_alpha] += 1. / mu0 * (mu * jumpMuInv * TnA[DofsI[permI[ii]]] * LocalL2Vec(ii) 
+                + mu0 * jumpMuInv * TdA[DofsI[permI[ii]]] * LocalL6Vec(ii)) 
+                + -mu * jumpMuInv * jumpMuInv * B0xn_coeffs[DofsI[permI[ii]]] * LocalL2Vec(ii);
+
+                /* atomicAdd(&l2[fieldIdx], ll2);
+                atomicAdd(&l6[fieldIdx], ll6);
+                atomicAdd(&r2r3[fieldIdx], rr2rr3); */
+            } // ii loop over test functions ends
         }
     }
 
