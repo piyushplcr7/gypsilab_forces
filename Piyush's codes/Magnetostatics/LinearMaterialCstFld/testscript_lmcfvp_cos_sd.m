@@ -6,7 +6,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 5;
+vals = 3;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_bem = forces_mst;
@@ -95,7 +95,7 @@ for i = 1:Nvals
     c = 1;
     alpha = 0;
     [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
-    idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1;
+    idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1
 
     Vels = Vel(X_i);
 

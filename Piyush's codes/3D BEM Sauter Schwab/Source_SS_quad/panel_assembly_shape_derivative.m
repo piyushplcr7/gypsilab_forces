@@ -19,12 +19,12 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
     M = zeros(test_space.ndof,trial_space.ndof);
     
      %M = sparse(test_space.ndof, trial_space.ndof);
+    % tracker = 0;
     
     % Vector storing volume of the mesh elements
     vols = mesh.ndv;
     
     normals = mesh.nrm;
-    
 
     [~,elt2dof_tr] = trial_space.dof;
     [~,elt2dof_ts] = test_space.dof;
@@ -605,7 +605,7 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
 
               case 'NONE' % Special case
                   local_vector = zeros(Qts,1);
-                  M = zeros(test_space.ndof,1);
+                  % M = zeros(test_space.ndof,1);
                   assert(strcmp(ts_typ,'RWG'));
                   volsi = vols(i);
                     volsj = vols(j);
@@ -639,7 +639,6 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                         DV3 = DVel{3}(Yh_panel');
 
                         divV = DV1(:,1)+DV2(:,2)+DV3(:,3);
-                        normals = repmat(nrmy,size(DV1,1),1);
 
                         % Computing DVel^T * nrm
                         DVelTnrm = nrmy(1) * DV1 + nrmy(2) * DV2 + nrmy(3) * DV3;
@@ -657,8 +656,30 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                         end
                     
                     end
+                    % if i==12 && j==12
+                    %     local_vector
+                    %     g_tau
+                    %     g_t
+                    %     Ker(1)
+                    %     testop = divV * nrmy - DVelTnrm;
+                    %     testop(1,:)
+                    %     nrmy
+                    %     normals(j,:)
+                    %     divV(1)
+                    % end
+                    % find18 = find(dofs_i(perm_i) == 1);
+                    % if size(find18,2) ~= 0
+                    %      fprintf("position 17 of l2vec filled by interaction %d,%d with rsf %d and value %f \n",i-1,j-1,find18-1,local_vector(find18));
+                    %     %fprintf("%f \n",local_vector(find18));
+                    %     tracker = local_vector(find18);
+                    %     disp("tracker value")
+                    %     tracker
+                    % end
+                    
                     % Check local2global map
-                    M(dofs_i(perm_i)) = M(dofs_i(perm_i)) + local_vector;
+                    M(dofs_i(perm_i),1) = M(dofs_i(perm_i),1) + local_vector;
+                    % disp("M(1) value");
+                    % M(1)
                 end
           end % End switch over tr_typ
     end % End loop over panel pairs

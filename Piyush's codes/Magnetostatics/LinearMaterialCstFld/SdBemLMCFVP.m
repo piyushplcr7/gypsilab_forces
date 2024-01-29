@@ -146,7 +146,9 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
     NONEBEMSpace = RWG_i;
     NONEBEMSpace.opr = 'NONE';
     NONEBEMSpace.dir = B0;
+
     l2vec = panel_assembly_shape_derivative(bndmesh_i,kernelA2,NONEBEMSpace,RWG_i,ii(:),jj(:),Vel,DVel);
+    l2vec = l2vec(:,1);
     l2 = mu * jumpMuInv * dot(l2vec,Psi_i);
 
     l3 = mu * jumpMuInv * B0xn_coeffs' * A2mat_ii{2} * Psi_i;
@@ -156,6 +158,7 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
     l5 = mu0 * jumpMuInv * B0xn_coeffs' * C1mat_ii{3} * g_i;
 
     l6vec = panel_assembly_shape_derivative(bndmesh_i,kernelC1,NONEBEMSpace,RWG_i,ii(:),jj(:),Vel,DVel);
+    l6vec = l6vec(:,1);
     l6 = mu0 * jumpMuInv * dot(l6vec,g_i);
 
     [X_i,W_i] = Gamma_i.qud;
