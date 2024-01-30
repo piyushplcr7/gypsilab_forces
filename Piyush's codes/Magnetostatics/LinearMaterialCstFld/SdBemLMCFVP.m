@@ -85,6 +85,10 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
 
     %% SS computations
 
+    NONEBEMSpace = RWG_i;
+    NONEBEMSpace.opr = 'NONE';
+    NONEBEMSpace.dir = B0;
+
     kernelA1 = @(x,y,z) dot(z,Vel(x) - Vel(y), 2)./(vecnorm(z,2,2).^3)/ (4*pi);
 
     kernelA2 = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
@@ -101,16 +105,19 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
     [ii,jj] = meshgrid(1:Nelt_i,1:Nelt_i);
     
     euler = parcluster('local');
-    euler.NumWorkers = 5;
+    euler.NumWorkers = 7;
     saveProfile(euler);
 
-    pool = euler.parpool(5);
+    pool = euler.parpool(7);
 
     spmd
         if spmdIndex==1
             % partial derivative of b_A 
             A1mat_ii = panel_assembly(bndmesh_i,kernelA1,RWG_i,RWG_i,ii(:),jj(:));
             A1_ii = Psi_i' * A1mat_ii * Psi_i;
+            % SS Based linear forms
+            l1 = mu * jumpMuInv * Psi_i' * A1mat_ii * B0xn_coeffs;
+            r1 = -mu * jumpMuInv^2 /2 * B0xn_coeffs' * A1mat_ii * B0xn_coeffs;
 
         elseif spmdIndex==2
             %g
@@ -118,6 +125,7 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
             DVelRWG.opr = 'Dvel[psi]';
             A2mat_ii = panel_assembly_shape_derivative(bndmesh_i,kernelA2,DVelRWG,RWG_i,ii(:),jj(:),Vel,DVel);
             A2_ii = 2* Psi_i' * A2mat_ii * Psi_i;
+            l3 = mu * jumpMuInv * B0xn_coeffs' * A2mat_ii * Psi_i;
 
         elseif spmdIndex==3
             DVelRWG = RWG_i;
@@ -126,50 +134,38 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
             C1mat_ii = panel_assembly_shape_derivative(bndmesh_i,kernelC1,DVelRWG,RWG_i,ii(:),jj(:),Vel,DVel);
             C1_ii = Psi_i' * C1mat_ii * g_i;
             C2_ii = g_i' * C1mat_ii * Psi_i ;% = C1?
+            l5 = mu0 * jumpMuInv * B0xn_coeffs' * C1mat_ii * g_i;
 
         elseif spmdIndex==4
             % C3 (Is this way of evaluation okay?), z:= y-x
             C3mat_ii = panel_assembly(bndmesh_i,kernelC3,RWG_i,RWG_i,ii(:),jj(:));
             C3_ii = Psi_i' * C3mat_ii * g_i;
+            l4 = mu0 * jumpMuInv * B0xn_coeffs' * C3mat_ii * g_i;
 
         elseif spmdIndex==5
             % Partial derivative of b_N
             Nmat_ii = panel_assembly_shape_derivative(bndmesh_i,kernelN,RWG_i.div,RWG_i.div,ii(:),jj(:),Vel,DVel);
             N_ii = -g_i' * Nmat_ii * g_i;
+        
+        elseif spmdIndex==6
+            l2vec = panel_assembly_shape_derivative(bndmesh_i,kernelA2,NONEBEMSpace,RWG_i,ii(:),jj(:),Vel,DVel);
+            l2vec = l2vec(:,1);
+            l2 = mu * jumpMuInv * dot(l2vec,Psi_i);
+            r2 = -mu * jumpMuInv^2 /2 * dot(l2vec,B0xn_coeffs);
+            r3 = r2;
 
+        elseif spmdIndex==7
+            l6vec = panel_assembly_shape_derivative(bndmesh_i,kernelC1,NONEBEMSpace,RWG_i,ii(:),jj(:),Vel,DVel);
+            l6vec = l6vec(:,1);
+            l6 = mu0 * jumpMuInv * dot(l6vec,g_i);
         end
     end
-    
-    % SS Based linear forms
-    l1 = mu * jumpMuInv * Psi_i' * A1mat_ii{1} * B0xn_coeffs;
-
-    NONEBEMSpace = RWG_i;
-    NONEBEMSpace.opr = 'NONE';
-    NONEBEMSpace.dir = B0;
-
-    l2vec = panel_assembly_shape_derivative(bndmesh_i,kernelA2,NONEBEMSpace,RWG_i,ii(:),jj(:),Vel,DVel);
-    l2vec = l2vec(:,1);
-    l2 = mu * jumpMuInv * dot(l2vec,Psi_i);
-
-    l3 = mu * jumpMuInv * B0xn_coeffs' * A2mat_ii{2} * Psi_i;
-
-    l4 = mu0 * jumpMuInv * B0xn_coeffs' * C3mat_ii{4} * g_i;
-
-    l5 = mu0 * jumpMuInv * B0xn_coeffs' * C1mat_ii{3} * g_i;
-
-    l6vec = panel_assembly_shape_derivative(bndmesh_i,kernelC1,NONEBEMSpace,RWG_i,ii(:),jj(:),Vel,DVel);
-    l6vec = l6vec(:,1);
-    l6 = mu0 * jumpMuInv * dot(l6vec,g_i);
 
     [X_i,W_i] = Gamma_i.qud;
     DVelnxgvals_i = [dot(DVel{1}(X_i),nxgvals_i,2)  dot(DVel{2}(X_i),nxgvals_i,2) dot(DVel{3}(X_i),nxgvals_i,2)];
     l7integral = sum(W_i.* DVelnxgvals_i,1);
     l7 = -mu0 * jumpMuInv/2 * dot(B0,l7integral);
 
-    r1 = -mu * jumpMuInv^2 /2 * B0xn_coeffs' * A1mat_ii{1} * B0xn_coeffs;
-    r2 = -mu * jumpMuInv^2 /2 * dot(l2vec,B0xn_coeffs);
-    r3 = r2;
-    
     Vel_i = Vel(X_i);
     Veldotn_i = dot(Vel_i,normals_i,2);
     r4integral = sum(W_i.*Veldotn_i,1);
@@ -180,8 +176,8 @@ function sd = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psi_i,g_i,Psi_e,Vel,DVel,mu0,mu,B0
                         +(1+mu0/mu) * (N_ii{5}) ...
                         + 2 * (Aei1+Aei2)...
                         + 2 * (Cie1+Cie2))...
-         +1/mu0 * (l1+l2+l3+l4+l5+l6+l7)...
-         + r1 + r2 + r3 + r4;
+         +1/mu0 * (l1{1}+l2{6}+l3{2}+l4{4}+l5{3}+l6{7}+l7)...
+         + r1{1} + r2{6} + r3{6} + r4;
 
     pool.delete();
 end
