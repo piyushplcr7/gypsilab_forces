@@ -1,6 +1,6 @@
 clear; clc;
 
-addpath(genpath("../../../"));
+addpath(genpath("../../../../"));
 
 prefix = "LMCFSP_forcesNtorques_";
 

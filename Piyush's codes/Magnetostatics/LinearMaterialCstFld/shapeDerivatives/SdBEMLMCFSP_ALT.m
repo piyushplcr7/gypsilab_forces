@@ -53,7 +53,7 @@ function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,m
     [X,WX] = Gamma_e.qud;
 
     NX = size(X,1); NY = size(Y,1);
-
+    % XX -> repelem (NY) ; YY -> repmat (NX)
     XX = repelem(X,NY,1); YY = repmat(Y,NX,1);
     W = repelem(WX,NY,1).*repmat(WY,NX,1);
 
@@ -64,8 +64,17 @@ function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,m
     DVel2YY = DVel{2}(YY);
     DVel3YY = DVel{3}(YY);
     divVelYY = DVel1YY(:,1)+DVel2YY(:,2)+DVel3YY(:,3);
-    dsKie2kernel =1/4/pi./vecnorm(XX-YY).^3  .*(divVelYY.*(XX-YY) - [dot(DVel1YY,XX-YY,2) dot(DVel2YY,XX-YY,2) dot(DVel3YY,XX-YY,2)]);
+    dsKie2kernel =1/4/pi./vecnorm(XX-YY,2,2).^3  .*(divVelYY.*(XX-YY) - [dot(DVel1YY,XX-YY,2) dot(DVel2YY,XX-YY,2) dot(DVel3YY,XX-YY,2)]);
     dsKie2 = sum(W.* dot(dsKie2kernel,normals_yy,2) .* g_i_vals_YY.*psi_e_XX ,1);
+
+    % dsVie computation explicit
+    % psi_i_vals_YY = repmat(psi_i_vals,NX,1);
+    % dsviekernel = 1/4/pi * dot(XX-YY,Vel(YY),2)./vecnorm(XX-YY,2,2).^3;
+    % dsVie = sum(W.*dsviekernel.*psi_i_vals_YY.*psi_e_XX,1);
+
+    % dsKie1 computation explicit
+    % dskie1kernelexpl = 1/4/pi * (3 * dot(XX-YY,normalsi_YY,2).*dot(XX-YY,Vel(YY),2)./vecnorm(XX-YY,2,2).^5 - dot(Vel(YY),normalsi_YY,2)./vecnorm(XX-YY,2,2).^3);
+    % dsKie1expl = sum(W.*dskie1kernelexpl.*g_i_vals_YY.*psi_e_XX,1);
     
     % dsl3 explicit computation
     kerneldsl3 = 1/4/pi./vecnorm(XX-YY,2,2);
@@ -76,18 +85,6 @@ function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,m
     nxgradgiYY = repmat(cross(normals_i,grad_g_i_vals,2),NX,1);
     DVelnxgradgiYY = [dot(DVel1YY,nxgradgiYY,2) dot(DVel2YY,nxgradgiYY,2) dot(DVel3YY,nxgradgiYY,2)];
     dsl3 = -sum(W.*kerneldsl3.*dot(DVelnxgradgiYY,nxH0XX,2),1);
-
-    % Vee = single_layer(Gamma_e,P0_e,P0_e);
-
-    % H0.n coefficients
-    % H0extended = repmat(H0,size(normals_i,1),1);
-    % H0dotn_vals = dot(H0extended,normals_i,2);
-    % H0dotn_coeffs = proj(H0dotn_vals,Gamma_i,P0_i);
-    % 
-    % % Complex integrand
-    % DVelH0 = [dot(DVel1i,H0extended,2) dot(DVel2i,H0extended,2) dot(DVel3i,H0extended,2)];
-    % compl_integrand = dot(normals_i,H0extended.*divVeli - DVelH0,2);
-    % compl_integrand_coeffs = proj(compl_integrand,Gamma_i,P0_i);
 
     %% SS Computations
     Nelt_i = bndmesh_i.nelt;
@@ -144,9 +141,11 @@ function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,m
 
     dsl2 = -integral(Gamma_i,Gamma_e,P1_i.nxgrad,dsVeiKernel,P1_e.nxgrad);
 
+    db_ds = (1+mu0/mu) * dbv_dsii{1} + 4 * dbk_dsii -(1+mu/mu0) * dbw_dsii...
+          + 2 * psi_i' * dsVei * psi_e + 2 * psi_e' * dsKie1 * g_i + 2 * dsKie2;
 
-    sd = -mu0/2*( (1+mu0/mu) * dbv_dsii{1} + 4 * dbk_dsii -(1+mu/mu0) * dbw_dsii...
-                  + 2 * psi_i' * dsVei * psi_e + 2 * psi_e' * dsKie1 * g_i + 2 * dsKie2)...
+
+    sd = -mu0/2*( db_ds )...
          +mu0 * (psi_i' * dsl1 * g_e_coeffs + g_i' * dsl2 * g_e_coeffs + dsl3);
 
     pool.delete();
