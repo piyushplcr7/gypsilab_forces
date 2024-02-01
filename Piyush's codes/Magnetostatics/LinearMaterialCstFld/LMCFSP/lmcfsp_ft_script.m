@@ -2,7 +2,7 @@
 gpuDevice(1);
 
 delete(gcp('nocreate'));
-addpath(genpath("../../../"));
+addpath(genpath("../../../../"));
 
 LMCFSP_forcesNtorques(@getMeshSphere,5:11);
 LMCFSP_forcesNtorques(@getMeshCube,5:11);
