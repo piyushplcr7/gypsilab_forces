@@ -64,9 +64,13 @@ for i = 1:Nvals
     idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1
     [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
 
+    [Vel,DVel] = getTransVelDVel([1 0 0]);
+
     testsdmst(i) = ShapeDervTpVol(Gamma_i,Bn,Ht,mu0,mu,Vel)
 
-    testsdbem(i) = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
+    testsdbem_constvel(i) = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
+
+    % testsdbem(i) = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
     
 
 end
