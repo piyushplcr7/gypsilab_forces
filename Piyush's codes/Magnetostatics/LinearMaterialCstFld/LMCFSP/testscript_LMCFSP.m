@@ -8,7 +8,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 7:12;
+vals = 5:9;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_mst_recon = forces_mst;
@@ -34,7 +34,7 @@ for i = 1:Nvals
     bndmesh_e = mshSphere(N,9);
     bndmesh_e = bndmesh_e.translate([2 2 2]);
 
-    bndmesh_i = getMeshSphere(N);
+    bndmesh_i = getMeshCube(N);
 
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
@@ -71,14 +71,16 @@ for i = 1:Nvals
     idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1
     [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
 
-    [Vel,DVel] = getRotVelDVel([1 0 0],[5 5 3]);
+    % [Vel,DVel] = getRotVelDVel([1 0 0],[5 5 3]);
     % [Vel,DVel] = getRotVelDVel([1 0 0],[4 0 0]);
     % [Vel,DVel] = getTransVelDVel([1 0 0]);
+    [Vel,DVel] = getTransVelDVel([1 0 0]);
+
     Vels = Vel(X_i);
 
     % testsdmst(i) = sum(W_i.*dot(fdensity,Vels,2),1)
     testsdmst(i) = ShapeDervTpVol(Gamma_i,Bntot,Htot_t,mu0,mu,Vel)
-    testsdbem(i) = SdBEMLMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
+    % testsdbem(i) = SdBEMLMCFSP(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
 
 
 
