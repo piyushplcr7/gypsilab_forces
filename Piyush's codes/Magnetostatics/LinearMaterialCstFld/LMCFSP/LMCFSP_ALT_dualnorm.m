@@ -52,15 +52,39 @@ function [] = LMCFSP_ALT_dualnorm(meshfunction,vals)
         Gamma_i = dom(bndmesh_i,3);
         Gamma_e = dom(bndmesh_e,3);
         normals_i = Gamma_i.qudNrm;
+        normals_e = Gamma_e.qudNrm;
         
         %% Solving the transmission problem
         H0 = [10 3 1];
-        [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0);
+
+        % Full solution (Dirichlet excitation)
+        %[psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0);
+
+        % Reaction solution (Neumann Jump Excitation)
+        [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0); 
+        
+        % Constructing traces for the full solution
+        P1_i = fem(bndmesh_i,'P1');
+        P0_e = fem(bndmesh_e,'P0');
+        P0_i = fem(bndmesh_i,'P0');
+        [X_i,W_i] = Gamma_i.qud;
+        [X_e,~] = Gamma_e.qud;
+
+        H0dotx_i = X_i * H0';
+        H0dotx_i_coeffs = proj(H0dotx_i,Gamma_i,P1_i);
+
+        H0dotn_e = normals_e * H0';
+        H0dotn_e_coeffs = proj(H0dotn_e,Gamma_e,P0_e);
+
+        H0dotn_i = normals_i * H0';
+        H0dotncoeffs_i = proj(H0dotn_i,Gamma_i,P0_i);
+        
+        % Trace coefficients for total values now
+        psi_i = psi_i - H0dotncoeffs_i;
+        g_i = g_i + H0dotx_i_coeffs;
+        psi_e = psi_e + H0dotn_e_coeffs;
 
         % Reconstructing Bn and Ht
-        P1_i = fem(bndmesh_i,'P1');
-        P0_i = fem(bndmesh_i,'P0');
-
         gradudotn = -reconstruct(psi_i,Gamma_i,P0_i);
         sgradu = reconstruct(g_i,Gamma_i,grad(P1_i));
     
@@ -69,7 +93,7 @@ function [] = LMCFSP_ALT_dualnorm(meshfunction,vals)
         
         jump_mu_inv = 1/mu0 - 1/mu;
         jump_mu = mu0 - mu;
-        [X_i,W_i] = Gamma_i.qud;
+        
         fdensity = 0.5 * ((Bn).^2*jump_mu_inv - (Ht).^2*jump_mu).* normals_i;
         
         %% Computing the MST based force and torque
