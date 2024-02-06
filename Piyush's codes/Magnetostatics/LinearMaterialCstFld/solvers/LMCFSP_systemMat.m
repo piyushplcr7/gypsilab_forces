@@ -4,9 +4,9 @@ function blockopr = LMCFSP_systemMat(bndmesh_i,bndmesh_e,mu,mu0)
 
     P0_i = fem(bndmesh_i,'P0');
     P0_e = fem(bndmesh_e,'P0');
-
-    Gamma_i = dom(bndmesh_i,3);
-    Gamma_e = dom(bndmesh_e,3);
+    order = 7;
+    Gamma_i = dom(bndmesh_i,order);
+    Gamma_e = dom(bndmesh_e,order);
     
     Vii = single_layer(Gamma_i,P0_i,P0_i);
     Vee = single_layer(Gamma_e,P0_e,P0_e);

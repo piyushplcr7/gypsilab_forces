@@ -36,9 +36,9 @@ for i = 1:Nvals
 
     % Visualize with outer mesh translucent
     %customPlot(bndmesh_i,bndmesh_e);
-    
-    Gamma_i = dom(bndmesh_i,3);
-    Gamma_e = dom(bndmesh_e,3);
+    order = 7;
+    Gamma_i = dom(bndmesh_i,order);
+    Gamma_e = dom(bndmesh_e,order);
     normals_i = Gamma_i.qudNrm;
     normals_e = Gamma_e.qudNrm;
 
@@ -70,7 +70,7 @@ for i = 1:Nvals
     Bntot = -mu0 * reconstruct(psi_i,Gamma_i,P0_i) + mu0 * dot(H0extended,normals_i,2);
 
     H = Htot_t + Bntot/mu0.*normals_i; 
-    Htot_t = vecnorm(Htot_t,2,2);
+    
     
     %% Visualizing
     [X_i,W_i] = Gamma_i.qud;
@@ -91,7 +91,7 @@ for i = 1:Nvals
     jump_mu = mu0 - mu;
 
     fdensity_ALT = 0.5 * ((Bn_ALT).^2*jump_mu_inv - (Ht_ALT).^2*jump_mu).* normals_i;
-    fdensity = 0.5 * ((Bntot).^2*jump_mu_inv - (Htot_t).^2*jump_mu).* normals_i;
+    fdensity = 0.5 * ((Bntot).^2*jump_mu_inv - (vecnorm(Htot_t,2,2)).^2*jump_mu).* normals_i;
 
     [Vel,DVel] = getTransVelDVel([1 0 0]);
     Vels = Vel(X_i);

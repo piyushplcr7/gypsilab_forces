@@ -5,9 +5,9 @@ function [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0)
 
     P0_i = fem(bndmesh_i,'P0');
     P0_e = fem(bndmesh_e,'P0');
-
-    Gamma_i = dom(bndmesh_i,3);
-    Gamma_e = dom(bndmesh_e,3);
+    order = 7;
+    Gamma_i = dom(bndmesh_i,order);
+    Gamma_e = dom(bndmesh_e,order);
     
     % Dirichlet trace at the outer boundary
     [X_e,~] = Gamma_e.qud;
