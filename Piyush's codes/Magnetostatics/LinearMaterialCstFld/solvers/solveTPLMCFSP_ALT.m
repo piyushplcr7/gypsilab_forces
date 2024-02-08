@@ -1,11 +1,11 @@
-function [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0)
+function [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0,order)
     % BEM Spaces
     P1_i = fem(bndmesh_i,'P1');
     P1_e = fem(bndmesh_e,'P1');
 
     P0_i = fem(bndmesh_i,'P0');
     P0_e = fem(bndmesh_e,'P0');
-    order = 7;
+    % order = 7;
     Gamma_i = dom(bndmesh_i,order);
     Gamma_e = dom(bndmesh_e,order);
     

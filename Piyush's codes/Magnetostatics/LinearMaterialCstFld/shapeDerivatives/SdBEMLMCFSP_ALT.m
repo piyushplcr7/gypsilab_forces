@@ -1,6 +1,6 @@
-function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
-    Gamma_i = dom(bndmesh_i,3);
-    Gamma_e = dom(bndmesh_e,3);
+function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0,order)
+    Gamma_i = dom(bndmesh_i,order);
+    Gamma_e = dom(bndmesh_e,order);
 
     jumpMu = mu0 - mu;
 

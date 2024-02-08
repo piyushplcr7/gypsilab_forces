@@ -1,6 +1,7 @@
-function sd = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
-    Gamma_i = dom(bndmesh_i,3);
-    Gamma_e = dom(bndmesh_e,3);
+function sd = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0,order)
+    % order = 3;
+    Gamma_i = dom(bndmesh_i,order);
+    Gamma_e = dom(bndmesh_e,order);
 
     % jumpMu = mu0 - mu;
 
