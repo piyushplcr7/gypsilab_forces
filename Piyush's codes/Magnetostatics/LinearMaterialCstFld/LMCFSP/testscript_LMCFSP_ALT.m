@@ -29,7 +29,7 @@ for i = 1:Nvals
     bndmesh_e = mshSphere(N,9);
     bndmesh_e = bndmesh_e.translate([2 2 2]);
     
-    bndmesh_i = getMeshCube(N);
+    bndmesh_i = getMeshSphere(N);
 
     % Mesh size
     hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
@@ -60,7 +60,7 @@ for i = 1:Nvals
 
 
     %% Checking solution for mu = mu0 using the field
-    a = 0; b = 1; c = 1; alpha = 0; kappa = 3;
+    a = 2; b = 2; c = 1; alpha = 2; kappa = 3;
     idx = a + kappa * b + kappa^2 * c + kappa^3 * alpha + 1
     [Vel,DVel] = getCosVelDVel(a,b,c,alpha+1);
 
@@ -68,9 +68,9 @@ for i = 1:Nvals
 
     testsdmst(i) = ShapeDervTpVol(Gamma_i,Bn,Ht,mu0,mu,Vel)
 
-    % testsdbem_constvel(i) = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
+    testsdbem_constvel(i) = SdBEMLMCFSP_ConstVEL_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
 
     % testsdbem(i) = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,mu,H0)
-    
+    disp('a');
 
 end

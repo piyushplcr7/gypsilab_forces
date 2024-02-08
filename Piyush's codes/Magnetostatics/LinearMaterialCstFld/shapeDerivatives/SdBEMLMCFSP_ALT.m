@@ -147,6 +147,16 @@ function sd = SdBEMLMCFSP_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,Vel,DVel,mu0,m
 
     sd = -mu0/2*( db_ds )...
          +mu0 * (psi_i' * dsl1 * g_e_coeffs + g_i' * dsl2 * g_e_coeffs + dsl3);
+    
+    % dbk_dsii_reduced = psi_i' * (kernelintegrablematii{3} -combkernelmatii{4}) * g_i;
+    % 
+    % db_ds_reduced = (1+mu0/mu) * dbv_dsii{1} + 4 * dbk_dsii_reduced -(1+mu/mu0) * dbw_dsii;
+    % 
+    % sdongpu = -mu0/2* (db_ds_reduced)
+    % 
+    % sdnongpu = -mu0/2 *(4 * psi_i' * Kmatii * divVelgi_coeffs...
+    %       + 2 * psi_i' * dsVei * psi_e + 2 * psi_e' * dsKie1 * g_i + 2 * dsKie2)...
+    %       +mu0 * (psi_i' * dsl1 * g_e_coeffs + g_i' * dsl2 * g_e_coeffs + dsl3);
 
     pool.delete();
 end

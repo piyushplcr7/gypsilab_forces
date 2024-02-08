@@ -4,7 +4,7 @@ function blockopr = LMCFSP_systemMat(bndmesh_i,bndmesh_e,mu,mu0)
 
     P0_i = fem(bndmesh_i,'P0');
     P0_e = fem(bndmesh_e,'P0');
-    order = 7;
+    order = 3;
     Gamma_i = dom(bndmesh_i,order);
     Gamma_e = dom(bndmesh_e,order);
     

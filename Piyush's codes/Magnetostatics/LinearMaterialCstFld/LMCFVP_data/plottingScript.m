@@ -4,7 +4,8 @@ addpath(genpath("../../../../"));
 
 prefix = "LMCFVP_forcesNtorques_";
 
-cases = ["getMeshSphere","getMeshCube","getMeshCuboid5","getMeshTetraNew"];
+% cases = ["getMeshSphere","getMeshCube","getMeshCuboid5","getMeshTetraNew"];
+cases = ["getMeshCube"];
 
 
 for i = 1:size(cases,2)

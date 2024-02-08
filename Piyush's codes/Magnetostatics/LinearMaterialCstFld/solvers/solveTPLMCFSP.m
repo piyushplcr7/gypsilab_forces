@@ -6,7 +6,7 @@ function [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0)
 
     P0_i = fem(bndmesh_i,'P0');
     P0_e = fem(bndmesh_e,'P0');
-    order = 7;
+    order = 3;
     Gamma_i = dom(bndmesh_i,order);
 
     normals_i = Gamma_i.qudNrm;

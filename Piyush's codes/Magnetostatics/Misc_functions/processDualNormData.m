@@ -27,10 +27,15 @@ function [conv_rate_mst,conv_rate_bem] = processDualNormData(fname,idxmst,idxbem
     dualnorm_errs_bem = sqrt(dot(errs_bem,Ginv_errs_bem,2));
 
     figure;
+    
+    % loglog(hvals(1:N-1),dualnorm_errs_bem,'-+', 'LineWidth', 2, 'MarkerSize', 10);
+    % hold on;
+    % loglog(hvals,dualnorm_errs_mst,'-^', 'LineWidth', 2, 'MarkerSize', 10);
 
-    loglog(hvals,dualnorm_errs_mst,'-*', 'LineWidth', 2, 'MarkerSize', 10);
+    loglog(hvals(1:N-1),dualnorm_errs_bem,'-*', 'LineWidth', 2, 'MarkerSize', 10);
     hold on;
-    loglog(hvals(1:N-1),dualnorm_errs_bem,'-+', 'LineWidth', 2, 'MarkerSize', 10);
+    loglog(hvals,dualnorm_errs_mst,'-o', 'LineWidth', 2, 'MarkerSize', 10);
+    % loglog(hvals(1:N-1),dualnorm_errs_mst(1:N-1),'-o', 'LineWidth', 2, 'MarkerSize', 10);
     
     hvals_small = hvals(1:N-1);
 
@@ -53,26 +58,27 @@ function [conv_rate_mst,conv_rate_bem] = processDualNormData(fname,idxmst,idxbem
 
     conv_rate_mst = mst_coeffs(2);
     conv_rate_bem = bem_coeffs(2);
-    legend1 = ['VOL: ', num2str(conv_rate_mst)];
-    l1 = legend1;
-    legend2 = ['BEM: ', num2str(conv_rate_bem)];
-    l2 = legend2;
-    legend(l1,l2);
-    print([fname(1:end-3), 'eps'], '-depsc2');
+    % legend1 = ['MST: ', num2str(conv_rate_mst)];
+    % l1 = legend1;
+    % legend2 = ['BEM: ', num2str(conv_rate_bem)];
+    % l2 = legend2;
+    % legend(l1,l2);
+    % legend(l2,l1);
+    % print([fname(1:end-3), 'eps'], '-depsc2');
 
-    legend(['Vol: ', num2str(conv_rate_mst)],['BEM: ',num2str(conv_rate_bem)],'Location','southeast');
+    legend(['BEM: ',num2str(conv_rate_bem)],['MST: ', num2str(conv_rate_mst)],'Location','southeast');
     % legend(["MST","BEM"],'Location','southeast');
 
-    fprintf("conv_rate_mst: %f\n",conv_rate_mst);
-    fprintf("conv_rate_bem: %f\n",conv_rate_bem);
+    % fprintf("conv_rate_mst: %f\n",conv_rate_mst);
+    % fprintf("conv_rate_bem: %f\n",conv_rate_bem);
 
-    print([fname(1:end-3),'eps'],'-depsc2');
+    % print([fname(1:end-3),'eps'],'-depsc2');
 
-    legend(['Vol: ', num2str(conv_rate_mst)],['BEM: ',num2str(conv_rate_bem)],'Location','southeast');
+    % legend(['Vol: ', num2str(conv_rate_mst)],['BEM: ',num2str(conv_rate_bem)],'Location','southeast');
     % legend(["MST","BEM"],'Location','southeast');
 
-    fprintf("conv_rate_mst: %f\n",conv_rate_mst);
-    fprintf("conv_rate_bem: %f\n",conv_rate_bem);
+    % fprintf("conv_rate_mst: %f\n",conv_rate_mst);
+    % fprintf("conv_rate_bem: %f\n",conv_rate_bem);
 
     print([fname(1:end-3),'eps'],'-depsc2');
 
