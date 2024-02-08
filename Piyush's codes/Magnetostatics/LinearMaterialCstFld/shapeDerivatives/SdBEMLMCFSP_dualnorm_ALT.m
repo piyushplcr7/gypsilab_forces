@@ -95,7 +95,7 @@ function sd = SdBEMLMCFSP_dualnorm_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,mu0,m
 
     % Kernel Object
     kernel = parallel.gpu.CUDAKernel(ptxFilePath, cuFilePath);
-    gridDim = [300, 1, 1];
+    gridDim = [20000, 1, 1];
     blockDim = [32, 1, 1]; % 32 is the SIMD Width or wrap size
     Nthreads = prod(blockDim) * prod(gridDim);
     kernel.GridSize = gridDim;
