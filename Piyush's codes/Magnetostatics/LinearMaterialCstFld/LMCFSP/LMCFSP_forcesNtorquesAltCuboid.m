@@ -1,7 +1,6 @@
-function [] = LMCFSP_forcesNtorquesAlt(meshfunction,vals)
+function [] = LMCFSP_forcesNtorquesAltCuboid(vals)
     delete(gcp('nocreate'));
-    funcInfo = functions(meshfunction);
-    disp(['LMCFSP forces and torques ALT invoked with: ', funcInfo.function]);
+    disp('LMCFSP forces and torques ALT invoked for Cuboid ');
     disp("===================================================");
     format long;
     mu = 4;
@@ -18,48 +17,26 @@ function [] = LMCFSP_forcesNtorquesAlt(meshfunction,vals)
         N = 2^vals(i);
         disp(N);
         %% SOLUTION DOMAIN
-        bndmesh_i = meshfunction(N);
+        bndmesh_i = getMeshCuboid5Translated(floor(N/3),[1 0.5 1]);
 
         % Bounding box
-        bndmesh_e = mshSphere(N,9);
-        bndmesh_e = bndmesh_e.translate([2 2 2]);
+        bndmesh_e = mshSphere(40*floor(N^0.7),4);
         
         % Mesh size
         hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
-        order = 12;
+        order = 3;
         Gamma_i = dom(bndmesh_i,order);
-        Gamma_e = dom(bndmesh_e,order);
-        normals_i = Gamma_i.qudNrm;
-        normals_e = Gamma_e.qudNrm;
         
         %% Solving the transmission problem
         H0 = [10 3 1];
         
         % Full solution (Dirichlet excitation)
-        % [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0,order);
-
-        % Reaction solution (Neumann Jump Excitation)
-        [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0,order);
+        [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0,order);
 
         %% Computing the force using MST formula
         % Constructing traces for the full solution
         P1_i = fem(bndmesh_i,'P1');
-        P0_e = fem(bndmesh_e,'P0');
         P0_i = fem(bndmesh_i,'P0');
-        [X_i,W_i] = Gamma_i.qud;
-        H0dotx_i = X_i * H0';
-        H0dotx_i_coeffs = proj(H0dotx_i,Gamma_i,P1_i);
-
-        H0dotn_e = normals_e * H0';
-        H0dotn_e_coeffs = proj(H0dotn_e,Gamma_e,P0_e);
-
-        H0dotn_i = normals_i * H0';
-        H0dotncoeffs_i = proj(H0dotn_i,Gamma_i,P0_i);
-
-        % Trace coefficients for total values now
-        psi_i = psi_i - H0dotncoeffs_i;
-        g_i = g_i + H0dotx_i_coeffs;
-        psi_e = psi_e + H0dotn_e_coeffs;
 
         % Reconstructing Bn and Ht
         gradudotn = -reconstruct(psi_i,Gamma_i,P0_i);
@@ -95,7 +72,7 @@ function [] = LMCFSP_forcesNtorquesAlt(meshfunction,vals)
     
         torques_bem(i,:) = [t1 t2 t3]
 
-        fname = "ALT_LMCFSP_forcesNtorques_" + funcInfo.function + ".mat";
+        fname = "ALT_LMCFSP_forcesNtorques_getMeshCuboid.mat";
         save(fname,"forces_mst","torques_mst","forces_bem","torques_bem","hvals");
     end
 

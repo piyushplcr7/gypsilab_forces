@@ -1,16 +1,11 @@
-function [] = LMCFSP_ALT_dualnorm(meshfunction,vals)
-    
-    funcInfo = functions(meshfunction);
-    disp(['LMCFSP ALT dualnorm invoked with: ', funcInfo.function]);
+function [] = LMCFSP_ALT_dualnormSphere(vals)
+    delete(gcp('nocreate'));
+    disp('LMCFSP ALT dualnorm invoked with sphere ');
     disp("===================================================");
 
-    % New transmission problem script
-%     clear; clc; close all;
     format long;
-    % (mui+mue)/(mui-mue)
     mu = 4;
     mu0 = 2;
-    %vals = 5:12;
     Nvals = size(vals,2);
     hvals = vals;
     
@@ -40,49 +35,29 @@ function [] = LMCFSP_ALT_dualnorm(meshfunction,vals)
         N = 2^vals(i);
         disp(N);
         %% SOLUTION DOMAIN
-        bndmesh_i = meshfunction(N);
+        bndmesh_i = mshSphere(N,2.5);
+        bndmesh_i = bndmesh_i.translate([1 0 0]);
 
         % Bounding box
-        bndmesh_e = mshSphere(N,9);
-        bndmesh_e = bndmesh_e.translate([2 2 2]);
+        bndmesh_e = mshSphere(floor(2.6*N),4);
         
         % Mesh size
         hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
-        order = 12;
+
+        order = 3;
         Gamma_i = dom(bndmesh_i,order);
-        Gamma_e = dom(bndmesh_e,order);
         normals_i = Gamma_i.qudNrm;
-        normals_e = Gamma_e.qudNrm;
         
         %% Solving the transmission problem
         H0 = [10 3 1];
 
         % Full solution (Dirichlet excitation)
-        % [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0,order);
-
-        % Reaction solution (Neumann Jump Excitation)
-        [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0,order); 
+        [psi_i,g_i,psi_e] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0,order);
         
         % Constructing traces for the full solution
         P1_i = fem(bndmesh_i,'P1');
-        P0_e = fem(bndmesh_e,'P0');
         P0_i = fem(bndmesh_i,'P0');
         [X_i,W_i] = Gamma_i.qud;
-        [X_e,~] = Gamma_e.qud;
-
-        H0dotx_i = X_i * H0';
-        H0dotx_i_coeffs = proj(H0dotx_i,Gamma_i,P1_i);
-
-        H0dotn_e = normals_e * H0';
-        H0dotn_e_coeffs = proj(H0dotn_e,Gamma_e,P0_e);
-
-        H0dotn_i = normals_i * H0';
-        H0dotncoeffs_i = proj(H0dotn_i,Gamma_i,P0_i);
-
-        % Trace coefficients for total values now
-        psi_i = psi_i - H0dotncoeffs_i;
-        g_i = g_i + H0dotx_i_coeffs;
-        psi_e = psi_e + H0dotn_e_coeffs;
 
         % Reconstructing Bn and Ht
         gradudotn = -reconstruct(psi_i,Gamma_i,P0_i);
@@ -115,7 +90,7 @@ function [] = LMCFSP_ALT_dualnorm(meshfunction,vals)
         shape_derivatives_bem(i,:) = SdBEMLMCFSP_dualnorm_ALT(bndmesh_i,bndmesh_e,psi_i,g_i,psi_e,mu0,mu,H0,abc_alpha,order);
 %         disp("BEM shape derivatives computed!");
 
-        fname = "LMCFSP_dualnorm_ALT_" + funcInfo.function + ".mat";
+        fname = "LMCFSP_dualnorm_ALT_getMeshSphere.mat";
         save(fname,"shape_derivatives_bem","shape_derivatives_mst","hvals");
     end
 

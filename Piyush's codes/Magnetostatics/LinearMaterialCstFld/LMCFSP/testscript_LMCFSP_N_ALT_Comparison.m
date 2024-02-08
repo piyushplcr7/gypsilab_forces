@@ -18,6 +18,8 @@ torques_mst_recon = torques_mst;
 torques_bem = forces_mst;
 hvals = 0*vals;
 
+h2 = [hvals' hvals'];
+
 H0 = [10 3 1];
 
 for i = 1:Nvals
@@ -26,79 +28,86 @@ for i = 1:Nvals
     %% SOLUTION DOMAIN
     
     % Bounding box
-    bndmesh_e = mshSphere(N,9);
-    bndmesh_e = bndmesh_e.translate([2 2 2]);
+    % bndmesh_e = mshSphere(40*floor(N^0.7),4);
+    bndmesh_e = mshSphere(floor(2.6*N),4);
+    % bndmesh_e = bndmesh_e.translate([2 2 2]);
     
-    bndmesh_i = getMeshCube(N);
+    % bndmesh_i = getMeshCubeTranslated(N,[1 0.5 1]);
+    % bndmesh_i = getMeshCuboid5Translated(floor(N/3),[1 0.5 1]);
+    bndmesh_i = mshSphere(N,2.5);
+    bndmesh_i = bndmesh_i.translate([1 0 0]);
 
+    h2(i,1) = mean(bndmesh_i.ndv,1);
+    h2(i,2) = mean(bndmesh_e.ndv,1);
+    % customPlot(bndmesh_i,bndmesh_e)
     % Mesh size
-    hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
-
-    % Visualize with outer mesh translucent
-    %customPlot(bndmesh_i,bndmesh_e);
-    order = 7;
-    Gamma_i = dom(bndmesh_i,order);
-    Gamma_e = dom(bndmesh_e,order);
-    normals_i = Gamma_i.qudNrm;
-    normals_e = Gamma_e.qudNrm;
-
-    P1_i = fem(bndmesh_i,'P1');
-    P0_i = fem(bndmesh_i,'P0');
-    P0_e = fem(bndmesh_e,'P0');
-    
-    %% LMCFSP alt solution and reconstruction
-
-    [psi_i_ALT,g_i_ALT,psi_e_ALT] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0);
-
-    gradudotn_ALT = -reconstruct(psi_i_ALT,Gamma_i,P0_i);
-    sgradu_ALT = reconstruct(g_i_ALT,Gamma_i,grad(P1_i));
-
-    Ht_ALT = vecnorm(sgradu_ALT,2,2);
-    Bn_ALT = mu0 * gradudotn_ALT;
-
-    Halt = Bn_ALT/mu0.*normals_i + sgradu_ALT;
-
-    %% LMCFSP solution and reconstruction
-
-
-    [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0); 
-
-    H0extended = repmat(H0,size(normals_i,1),1);
-    H0t = cross(normals_i,cross(H0extended,normals_i,2),2);
-    Htot_t = reconstruct(g_i,Gamma_i,P1_i.grad) + H0t;
-
-    Bntot = -mu0 * reconstruct(psi_i,Gamma_i,P0_i) + mu0 * dot(H0extended,normals_i,2);
-
-    H = Htot_t + Bntot/mu0.*normals_i; 
-    
-    
-    %% Visualizing
-    [X_i,W_i] = Gamma_i.qud;
-    % quiver3wrapper(X_i,Halt,'red');
-    % hold on;
-    % quiver3wrapper(X_i,H,'blue');
-
-
-    %% Comparing the solutions (L2 norm of difference)
-    
-
-    % l2err_bn = sum(W_i.*(Bn_ALT-Bntot).^2,1)
-    % l2err_ht = sum(W_i.*vecnorm(sgradu_ALT-Htot_t,2,2).^2,1)
-
-    %% Comparing the MST shape derivatives
-
-    jump_mu_inv = 1/mu0 - 1/mu;
-    jump_mu = mu0 - mu;
-
-    fdensity_ALT = 0.5 * ((Bn_ALT).^2*jump_mu_inv - (Ht_ALT).^2*jump_mu).* normals_i;
-    fdensity = 0.5 * ((Bntot).^2*jump_mu_inv - (vecnorm(Htot_t,2,2)).^2*jump_mu).* normals_i;
-
-    [Vel,DVel] = getTransVelDVel([1 0 0]);
-    Vels = Vel(X_i);
-
-    testsd_mst(i) = sum(W_i.*dot(fdensity,Vels,2),1)
-    testsd_mst_ALT(i) = sum(W_i.*dot(fdensity_ALT,Vels,2),1)
-    
+    % hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
+    % 
+    % % Visualize with outer mesh translucent
+    % %customPlot(bndmesh_i,bndmesh_e);
+    % order = 3;
+    % Gamma_i = dom(bndmesh_i,order);
+    % Gamma_e = dom(bndmesh_e,order);
+    % normals_i = Gamma_i.qudNrm;
+    % normals_e = Gamma_e.qudNrm;
+    % 
+    % P1_i = fem(bndmesh_i,'P1');
+    % P0_i = fem(bndmesh_i,'P0');
+    % P0_e = fem(bndmesh_e,'P0');
+    % 
+    % %% LMCFSP alt solution and reconstruction
+    % 
+    % [psi_i_ALT,g_i_ALT,psi_e_ALT] = solveTPLMCFSP_ALT(bndmesh_i,bndmesh_e,mu,mu0,H0,order);
+    % 
+    % gradudotn_ALT = -reconstruct(psi_i_ALT,Gamma_i,P0_i);
+    % sgradu_ALT = reconstruct(g_i_ALT,Gamma_i,grad(P1_i));
+    % 
+    % Ht_ALT = vecnorm(sgradu_ALT,2,2);
+    % Bn_ALT = mu0 * gradudotn_ALT;
+    % 
+    % Halt = Bn_ALT/mu0.*normals_i + sgradu_ALT;
+    % 
+    % %% LMCFSP solution and reconstruction
+    % 
+    % 
+    % [psi_i,g_i,psi_e] = solveTPLMCFSP(bndmesh_i,bndmesh_e,mu,mu0,H0,order); 
+    % 
+    % H0extended = repmat(H0,size(normals_i,1),1);
+    % H0t = cross(normals_i,cross(H0extended,normals_i,2),2);
+    % Htot_t = reconstruct(g_i,Gamma_i,P1_i.grad) + H0t;
+    % 
+    % Bntot = -mu0 * reconstruct(psi_i,Gamma_i,P0_i) + mu0 * dot(H0extended,normals_i,2);
+    % 
+    % H = Htot_t + Bntot/mu0.*normals_i; 
+    % 
+    % 
+    % %% Visualizing
+    % [X_i,W_i] = Gamma_i.qud;
+    % % quiver3wrapper(X_i,Halt,'red');
+    % % hold on;
+    % % quiver3wrapper(X_i,H,'blue');
+    % 
+    % 
+    % %% Comparing the solutions (L2 norm of difference)
+    % 
+    % 
+    % % l2err_bn = sum(W_i.*(Bn_ALT-Bntot).^2,1)
+    % % l2err_ht = sum(W_i.*vecnorm(sgradu_ALT-Htot_t,2,2).^2,1)
+    % 
+    % %% Comparing the MST shape derivatives
+    % 
+    % jump_mu_inv = 1/mu0 - 1/mu;
+    % jump_mu = mu0 - mu;
+    % 
+    % fdensity_ALT = 0.5 * ((Bn_ALT).^2*jump_mu_inv - (Ht_ALT).^2*jump_mu).* normals_i;
+    % fdensity = 0.5 * ((Bntot).^2*jump_mu_inv - (vecnorm(Htot_t,2,2)).^2*jump_mu).* normals_i;
+    % 
+    % [Vel,DVel] = getTransVelDVel([1 0 0]);
+    % Vels = Vel(X_i);
+    % 
+    % testsd_mst(i) = sum(W_i.*dot(fdensity,Vels,2),1)
+    % testsd_mst_ALT(i) = sum(W_i.*dot(fdensity_ALT,Vels,2),1)
+    % 
 
     %% Checking solution for mu = mu0 using the field
     % a = 0; b = 1; c = 1; alpha = 0; kappa = 3;
