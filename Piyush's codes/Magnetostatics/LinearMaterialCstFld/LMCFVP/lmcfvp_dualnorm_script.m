@@ -1,7 +1,7 @@
 % Forces and torques script
 gpuDevice(1);
 delete(gcp('nocreate'));
-addpath(genpath("../../../"));
+addpath(genpath("../../../../"));
 
 % LMCFVP_dualnorm(@getMeshSphere,5:11);
 % LMCFVP_dualnorm(@getMeshCube,5:11);
