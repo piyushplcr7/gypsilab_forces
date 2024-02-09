@@ -8,7 +8,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 4;
 mu0 = 2;
-vals = 5:10;
+vals = 7:11;
 Nvals = size(vals,2);
 forces_mst = zeros(Nvals,3);
 forces_mst_recon = forces_mst;
@@ -29,13 +29,15 @@ for i = 1:Nvals
     
     % Bounding box
     % bndmesh_e = mshSphere(40*floor(N^0.7),4);
-    bndmesh_e = mshSphere(floor(2.6*N),4);
-    % bndmesh_e = bndmesh_e.translate([2 2 2]);
+    bndmesh_e = mshSphere(floor(N^2/287),2);
+    bndmesh_e = bndmesh_e.translate([2 1 3]);
+    bndmesh_e = bndmesh_e.translate([0.3 0.5 0.1]);
     
     % bndmesh_i = getMeshCubeTranslated(N,[1 0.5 1]);
     % bndmesh_i = getMeshCuboid5Translated(floor(N/3),[1 0.5 1]);
-    bndmesh_i = mshSphere(N,2.5);
-    bndmesh_i = bndmesh_i.translate([1 0 0]);
+    % bndmesh_i = mshSphere(N,2.5);
+    % bndmesh_i = bndmesh_i.translate([1 0 0]);
+    bndmesh_i = getMeshTetraNew(N);
 
     h2(i,1) = mean(bndmesh_i.ndv,1);
     h2(i,2) = mean(bndmesh_e.ndv,1);

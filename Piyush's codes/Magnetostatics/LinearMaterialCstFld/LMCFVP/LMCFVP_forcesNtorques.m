@@ -18,11 +18,11 @@ function [] = LMCFVP_forcesNtorques(meshfunction,vals)
         N = 2^vals(i);
         disp(N);
         %% SOLUTION DOMAIN
-        bndmesh_i = meshfunction(N);
+        [bndmesh_i,bndmesh_e] = meshfunction(N);
 
         % Bounding box
-        bndmesh_e = mshSphere(N,9);
-        bndmesh_e = bndmesh_e.translate([2 2 2]);
+        % bndmesh_e = mshSphere(N,9);
+        % bndmesh_e = bndmesh_e.translate([2 2 2]);
         
         % Mesh size
         hvals(i) = sqrt(mean(bndmesh_i.ndv,1));
