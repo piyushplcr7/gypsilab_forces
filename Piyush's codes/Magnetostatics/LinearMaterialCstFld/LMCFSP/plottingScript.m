@@ -2,9 +2,10 @@ clear; clc;
 
 addpath(genpath("../../../../"));
 
-prefix = "ALT_LMCFSP_forcesNtorques_";
+prefix = "1ALT_LMCFSP_forcesNtorques_";
 
-cases = ["getMeshSphere","getMeshCube","getMeshTetraNew","getMeshCuboid5"];
+% cases = ["getMeshSphere","getMeshCube","getMeshTetraNew","getMeshCuboid5"];
+cases = ["getMeshSphere","getMeshCube","getMeshCuboid"];
 
 
 for i = 1:size(cases,2)
