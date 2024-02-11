@@ -1,0 +1,129 @@
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2023 The MathWorks, Inc.
+             R2023b Update 1 (23.2.0.2380103) 64-bit (glnxa64)
+                             September 11, 2023
+
+[Warning: Unrecognized command line option: R.] 
+ 
+To get started, type doc.
+For product information, visit www.mathworks.com.
+ 
+LMCFVP forces and torques invoked with: cuboidSphMesh
+===================================================
+    32
+
+
+forces_mst =
+
+  -0.004382755532441  -0.001088240405117  -0.002045570400323
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+torques_mst =
+
+   0.000054469486644  -0.000776452226411  -0.003890268804097
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+forces_bem =
+
+   0.004292939752669   0.001289079777849   0.002578337080292
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+
+torques_bem =
+
+   0.000000514527044   0.010225027909502  -0.004729377499488
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+    64
+
+
+forces_mst =
+
+  -0.004382755532441  -0.001088240405117  -0.002045570400323
+  -0.004111586615349  -0.001082678092471  -0.002141456621104
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+torques_mst =
+
+   0.000054469486644  -0.000776452226411  -0.003890268804097
+   0.000007746881438  -0.007046954531525   0.002214600438203
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+forces_bem =
+
+   0.004292939752669   0.001289079777849   0.002578337080292
+   0.003995671292648   0.001189359008571   0.002377432130245
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Parallel pool using the 'Processes' profile is shutting down.
+
+{Error using parallel.Cluster/parpool
+Parallel pool failed to start with the following error. For more detailed
+information, validate the profile 'Processes' in the Cluster Profile Manager.
+
+Error in SdBemLMCFVP (line 111)
+    pool = euler.parpool(7);
+
+Error in LMCFVP_forcesNtorques (line 85)
+        t1 = SdBemLMCFVP(bndmesh_i,bndmesh_e,Psii_RWG,g_i,Psie_RWG,Velr1,DVelr1,mu0,mu,B_0);
+
+Error in lmcfvp_ft_script (line 12)
+%LMCFVP_forcesNtorques(@cuboidSphMesh,5:11);
+
+Caused by:
+    Error using
+    parallel.internal.pool.AbstractInteractiveClient>iThrowWithCause
+    Failed to initialize the interactive session.
+        Error using parallel.Job/wait
+        Could not open file
+        "/cluster/home/ppanchal/.matlab/local_cluster_jobs/R2023b/Job10.in.mat",
+        the error returned was: Unable to find file or directory
+        '/cluster/home/ppanchal/.matlab/local_cluster_jobs/R2023b/Job10.in.mat'..
+} 

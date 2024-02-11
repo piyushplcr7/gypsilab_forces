@@ -1,0 +1,405 @@
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2023 The MathWorks, Inc.
+             R2023b Update 1 (23.2.0.2380103) 64-bit (glnxa64)
+                             September 11, 2023
+
+[Warning: Unrecognized command line option: R.] 
+ 
+To get started, type doc.
+For product information, visit www.mathworks.com.
+ 
+LMCFVP forces and torques invoked with: sphSphMesh
+===================================================
+    32
+
+[Warning: Matrix is close to singular or badly scaled. Results may be
+inaccurate. RCOND =  5.551115e-17.] 
+[> In proj (line 21)
+In solveTPLMCFVP (line 44)
+In LMCFVP_forcesNtorques (line 37)
+In lmcfvp_ft_script (line 10)
+] 
+
+forces_mst =
+
+  -0.406137742740286   0.005276665773490   0.000829536568327
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+torques_mst =
+
+   0.002669501274226   0.011176967143676  -0.012854353269797
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+forces_bem =
+
+   0.396775063431659  -0.001117330008721   0.000694133818137
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+
+torques_bem =
+
+  -0.000945383539968   0.000124121530740   0.001643595568679
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+    64
+
+
+forces_mst =
+
+  -0.406137742740286   0.005276665773490   0.000829536568327
+  -0.468872083702588   0.002147263216400  -0.000676817947447
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+torques_mst =
+
+   0.002669501274226   0.011176967143676  -0.012854353269797
+  -0.003212233537605   0.000034842712033  -0.006989823595326
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+forces_bem =
+
+   0.396775063431659  -0.001117330008721   0.000694133818137
+   0.456915321613199  -0.000018092649120   0.000062673693575
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+
+torques_bem =
+
+  -0.000945383539968   0.000124121530740   0.001643595568679
+  -0.000179035709881  -0.000105522529973   0.000097679658739
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+   128
+
+
+forces_mst =
+
+  -0.406137742740286   0.005276665773490   0.000829536568327
+  -0.468872083702588   0.002147263216400  -0.000676817947447
+  -0.488310053142846  -0.000355911833863   0.000105127039967
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+torques_mst =
+
+   0.002669501274226   0.011176967143676  -0.012854353269797
+  -0.003212233537605   0.000034842712033  -0.006989823595326
+  -0.000796949922876   0.002412406580369   0.001085213621305
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+forces_bem =
+
+   0.396775063431659  -0.001117330008721   0.000694133818137
+   0.456915321613199  -0.000018092649120   0.000062673693575
+   0.483757301538683   0.000009041561083   0.000023414867583
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+
+torques_bem =
+
+  -0.000945383539968   0.000124121530740   0.001643595568679
+  -0.000179035709881  -0.000105522529973   0.000097679658739
+   0.000092720874412  -0.000694407959459  -0.000012731446088
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+   256
+
+
+forces_mst =
+
+  -0.406137742740286   0.005276665773490   0.000829536568327
+  -0.468872083702588   0.002147263216400  -0.000676817947447
+  -0.488310053142846  -0.000355911833863   0.000105127039967
+  -0.498320164838282   0.000135022862613  -0.000051348068919
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+torques_mst =
+
+   0.002669501274226   0.011176967143676  -0.012854353269797
+  -0.003212233537605   0.000034842712033  -0.006989823595326
+  -0.000796949922876   0.002412406580369   0.001085213621305
+   0.000678983620266   0.000034460495989  -0.000308765945936
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+
+forces_bem =
+
+   0.396775063431659  -0.001117330008721   0.000694133818137
+   0.456915321613199  -0.000018092649120   0.000062673693575
+   0.483757301538683   0.000009041561083   0.000023414867583
+   0.496129865613947   0.000001679000185   0.000001759901843
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+
+torques_bem =
+
+  -0.000945383539968   0.000124121530740   0.001643595568679
+  -0.000179035709881  -0.000105522529973   0.000097679658739
+   0.000092720874412  -0.000694407959459  -0.000012731446088
+  -0.000003759567373  -0.000112400644213   0.000031300290925
+                   0                   0                   0
+                   0                   0                   0
+                   0                   0                   0
+
+   512
+
+
+forces_mst =
+
+  -0.406137742740286   0.005276665773490   0.000829536568327
+  -0.468872083702588   0.002147263216400  -0.000676817947447
+  -0.488310053142846  -0.000355911833863   0.000105127039967
+  -0.498320164838282   0.000135022862613  -0.000051348068919
+  -0.503722250425849   0.000018805685558   0.000011149557051
+                   0                   0                   0
+                   0                   0                   0
+
+
+torques_mst =
+
+   0.002669501274226   0.011176967143676  -0.012854353269797
+  -0.003212233537605   0.000034842712033  -0.006989823595326
+  -0.000796949922876   0.002412406580369   0.001085213621305
+   0.000678983620266   0.000034460495989  -0.000308765945936
+  -0.000111615433711   0.000035968712649  -0.000043287658831
+                   0                   0                   0
+                   0                   0                   0
+
+
+forces_bem =
+
+   0.396775063431659  -0.001117330008721   0.000694133818137
+   0.456915321613199  -0.000018092649120   0.000062673693575
+   0.483757301538683   0.000009041561083   0.000023414867583
+   0.496129865613947   0.000001679000185   0.000001759901843
+   0.502419951698110   0.000000256709208   0.000000833003313
+                   0                   0                   0
+                   0                   0                   0
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+
+torques_bem =
+
+  -0.000945383539968   0.000124121530740   0.001643595568679
+  -0.000179035709881  -0.000105522529973   0.000097679658739
+   0.000092720874412  -0.000694407959459  -0.000012731446088
+  -0.000003759567373  -0.000112400644213   0.000031300290925
+  -0.000000029004463  -0.000007592757352  -0.000004057275817
+                   0                   0                   0
+                   0                   0                   0
+
+        1024
+
+
+forces_mst =
+
+  -0.406137742740286   0.005276665773490   0.000829536568327
+  -0.468872083702588   0.002147263216400  -0.000676817947447
+  -0.488310053142846  -0.000355911833863   0.000105127039967
+  -0.498320164838282   0.000135022862613  -0.000051348068919
+  -0.503722250425849   0.000018805685558   0.000011149557051
+  -0.506423232242859  -0.000001860532335   0.000004473247200
+                   0                   0                   0
+
+
+torques_mst =
+
+   0.002669501274226   0.011176967143676  -0.012854353269797
+  -0.003212233537605   0.000034842712033  -0.006989823595326
+  -0.000796949922876   0.002412406580369   0.001085213621305
+   0.000678983620266   0.000034460495989  -0.000308765945936
+  -0.000111615433711   0.000035968712649  -0.000043287658831
+  -0.000062464165947   0.000021087906429   0.000007344323602
+                   0                   0                   0
+
+
+forces_bem =
+
+   0.396775063431659  -0.001117330008721   0.000694133818137
+   0.456915321613199  -0.000018092649120   0.000062673693575
+   0.483757301538683   0.000009041561083   0.000023414867583
+   0.496129865613947   0.000001679000185   0.000001759901843
+   0.502419951698110   0.000000256709208   0.000000833003313
+   0.505810070582147  -0.000000108334793   0.000000077682698
+                   0                   0                   0
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+
+torques_bem =
+
+  -0.000945383539968   0.000124121530740   0.001643595568679
+  -0.000179035709881  -0.000105522529973   0.000097679658739
+   0.000092720874412  -0.000694407959459  -0.000012731446088
+  -0.000003759567373  -0.000112400644213   0.000031300290925
+  -0.000000029004463  -0.000007592757352  -0.000004057275817
+  -0.000000000722022  -0.000000067723227   0.000001564030635
+                   0                   0                   0
+
+        2048
+
+
+forces_mst =
+
+  -0.406137742740286   0.005276665773490   0.000829536568327
+  -0.468872083702588   0.002147263216400  -0.000676817947447
+  -0.488310053142846  -0.000355911833863   0.000105127039967
+  -0.498320164838282   0.000135022862613  -0.000051348068919
+  -0.503722250425849   0.000018805685558   0.000011149557051
+  -0.506423232242859  -0.000001860532335   0.000004473247200
+  -0.507587153997125   0.000000151667340   0.000001600481118
+
+
+torques_mst =
+
+   0.002669501274226   0.011176967143676  -0.012854353269797
+  -0.003212233537605   0.000034842712033  -0.006989823595326
+  -0.000796949922876   0.002412406580369   0.001085213621305
+   0.000678983620266   0.000034460495989  -0.000308765945936
+  -0.000111615433711   0.000035968712649  -0.000043287658831
+  -0.000062464165947   0.000021087906429   0.000007344323602
+   0.000067185303666   0.000003366270636  -0.000001407556343
+
+
+forces_bem =
+
+   0.396775063431659  -0.001117330008721   0.000694133818137
+   0.456915321613199  -0.000018092649120   0.000062673693575
+   0.483757301538683   0.000009041561083   0.000023414867583
+   0.496129865613947   0.000001679000185   0.000001759901843
+   0.502419951698110   0.000000256709208   0.000000833003313
+   0.505810070582147  -0.000000108334793   0.000000077682698
+   0.507359554244487  -0.000000004961798  -0.000000013413128
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 7 workers.
+Parallel pool using the 'Processes' profile is shutting down.
+
+torques_bem =
+
+  -0.000945383539968   0.000124121530740   0.001643595568679
+  -0.000179035709881  -0.000105522529973   0.000097679658739
+   0.000092720874412  -0.000694407959459  -0.000012731446088
+  -0.000003759567373  -0.000112400644213   0.000031300290925
+  -0.000000029004463  -0.000007592757352  -0.000004057275817
+  -0.000000000722022  -0.000000067723227   0.000001564030635
+  -0.000000003876257   0.000000052830431   0.000001594602446
+
