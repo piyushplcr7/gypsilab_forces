@@ -33,7 +33,7 @@ function [] = LMCFVP_forcesNtorques(meshfunction,vals)
         
         %% Solving the transmission problem
         % These are traces from the exterior
-        B_0 = [1 0 0];
+        B_0 = [1 1 1];
         [Psi_i,g_i,Psi_e] = solveTPLMCFVP(bndmesh_i,bndmesh_e,mu,mu0,B_0);
 
         %% MST Based force and torque on bndmesh_i

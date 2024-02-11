@@ -2,11 +2,10 @@ clear; clc;
 
 addpath(genpath("../../../../"));
 
-prefix = "1ALT_LMCFSP_forcesNtorques_";
+prefix = "LMCFVP_forcesNtorques_";
 
-cases = ["getMeshSphere","getMeshCube","getMeshTetraNew","getMeshCuboid5"];
-cases = cases(3);
-% cases = ["getMeshSphere","getMeshCube","getMeshCuboid"];
+cases = ["cubeSphMesh","cuboidSphMesh","sphSphMesh","tetraSphMesh"];
+cases = cases(2);
 
 
 for i = 1:size(cases,2)
@@ -15,9 +14,9 @@ for i = 1:size(cases,2)
         load(fname);
 
         err_Fbem = vecnorm(forces_bem(1:end-1,:)-forces_bem(end,:),2,2);
-        err_Fmst = vecnorm(forces_mst(1:end-1,:)-forces_bem(end,:),2,2);
+        err_Fmst = vecnorm(forces_mst(1:end-1,:)+forces_bem(end,:),2,2);
         err_Tbem = vecnorm(torques_bem(1:end-1,:)-torques_bem(end,:),2,2);
-        err_Tmst = vecnorm(torques_mst(1:end-1,:)-torques_bem(end,:),2,2);
+        err_Tmst = vecnorm(torques_mst(1:end-1,:)+torques_bem(end,:),2,2);
         h = hvals;
 
         figure;
