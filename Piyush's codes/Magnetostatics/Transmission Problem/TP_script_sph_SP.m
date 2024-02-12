@@ -62,17 +62,17 @@ for i = 1:Nvals
     f3 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Vel3,DVel3);
 
     forces_vol(i,:) = [f1 f2 f3]
-% 
-%     Xcg = [4 0 0];
-%     [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
-%     [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
-%     [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
-% 
-%     t1 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Velr1,DVelr1);
-%     t2 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Velr2,DVelr2);
-%     t3 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Velr3,DVelr3);
-% 
-%     torques_vol(i,:) = [t1 t2 t3]
+
+    Xcg = [4 0 0];
+    [Velr1,DVelr1] = getRotVelDVel([1 0 0],Xcg);
+    [Velr2,DVelr2] = getRotVelDVel([0 1 0],Xcg);
+    [Velr3,DVelr3] = getRotVelDVel([0 0 1],Xcg);
+
+    t1 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Velr1,DVelr1);
+    t2 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Velr2,DVelr2);
+    t3 = shapeDer_ScalPot_Vol_TP(bndmesh,mu,mu0,Tnu,Tdu,J,omega_src,Velr3,DVelr3);
+
+    torques_vol(i,:) = [t1 t2 t3]
 
     % BEM based shape derivative
     fbem1 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Vel1,DVel1,mu0,mu);
@@ -81,11 +81,11 @@ for i = 1:Nvals
 
     forces_bem(i,:) = [fbem1 fbem2 fbem3]
 
-%     tbem1 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr1,DVelr1,mu0,mu);
-%     tbem2 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr2,DVelr2,mu0,mu);
-%     tbem3 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr3,DVelr3,mu0,mu);
-% 
-%     torques_bem(i,:) = [tbem1 tbem2 tbem3]
+    tbem1 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr1,DVelr1,mu0,mu);
+    tbem2 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr2,DVelr2,mu0,mu);
+    tbem3 = shapDervTranPrbScalPotBIE(bndmesh,Tdu,Tnu,J,omega_src,Velr3,DVelr3,mu0,mu);
+
+    torques_bem(i,:) = [tbem1 tbem2 tbem3]
 
     % fbem1 = shapDervTranPrbScalPotBIE_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Vel1,DVel1,mu0,mu);
     % fbem2 = shapDervTranPrbScalPotBIE_BACKUP(bndmesh,Tdu,Tnu,J,omega_src,Vel2,DVel2,mu0,mu);
