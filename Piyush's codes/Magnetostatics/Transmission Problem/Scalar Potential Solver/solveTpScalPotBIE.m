@@ -25,15 +25,17 @@ function [psi,g] = solveTpScalPotBIE(bndmesh,mu,mu0,J,omega_src)
     NP1 = P1.ndof;
     NP0 = P0.ndof;
     % LHS matrix
-    blockmat = [(1+mu0/mu)*V -2*K zeros(NP0,1);
-                2*K' (1+mu/mu0)*W Vec;
-                zeros(1,NP0) Vec' 0];
+    % blockmat = [(1+mu0/mu)*V -2*K zeros(NP0,1);
+    %             2*K' (1+mu/mu0)*W Vec;
+    %             zeros(1,NP0) Vec' 0];
+    blockmat = [(1+mu0/mu)*V -2*K;
+                2*K' (1+mu/mu0)*W];
 
     % RHS
     rhs1 = -jumpMu/mu*V*HJn_coeffs;
     M_P1_P0 = mass_matrix(Gamma,P1,P0);
     rhs2 = jumpMu/mu0 * (0.5*M_P1_P0 - K') * HJn_coeffs;
-    rhs = [rhs1;rhs2;0];
+    rhs = [rhs1;rhs2];
 
     sol= blockmat\rhs;
 

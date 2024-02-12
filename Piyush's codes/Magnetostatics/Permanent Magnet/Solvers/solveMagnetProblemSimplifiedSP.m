@@ -34,16 +34,18 @@ function [psi,g] = solveMagnetProblemSimplifiedSP(Gamma,mu,mu0,J,omega_src,M)
     NP1 = P1.ndof;
     NP0 = P0.ndof;
     % LHS matrix
-    blockmat = [(1+mu0/mu)*V -2*K zeros(NP0,1);
-                2*K' (1+mu/mu0)*W Vec;
-                zeros(1,NP0) Vec' 0];
+    % blockmat = [(1+mu0/mu)*V -2*K zeros(NP0,1);
+    %             2*K' (1+mu/mu0)*W Vec;
+    %             zeros(1,NP0) Vec' 0];
+    blockmat = [(1+mu0/mu)*V -2*K;
+                2*K' (1+mu/mu0)*W];
 
     % RHS
     rhs1 = 1/mu * V * alpha_coeffs;
     M_P1_P0 = mass_matrix(Gamma,P1,P0);
     %rhs2 = jumpMu/mu0 * (0.5*M_P1_P0 - K') * HJn_coeffs;
     rhs2 = 1/mu0*(K' - 0.5 * M_P1_P0) * alpha_coeffs;
-    rhs = [rhs1;rhs2;0];
+    rhs = [rhs1;rhs2];
 
     sol= blockmat\rhs;
 
