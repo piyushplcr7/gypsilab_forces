@@ -61,6 +61,9 @@ function [] = TP_VP_dualnorm(meshfunction,vals)
         elseif strcmp(funcInfo.function,'getMeshTetraNew')
             disp('getMeshTetraNew Nsrc');
             N_src = floor((N^2)/350);
+        elseif strcmp(funcInfo.function,'getMeshCuboid5')
+            disp('getMeshCube Nsrc');
+            N_src = floor(16*N^0.7);
         end
 
         R0 = 2;
