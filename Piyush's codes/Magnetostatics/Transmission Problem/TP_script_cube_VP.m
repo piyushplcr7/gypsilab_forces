@@ -13,6 +13,7 @@ forces_bem = forces_mst;
 torques_mst = forces_mst;
 torques_bem = forces_mst;
 hvals = 0*vals;
+hvals_src = hvals;
 
 for i = 1:Nvals
     N = 2^vals(i);
@@ -41,11 +42,12 @@ for i = 1:Nvals
     normals = Gamma.qudNrm;
     
     %% Source
-    N_src = N;
+    N_src = floor(8*N^0.7);
     R0 = 2;
     r0 = .5;
     [J,mesh_src] = get_torus_source(N_src,R0,r0);
     omega_src = dom(mesh_src,3);
+    hvals_src(i) = sqrt(mean(mesh_src.ndv,1));
     
     %% Solving the transmission problem
     % These are traces from the exterior
@@ -54,23 +56,23 @@ for i = 1:Nvals
     % Interior traces
     Psi_in = mu/mu0 * Psi;
     g_in = g;
-    
+
     %% Computing the MST based force and torque
-    
+
     % Force computation
     NED = fem(bndmesh,'NED'); 
     P1 = fem(bndmesh,'P1');
     % Div conforming with div0 constraint -> Neumann trace
     DIV0 = nxgrad(P1); 
     RWG = fem(bndmesh,'RWG');
-    
+
     % Bn = curlA.n = curlTg
     Bn = reconstruct(g,Gamma,NED.curl);
     % Ht = nx(Hxn) = mu_e^-1 nxPsi
     Psivals = reconstruct(Psi,Gamma,DIV0);
     Ht = mu0^(-1) * cross(normals,Psivals,2);
     Ht = vecnorm(Ht,2,2);
-    
+
     forces_mst(i,:) = ForceMstTP(Gamma,Bn,Ht,mu0,mu)
 
     % Torque computation

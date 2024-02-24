@@ -36,6 +36,7 @@ function [] = TP_VP_dualnorm(meshfunction,vals)
     Nfields = size(abc_alpha,1);
   
     hvals = 0*vals;
+    hvals_src = hvals;
     
     for i = 1:Nvals
         N = 2^vals(i);
@@ -51,11 +52,22 @@ function [] = TP_VP_dualnorm(meshfunction,vals)
         normals = Gamma.qudNrm;
         
         %% Source
-        N_src = N;
+        if strcmp(funcInfo.function,'getMeshCube')
+            disp('getMeshCube Nsrc');
+            N_src = floor(8*N^0.7);
+        elseif strcmp(funcInfo.function,'getMeshSphere')
+            disp('getMeshSphere Nsrc');
+            N_src = floor(3*N);
+        elseif strcmp(funcInfo.function,'getMeshTetraNew')
+            disp('getMeshTetraNew Nsrc');
+            N_src = floor((N^2)/350);
+        end
+
         R0 = 2;
         r0 = .5;
         [J,mesh_src] = get_torus_source(N_src,R0,r0);
         omega_src = dom(mesh_src,3);
+        hvals_src(i) = sqrt(mean(mesh_src.ndv,1));
         
         %% Solving the transmission problem
         % These are traces from the exterior
