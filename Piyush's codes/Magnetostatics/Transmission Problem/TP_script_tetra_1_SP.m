@@ -49,7 +49,7 @@ for i = 1:Nvals
     normals = Gamma.qudNrm;
     
     %% Source
-    N_src = N;
+    N_src = floor((N^2)/350);
     R0 = 2;
     r0 = .5;
     [J,mesh_src] = get_torus_source(N_src,R0,r0);

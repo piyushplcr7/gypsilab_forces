@@ -50,7 +50,20 @@ function [] = TP_SP_dualnorm(meshfunction,vals)
         normals = Gamma.qudNrm;
         
         %% Source
-        N_src = N;
+        if strcmp(funcInfo.function,'getMeshCube')
+            disp('getMeshCube Nsrc');
+            N_src = floor(8*N^0.7);
+        elseif strcmp(funcInfo.function,'getMeshSphere')
+            disp('getMeshSphere Nsrc');
+            N_src = floor(3*N);
+        elseif strcmp(funcInfo.function,'getMeshTetraNew')
+            disp('getMeshTetraNew Nsrc');
+            N_src = floor((N^2)/350);
+        elseif strcmp(funcInfo.function,'getMeshCuboid5')
+            disp('getMeshCube Nsrc');
+            N_src = floor(16*N^0.7);
+        end
+        
         R0 = 2;
         r0 = .5;
         [J,mesh_src] = get_torus_source(N_src,R0,r0);
