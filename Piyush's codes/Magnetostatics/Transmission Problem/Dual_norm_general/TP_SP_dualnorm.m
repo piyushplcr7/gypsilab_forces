@@ -8,8 +8,8 @@ function [] = TP_SP_dualnorm(meshfunction,vals)
 %     clear; clc; close all;
     format long;
     % (mui+mue)/(mui-mue)
-    mu = 4;
-    mu0 = 2;
+    mu = 100;
+    mu0 = 1;
     %vals = 5:12;
     Nvals = size(vals,2);
     hvals = vals;
