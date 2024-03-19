@@ -4,8 +4,8 @@ addpath(genpath("../../../"));
 clear; clc; close all;
 format long;
 % (mui+mue)/(mui-mue)
-mu = 100;
-mu0 = 1;
+mu = 4;
+mu0 = 2;
 vals = 9:12;
 Nvals = size(vals,2);
 forces_vol = zeros(Nvals,3);
