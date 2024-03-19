@@ -3,7 +3,7 @@ delete(gcp('nocreate'));
 addpath(genpath("../../../../"));
 
 gpuDevice(1);
-valsrest = 7:12;
+valsrest = 5:12;
 valstetra = 7:11;
 
 % TP_VP_dualnorm(@getMeshCuboid5,valsrest);
