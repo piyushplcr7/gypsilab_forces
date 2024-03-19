@@ -6,7 +6,7 @@ format long;
 % (mui+mue)/(mui-mue)
 mu = 100;
 mu0 = 1;
-vals = 5:12;
+vals = 9:12;
 Nvals = size(vals,2);
 forces_vol = zeros(Nvals,3);
 forces_bem = forces_vol;

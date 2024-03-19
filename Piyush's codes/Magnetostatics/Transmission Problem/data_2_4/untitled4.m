@@ -1,0 +1,1 @@
+combineDualNormData('TPVP_dualnorm_getMeshCube.mat','TPSP_dualnorm_getMeshCube.mat',1:7,1:6,1:7)
