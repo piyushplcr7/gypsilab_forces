@@ -47,19 +47,16 @@ function [Psi,g] = solveTransmissionProblem(bndmesh,J,omega_src,mu_i,mu_e)
 
     % Computing the RHS
     % Computing the fields on the points X
-    % AJ = compute_vecpot(J,omega_src,X);
+    AJ = compute_vecpot(J,omega_src,X);
     data = omega_src.msh.col;
     R = data(1);
     r = data(2);
-    % AJ computed using Gauss Quadrature
-    AJ = computeVecpotTorus(1,R,r,X);
+    AJ_new = computeVecpotTorus(1,R,r,X);
 
-    % err = max(vecnorm(AJ-AJ_new,2,2))
+    err = max(vecnorm(AJ-AJ_new,2,2))
 
-    % curlAJ = compute_vecpot_curl(J,omega_src,X);
-    % curlAJ computed using Gauss Quadrature
-    curlAJ = computeVecpotCurlTorus(1,R,r,X);
-    % err_curl = max(vecnorm(curlAJ-curlAJ_new,2,2))
+    curlAJ = compute_vecpot_curl(J,omega_src,X);
+    curlAJ_new = computeVecpotCurlTorus
 
     % Taking traces of the fields at the points X
     normals = Gamma.qudNrm;

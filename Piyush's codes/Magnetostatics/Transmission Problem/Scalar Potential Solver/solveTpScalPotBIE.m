@@ -17,7 +17,12 @@ function [psi,g] = solveTpScalPotBIE(bndmesh,mu,mu0,J,omega_src)
 
     jumpMu = mu0-mu;
 
-    HJ = compute_vecpot_curl(J,omega_src,X);
+    % HJ = compute_vecpot_curl(J,omega_src,X);
+    data = omega_src.msh.col;
+    R = data(1);
+    r = data(2);
+    HJ = computeVecpotCurlTorus(1,R,r,X);
+
     HJn = dot(normals,HJ,2);
     HJn_coeffs = proj(HJn,Gamma,P0);
 

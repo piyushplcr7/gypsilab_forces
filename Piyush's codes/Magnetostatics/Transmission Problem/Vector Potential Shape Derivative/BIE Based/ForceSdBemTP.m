@@ -14,32 +14,44 @@ function sd = ForceSdBemTP(bndmesh,TnA,g,J,omega_src,Vel)
 
     % Getting quadrature points for Gamma and omega_src
     [X,WX] = Gamma.qud;
-    [Y,WY] = omega_src.qud;
+    % [Y,WY] = omega_src.qud;
 
     % Get tensor product quadrature rule
-    NX = size(X,1);
-    NY = size(Y,1);
+    % NX = size(X,1);
+    % NY = size(Y,1);
 
-    XX = repmat(X,NY,1); WWX = repmat(WX,NY,1); Psi_XX = repmat(Psi,NY,1);
-    YY = repelem(Y,NX,1); WWY = repelem(WY,NX,1);
+    % XX = repmat(X,NY,1); WWX = repmat(WX,NY,1); Psi_XX = repmat(Psi,NY,1);
+    % YY = repelem(Y,NX,1); WWY = repelem(WY,NX,1);
 
-    W = WWX .* WWY;
+    % W = WWX .* WWY;
 
-    VelXX = Vel(XX);
-    JYY = J(YY(:,1),YY(:,2),YY(:,3));
+    % VelXX = Vel(XX);
+    % JYY = J(YY(:,1),YY(:,2),YY(:,3));
     
     % Kernel gradx G
-    gradxG = @(X,Y) 1/(4*pi) * (Y-X)./vecnorm(X-Y,2,2).^3;
-    dl1_ds = sum(W.* dot(gradxG(XX,YY),VelXX,2).*dot(Psi_XX,JYY,2),1 );
+    % gradxG = @(X,Y) 1/(4*pi) * (Y-X)./vecnorm(X-Y,2,2).^3;
+    % dl1_ds = sum(W.* dot(gradxG(XX,YY),VelXX,2).*dot(Psi_XX,JYY,2),1 );
+
+    % Computing with Gaussian quadrature for the integration over source
+    data = omega_src.msh.col;
+    R = data(1);
+    r = data(2);
+
+    middle = computeGradxGJTTorus(1,R,r,X);
+    dl1_ds = sum(WX.*dot(Vel(X), [dot(middle{1}, Psi,2) dot(middle{2}, Psi,2) dot(middle{3}, Psi,2)] , 2 ), 1);
+    % err= abs(term-dl1_ds)
 
 
     %% 
     gvals = reconstruct(g,Gamma,NED);
     normals = Gamma.qudNrm;
-    nxgvals = cross(normals,gvals,2);
-    nxgvals_XX = repmat(nxgvals,NY,1);
-    kernel = 3/(4*pi) * (XX-YY).*dot(XX-YY,VelXX,2)./vecnorm(XX-YY,2,2).^5 - 1/(4*pi)*VelXX./vecnorm(XX-YY,2,2).^3;
-    dl2_ds = sum(W.*dot(cross(kernel,JYY,2),nxgvals_XX,2),1);
+    % nxgvals = cross(normals,gvals,2);
+    % nxgvals_XX = repmat(nxgvals,NY,1);
+    % kernel = 3/(4*pi) * (XX-YY).*dot(XX-YY,VelXX,2)./vecnorm(XX-YY,2,2).^5 - 1/(4*pi)*VelXX./vecnorm(XX-YY,2,2).^3;
+    % dl2_ds = sum(W.*dot(cross(kernel,JYY,2),nxgvals_XX,2),1);
+    
+    customintegranddl22 = dl22_ds_TPVPBEM_GLQuad(1,R,r,X,Vel);
+    dl2_ds = sum(WX.* dot( cross(normals,gvals,2) , customintegranddl22 , 2),1);
 
     sd = -dl1_ds + dl2_ds;
 end

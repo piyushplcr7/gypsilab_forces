@@ -13,8 +13,21 @@ function sd = shapDervTranPrbScalPotBIE_CSTFLD(bndmesh,Tdu,Tnu,J,omega_src,Vel,D
     % Reconstructing the trace of u- > g
     g = reconstruct(Tdu,Gamma,P1);
 
-    HJ = compute_vecpot_curl(J,omega_src,Xgypsi);
-    DHJ = compute_vecpot_D_curl(J,omega_src,Xgypsi);
+    % HJ = compute_vecpot_curl(J,omega_src,Xgypsi);
+    data = omega_src.msh.col;
+    R = data(1);
+    r = data(2);
+    HJ = computeVecpotCurlTorus(1,R,r,Xgypsi);
+
+    % DHJ using triangulation of torus
+    % DHJ = compute_vecpot_D_curl(J,omega_src,Xgypsi);
+    
+    % DHJ using Gauss Legendre integration
+    DHJ = computeVecpotDCurlTorus(1,R,r,Xgypsi);
+
+    % err1 = mean(vecnorm(DHJ{1} - DHJ_new{1},2,2))
+    % err2 = mean(vecnorm(DHJ{2} - DHJ_new{2},2,2))
+    % err3 = mean(vecnorm(DHJ{3} - DHJ_new{3},2,2))
 
     HJn = dot(normals,HJ,2);
     HJn_coeffs = proj(HJn,Gamma,P0);

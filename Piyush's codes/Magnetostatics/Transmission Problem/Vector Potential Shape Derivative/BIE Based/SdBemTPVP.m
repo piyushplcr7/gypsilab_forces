@@ -21,31 +21,44 @@ function sd = SdBemTPVP(bndmesh,TnA,TdA,J,omega_src,Vel,DVel,mu0,mu)
     % Partial derivaive of l2
     % Getting quadrature points for Gamma and omega_src
     [X,WX] = Gamma.qud;
-    [Y,WY] = omega_src.qud;
+    % [Y,WY] = omega_src.qud;
     % Get tensor product quadrature rule
-    NX = size(X,1);
-    NY = size(Y,1);
-    XX = repmat(X,NY,1); WWX = repmat(WX,NY,1); 
-    YY = repelem(Y,NX,1); WWY = repelem(WY,NX,1);
-    W = WWX .* WWY;
-    VelXX = Vel(XX);
-    DVel1XX = DVel{1}(XX);
-    DVel2XX = DVel{2}(XX);
-    DVel3XX = DVel{3}(XX);
-    JYY = J(YY(:,1),YY(:,2),YY(:,3));
+    % NX = size(X,1);
+    % NY = size(Y,1);
+    % XX = repmat(X,NY,1); WWX = repmat(WX,NY,1); 
+    % YY = repelem(Y,NX,1); WWY = repelem(WY,NX,1);
+    % W = WWX .* WWY;
+    % VelXX = Vel(XX);
+    % DVel1XX = DVel{1}(XX);
+    % DVel2XX = DVel{2}(XX);
+    % DVel3XX = DVel{3}(XX);
+    % JYY = J(YY(:,1),YY(:,2),YY(:,3));
 
     gvals = reconstruct(TdA,Gamma,NED);
     normals = Gamma.qudNrm;
     nxgvals = cross(normals,gvals,2);
-    nxgvals_XX = repmat(nxgvals,NY,1);
-    kernell22 = 3/(4*pi) * (XX-YY).*dot(XX-YY,VelXX,2)./vecnorm(XX-YY,2,2).^5 - 1/(4*pi)*VelXX./vecnorm(XX-YY,2,2).^3;
-    l22 = sum(W.*dot(cross(kernell22,JYY,2),nxgvals_XX,2),1);
+    % nxgvals_XX = repmat(nxgvals,NY,1);
+    % kernell22 = 3/(4*pi) * (XX-YY).*dot(XX-YY,VelXX,2)./vecnorm(XX-YY,2,2).^5 - 1/(4*pi)*VelXX./vecnorm(XX-YY,2,2).^3;
+    % l22 = sum(W.*dot(cross(kernell22,JYY,2),nxgvals_XX,2),1);
+
+    % Computing with Gaussian quadrature for the integration over source
+    data = omega_src.msh.col;
+    R = data(1);
+    r = data(2);
+
+    customintegranddl22 = dl22_ds_TPVPBEM_GLQuad(1,R,r,X,Vel);
+    l22 = sum(WX.* dot( cross(normals,gvals,2) , customintegranddl22 , 2),1);
 
     % Kernel gradx G
-    gradxG = 1/(4*pi) * (YY-XX)./vecnorm(XX-YY,2,2).^3;
+    % gradxG = 1/(4*pi) * (YY-XX)./vecnorm(XX-YY,2,2).^3;
     % DVel {nxg}
-    DVelnxgvalsXX = [dot(DVel1XX,nxgvals_XX,2) dot(DVel2XX,nxgvals_XX,2) dot(DVel3XX,nxgvals_XX,2) ];
-    l21 = sum(W.* dot(cross(gradxG,JYY,2),DVelnxgvalsXX,2),1);
+    % DVelnxgvalsXX = [dot(DVel1XX,nxgvals_XX,2) dot(DVel2XX,nxgvals_XX,2) dot(DVel3XX,nxgvals_XX,2) ];
+    % l21 = sum(W.* dot(cross(gradxG,JYY,2),DVelnxgvalsXX,2),1);
+    
+    curlAJ = computeVecpotCurlTorus(1,R,r,X);
+    DVelnxgvalsX = [dot(DVel{1}(X),nxgvals,2) dot(DVel{2}(X),nxgvals,2) dot(DVel{3}(X),nxgvals,2)];
+    l21 = sum(WX.* dot(DVelnxgvalsX,curlAJ,2),1);
+    % errl21 = abs(l21_new - l21)
 
     %% Dispatching SS computations to GPU
     % [~,elt2dof] = RWG.dof;
