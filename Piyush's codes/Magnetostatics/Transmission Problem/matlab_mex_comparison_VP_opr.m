@@ -9,16 +9,17 @@ mesh = mesh.translate(T);
 bndmesh = mesh.bnd;
 
 P1 = fem(bndmesh,'P1');
-P0 = fem(bndmesh,'P0');
+DIV0 = nxgrad(P1);
+RWG = fem(bndmesh,'RWG');
 
 Gamma = dom(bndmesh,3);
 
-V_gypsi = single_layer(Gamma,P0,P0);
-K_gypsi = double_layer_laplace(Gamma,P0,P1);
-W_gypsi = single_layer(Gamma,P1.nxgrad,P1.nxgrad);
+Agypsi = single_layer(Gamma,DIV0,DIV0);
+Cgypsi = double_layer_magnetostatics(Gamma,DIV0,RWG);
+Ngypsi = -single_layer(Gamma,RWG.div,RWG.div);
 
 %% Calling the mex function
-[~,elt2dof] = P1.dof;
+[~,elt2dof] = RWG.dof;
 % Creating the interaction matrix
 elts = 1:bndmesh.nelt;
 elts = elts';
@@ -103,30 +104,34 @@ Vertices_gpu = bndmesh.vtx';
 Normals_gpu = bndmesh.nrm';
 Areas_gpu = bndmesh.ndv;
 
+zeroIdxelt2dof = cast(elt2dof-1,'int32');
+elt2dof_gpu = zeroIdxelt2dof';
+
 tic;
-[V,K,W] = LaplaceTPOperator(cast(bndmesh.nelt,'int32'), cast(bndmesh.nvtx,'int32'), cast(bndmesh.nelt^2,'int32'),... 
+[Amex,Cmex,Nmex] = curlcurlTPOperator(cast(bndmesh.nelt,'int32'), cast(bndmesh.nvtx,'int32'), cast(bndmesh.nelt^2,'int32'),... 
     Ivec, Jvec, relation, ...
     W0_gpu,X0_gpu,cast(size(X0,1),'int32'),...
     W1_gpu,X1_gpu,cast(size(X1,1),'int32'),...
     W2_gpu,X2_gpu, cast(size(X2,1),'int32'),...
     W3_gpu,X3_gpu, cast(size(X3,1),'int32'),...
     Elements_gpu,Vertices_gpu,Normals_gpu,Areas_gpu,...
-    permI_gpu,permJ_gpu);
+    permI_gpu,permJ_gpu,...
+    cast(RWG.ndof,'int32'),elt2dof_gpu,elt2dof_gpu);
 
 time_elapsed_1 = toc
 
 tic;
-[VP,KP,WP] = LaplaceTPOperatorParallel(cast(bndmesh.nelt,'int32'), cast(bndmesh.nvtx,'int32'), cast(bndmesh.nelt^2,'int32'),... 
+[AP,CP,NP] = curlcurlTPOperatorParallel(cast(bndmesh.nelt,'int32'), cast(bndmesh.nvtx,'int32'), cast(bndmesh.nelt^2,'int32'),... 
     Ivec, Jvec, relation, ...
     W0_gpu,X0_gpu,cast(size(X0,1),'int32'),...
     W1_gpu,X1_gpu,cast(size(X1,1),'int32'),...
     W2_gpu,X2_gpu, cast(size(X2,1),'int32'),...
     W3_gpu,X3_gpu, cast(size(X3,1),'int32'),...
     Elements_gpu,Vertices_gpu,Normals_gpu,Areas_gpu,...
-    permI_gpu,permJ_gpu);
+    permI_gpu,permJ_gpu,...
+    cast(RWG.ndof,'int32'),elt2dof_gpu,elt2dof_gpu);
 
-time_elapsed_par = toc
-
+time_elapsed_p = toc
 
 
 %% Assembling using SS in gypsi
@@ -134,13 +139,13 @@ time_elapsed_par = toc
 [ii,jj] = meshgrid(1:Nelt,1:Nelt);
 
 SLKernel = @(x,y,z) 1./vecnorm(z,2,2)/4./pi;
-DLKernel = @(x,y,z) -1/4/pi * z./vecnorm(z,2,2).^3;
+% DLKernel = @(x,y,z) -1/4/pi * z./vecnorm(z,2,2).^3;
 
 tic;
 
-VSS_gypsi = panel_assembly(bndmesh,SLKernel,P0,P0,ii(:),jj(:));
-KSS_gypsi = panel_assembly(bndmesh,DLKernel,ntimes(P1),P0,ii(:),jj(:));
-WSS_gypsi = panel_assembly(bndmesh,SLKernel,P1.nxgrad,P1.nxgrad,ii(:),jj(:));
+ASS_gypsi = panel_assembly(bndmesh,SLKernel,DIV0,DIV0,ii(:),jj(:));
+% CSS_gypsi = panel_assembly(bndmesh,DLKernel,ntimes(P1),P0,ii(:),jj(:));
+NSS_gypsi = -panel_assembly_shape_derivative(bndmesh,SLKernel,RWG.div,RWG.div,ii(:),jj(:));
 
 time_elapsed_2 = toc
 

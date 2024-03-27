@@ -528,12 +528,8 @@ function M = panel_assembly_shape_derivative(mesh,kernel,trial_space,test_space,
                         end
 
                         % Debug
-%                         xindices = find(dofs_i(perm_i) == 1);
-%                         yindices = find(dofs_j(perm_j) == 1);
-% 
-%                         if (length(xindices)~=0 && length(yindices)~=0)
-%                             fprintf("Interaction (I,J) =  (%d, %d)\n", i,j);
-%                         end
+                        xindices = find(dofs_i(perm_i) == 1);
+                        yindices = find()
                         % Check local2global map
                         M(dofs_i(perm_i), dofs_j(perm_j)) = M(dofs_i(perm_i), dofs_j(perm_j)) + ...
                                           local_matrix;
