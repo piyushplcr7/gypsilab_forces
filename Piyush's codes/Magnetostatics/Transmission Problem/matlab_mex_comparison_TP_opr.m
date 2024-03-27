@@ -1,5 +1,6 @@
 % Script to compare the operator evaluated using gypsilab and mex file
 clear;clc;
+addpath(genpath("../../../"));
 N = 200;
 L = 2*[1 1 1];
 T = [5 5 3];
