@@ -1,4 +1,5 @@
 #include "mex.hpp"
+#include "omp.h"
 #include "mexAdapter.hpp"
 #include <eigen3/Eigen/Dense>
 #include <iostream>
@@ -89,8 +90,16 @@ public:
     Eigen::MatrixXd K = Eigen::MatrixXd::Zero(NTriangles, NVertices);
     Eigen::MatrixXd Wmat = Eigen::MatrixXd::Zero(NVertices, NVertices);
 
+    // Quadrature points and weights
+    const double *Weights[4] = {W0, W1, W2, W3};
+    const double *Points[4] = {X0, X1, X2, X3};
+    const int NumPoints[4] = {Nq0, Nq1, Nq2, Nq3};
+
+    omp_set_num_threads(omp_get_max_threads());
+
     // Looping over all interactions specified by the index pairs
     // I(idx),J(idx)
+    # pragma omp parallel for schedule(dynamic)
     for (int InteractionIdx = 0; InteractionIdx < NInteractions;
          ++InteractionIdx) {
       Eigen::Vector3d Ai, Bi, Ci, Aj, Bj, Cj;
@@ -98,7 +107,6 @@ public:
  
       // The pair of panels
       int i = I[InteractionIdx], j = J[InteractionIdx];
-
 
       double g_tau = 2 * Areas[i], g_t = 2 * Areas[j];
 
@@ -117,10 +125,6 @@ public:
       // Original permutation of elements
       int permI[] = {0, 1, 2};
       int permJ[] = {0, 1, 2};
-
-      const double *Weights[4] = {W0, W1, W2, W3};
-      const double *Points[4] = {X0, X1, X2, X3};
-      const int NumPoints[4] = {Nq0, Nq1, Nq2, Nq3};
 
       const double *W = Weights[relation[InteractionIdx]];
       const double *X = Points[relation[InteractionIdx]];
@@ -239,9 +243,15 @@ public:
       V(i, j) += localvalV;
 
       for (int jj = 0; jj < 3; ++jj) {
-        K(i, EltJ[jj]) += localMatrixK(0, jj);
+        # pragma omp critical
+        {
+            K(i, EltJ[jj]) += localMatrixK(0, jj);
+        }
         for (int ii = 0; ii < 3; ++ii) {
-          Wmat(EltI[ii], EltJ[jj]) += localMatrixW(ii, jj);
+            # pragma omp critical
+            {
+                Wmat(EltI[ii], EltJ[jj]) += localMatrixW(ii, jj);
+            }
         }
       }
     }
